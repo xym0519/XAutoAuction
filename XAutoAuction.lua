@@ -1,26 +1,41 @@
-XAutoAuction = CreateFrame("Frame")
+XAutoAuction = {}
+XAutoAuctionFrame = CreateFrame('Frame')
+
+-- Global variables definition
 XAuctionInfoList = {}
 XAutoAuctionList = {}
 XAutoBuyList = {}
 XSpeakWordList = {}
 XJewWordList = {}
+XJewWordSetting = {}
+XFrameLevel = 10
 
-XAutoAuction:RegisterEvent("ADDON_LOADED")
-XAutoAuction:RegisterEvent("AUCTION_ITEM_LIST_UPDATE")
-XAutoAuction:RegisterEvent("CHAT_MSG_SYSTEM")
-XAutoAuction:RegisterEvent("AUCTION_HOUSE_CLOSED")
-XAutoAuction:RegisterEvent("AUCTION_HOUSE_SHOW")
-XAutoAuction:RegisterEvent("BAG_UPDATE")
-XAutoAuction:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
-XAutoAuction:RegisterEvent("UNIT_SPELLCAST_FAILED")
-XAutoAuction:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
-XAutoAuction:RegisterEvent("PLAYER_MONEY")
+-- Register system events
+XAutoAuctionFrame:RegisterEvent('ADDON_LOADED')
+XAutoAuctionFrame:RegisterEvent('AUCTION_ITEM_LIST_UPDATE')
+XAutoAuctionFrame:RegisterEvent('CHAT_MSG_SYSTEM')
+XAutoAuctionFrame:RegisterEvent('AUCTION_HOUSE_CLOSED')
+XAutoAuctionFrame:RegisterEvent('AUCTION_HOUSE_SHOW')
+XAutoAuctionFrame:RegisterEvent('BAG_UPDATE')
+XAutoAuctionFrame:RegisterEvent('UNIT_SPELLCAST_SUCCEEDED')
+XAutoAuctionFrame:RegisterEvent('UNIT_SPELLCAST_FAILED')
+XAutoAuctionFrame:RegisterEvent('UNIT_SPELLCAST_INTERRUPTED')
+XAutoAuctionFrame:RegisterEvent('PLAYER_MONEY')
 
+-- Event registion interface
+-- OnUpdate callback
 local updateCallback = {}
 XAutoAuction.registerUpdateCallback = function(key, callback)
     updateCallback[key] = callback
 end
 
+-- Refresh callback
+local refreshCallback = {}
+XAutoAuction.registerRefreshCallback = function(key, callback)
+    refreshCallback[key] = callback
+end
+
+-- Other events callback
 local eventCallback = {}
 XAutoAuction.registerEventCallback = function(key, event, callback)
     if not eventCallback[event] then
@@ -29,111 +44,56 @@ XAutoAuction.registerEventCallback = function(key, event, callback)
     eventCallback[event][key] = callback
 end
 
-local actionCallback = {}
-XAutoAuction.registerActionCallback = function(key, callback)
-    actionCallback[key] = callback
-end
-
-XAutoAuction.refreshUI = function()
-    if XAuctionCenter ~= nil then XAuctionCenter.refreshUI() end
-    if XAuctionBoard ~= nil then XAuctionBoard.refreshUI() end
-    if XCraftQueue ~= nil then XCraftQueue.refreshUI() end
-    if XAutoBuy ~= nil then XAutoBuy.refreshUI() end
-    if XJewCount ~= nil then XJewCount.refreshUI() end
-end
-
+-- Update cycle per second
 local lastUpdateTime = 0
-local function onUpdate()
-    for _, callback in pairs(updateCallback) do
-        if type(callback) == "function" then
-            callback()
-        end
-    end
-end
-
-XAutoAuction:SetScript('OnUpdate', function()
+XAutoAuctionFrame:SetScript('OnUpdate', function()
     local currentTime = time()
     if currentTime - lastUpdateTime < 1 then
         return
     end
     lastUpdateTime = currentTime
-    onUpdate()
+    for _, callback in pairs(updateCallback) do
+        if type(callback) == 'function' then
+            callback()
+        end
+    end
 end)
 
-XAutoAuction:SetScript("OnEvent", function(self, event, text, context)
+-- Event listener
+XAutoAuctionFrame:SetScript('OnEvent', function(self, event, text, context)
     if event == 'ADDON_LOADED' then
-        if text == "XAutoAuction" then
+        if text == 'XAutoAuction' then
             if eventCallback[event] then
                 for _, callback in pairs(eventCallback[event]) do
-                    callback(self, event, text, context)
+                    if type(callback) == 'function' then
+                        callback(self, event, text, context)
+                    end
                 end
             end
         end
     else
         if eventCallback[event] then
             for _, callback in pairs(eventCallback[event]) do
-                callback(self, event, text, context)
+                if type(callback) == 'function' then
+                    callback(self, event, text, context)
+                end
             end
         end
     end
 end)
 
-SlashCmdList["XAUTOAUCTIONREFRESH"] = function()
-    XInfo.reloadBag()
-    XInfo.reloadAuction()
-    XAutoAuction.refreshUI()
-end
-SLASH_XAUTOAUCTIONREFRESH1 = "/xautoauction_refresh"
-
-SlashCmdList["XAUTOAUCTIONMODESELL"] = function()
-    if XAuctionCenter.mainFrame then XAuctionCenter.mainFrame:Show() end
-    if XAuctionBoard.mainFrame then XAuctionBoard.mainFrame:Show() end
-    if XCraftQueue.mainFrame then XCraftQueue.mainFrame:Show() end
-    if XAutoSpeak.mainFrame then XAutoSpeak.mainFrame:Show() end
-    if XAutoBuy.mainFrame then XAutoBuy.mainFrame:Hide() end
-    if XJewWords.mainFrame then XJewWords.mainFrame:Hide() end
-    if XJewCount.mainFrame then XJewCount.mainFrame:Show() end
-end
-SLASH_XAUTOAUCTIONMODESELL1 = "/xautoauction_mode_sell"
-
-SlashCmdList["XAUTOAUCTIONMODEBUY"] = function()
-    if XAuctionCenter.mainFrame then XAuctionCenter.mainFrame:Hide() end
-    if XAuctionBoard.mainFrame then XAuctionBoard.mainFrame:Hide() end
-    if XCraftQueue.mainFrame then XCraftQueue.mainFrame:Hide() end
-    if XAutoSpeak.mainFrame then XAutoSpeak.mainFrame:Hide() end
-    if XAutoBuy.mainFrame then XAutoBuy.mainFrame:Show() end
-    if XJewWords.mainFrame then XJewWords.mainFrame:Hide() end
-    if XJewCount.mainFrame then XJewCount.mainFrame:Hide() end
-end
-SLASH_XAUTOAUCTIONMODEBUY1 = "/xautoauction_mode_buy"
-
-SlashCmdList["XAUTOAUCTIONMODETRADE"] = function()
-    if XAuctionCenter.mainFrame then XAuctionCenter.mainFrame:Hide() end
-    if XAuctionBoard.mainFrame then XAuctionBoard.mainFrame:Hide() end
-    if XCraftQueue.mainFrame then XCraftQueue.mainFrame:Hide() end
-    if XAutoSpeak.mainFrame then XAutoSpeak.mainFrame:Hide() end
-    if XAutoBuy.mainFrame then XAutoBuy.mainFrame:Hide() end
-    if XJewWords.mainFrame then XJewWords.mainFrame:Show() end
-    if XJewCount.mainFrame then XJewCount.mainFrame:Hide() end
-end
-SLASH_XAUTOAUCTIONMODETRADE1 = "/xautoauction_mode_trade"
-
-SlashCmdList["XAUTOAUCTIONMODECLOSE"] = function()
-    if XAuctionCenter.mainFrame then XAuctionCenter.mainFrame:Hide() end
-    if XAuctionBoard.mainFrame then XAuctionBoard.mainFrame:Hide() end
-    if XCraftQueue.mainFrame then XCraftQueue.mainFrame:Hide() end
-    if XAutoSpeak.mainFrame then XAutoSpeak.mainFrame:Hide() end
-    if XAutoBuy.mainFrame then XAutoBuy.mainFrame:Hide() end
-    if XJewWords.mainFrame then XJewWords.mainFrame:Hide() end
-    if XJewCount.mainFrame then XJewCount.mainFrame:Hide() end
-end
-SLASH_XAUTOAUCTIONMODECLOSE1 = "/xautoauction_mode_close"
-
-SlashCmdList["XAUTOAUCTIONACTIONONE"] = function()
-    if actionCallback then
-        for key, callback in pairs(actionCallback) do
-            callback(key)
+-- Global functions
+XAutoAuction.refreshUI = function()
+    for _, callback in pairs(refreshCallback) do
+        if type(callback) == 'function' then
+            callback()
         end
     end
 end
-SLASH_XAUTOAUCTIONACTIONONE1 = "/xautoauction_action_1"
+
+-- Commands
+SlashCmdList['XAUTOAUCTIONREFRESH'] = function()
+    XAutoAuction.refreshUI()
+end
+SLASH_XAUTOAUCTIONREFRESH1 = '/xautoauction_refresh'
+

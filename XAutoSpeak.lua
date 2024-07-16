@@ -1,137 +1,63 @@
-XAutoSpeak = CreateFrame("Frame")
+XAutoSpeak = {}
+local moduleName = 'XAutoSpeak'
 
-local dft_interval = 40
+-- Variable definition
+local mainFrame = nil
+local settingFrame = nil
+local editFrame = nil
+
+local dft_interval = 100
+local dft_buttonWidth = 60
+local dft_buttonGap = 1
+
+local displayPageNo = 0
+local displayFrameList = {}
+local displayPageSize = 10
+local displaySettingItem = nil
+
 local lastUpdatetime = 0
 local running = false
 local curIndex = 1;
 
-XAutoSpeak.addItem = function(text, enabled)
-    table.insert(XSpeakWordList, { text = text, enabled = enabled })
-end
+-- Function definition
+local initUI
+local initUI_Setting
+local initUI_Edit
+local refreshUI
+local addItem
+local getWordItem
 
-XAutoSpeak.getWordItem = function(index)
-    return XSpeakWordList[index]
-end
-
-local function toggle()
-    if not running and #XSpeakWordList <= 0 then
-        print("请先设置喊话内容")
-        return
-    end
-    running = not running
-    if running then
-        curIndex = 1
-        XAutoSpeak.mainFrame.startButton:SetText("停止")
-    else
-        XAutoSpeak.mainFrame.startButton:SetText("开始喊话")
-    end
-end
-
-local function initUI_Setting()
-    local settingFrame = XUI.createFrame("XAutoSpeakSettingFrame", 400, 200, 'DIALOG')
-    settingFrame.title:SetText("自动喊话")
-    settingFrame:SetPoint("CENTER", UIParent, "CENTER", 0, -50)
-    XAutoSpeak.settingFrame = settingFrame
-
-    local indexEditBox = XUI.createEditbox(settingFrame, 100, true)
-    indexEditBox:SetPoint("TOPLEFT", settingFrame, "TOPLEFT", 10, -30)
-    indexEditBox:SetScript("OnEscapePressed", function() XAutoSpeak.settingFrame:Hide() end)
-    indexEditBox:SetScript("OnTabPressed", function()
-        local index = tonumber(XAutoSpeak.settingFrame.indexEditBox:GetText());
-        if XSpeakWordList[index] == nil then
-            XAutoSpeak.settingFrame.contentEditBox:SetText("")
-            XAutoSpeak.settingFrame.enableButton:SetText("禁用")
-        else
-            local item = XSpeakWordList[index]
-            XAutoSpeak.settingFrame.contentEditBox:SetText(item['text']);
-            if item['enabled'] ~= nil and item['enabled'] then
-                XAutoSpeak.settingFrame.enableButton:SetText('禁用');
-            else
-                XAutoSpeak.settingFrame.enableButton:SetText('起用');
-            end
-        end
-        XAutoSpeak.settingFrame.contentEditBox:SetFocus()
-    end)
-    settingFrame.indexEditBox = indexEditBox
-
-    local deleteButton = XUI.createButton(settingFrame, 80, '删除')
-    deleteButton:SetPoint("LEFT", indexEditBox, "RIGHT", 5, 0)
-    deleteButton:SetScript("OnClick", function(self)
-        local index = tonumber(XAutoSpeak.settingFrame.indexEditBox:GetText());
-        if XSpeakWordList[index] ~= nil then
-            table.remove(XSpeakWordList, index)
-        end
-        XAutoSpeak.settingFrame:Hide()
-    end)
-
-    local enableButton = XUI.createButton(settingFrame, 80, '')
-    enableButton:SetPoint("LEFT", deleteButton, "RIGHT", 5, 0)
-    enableButton:SetScript("OnClick", function(self)
-        local index = tonumber(XAutoSpeak.settingFrame.indexEditBox:GetText());
-        if XSpeakWordList[index] ~= nil then
-            local item = XSpeakWordList[index]
-            if item['enabled'] ~= nil and item['enabled'] then
-                item['enabled'] = false
-            else
-                item['enabled'] = true
-            end
-        end
-        XAutoSpeak.settingFrame:Hide()
-    end)
-    settingFrame.enableButton = enableButton
-
-    local contentEditBox = XUI.createEditbox(settingFrame, 380, false)
-    contentEditBox:SetMultiLine(true)
-    contentEditBox:SetPoint("TOPLEFT", indexEditBox, "BOTTOMLEFT", 0, -20)
-    contentEditBox:SetScript("OnEscapePressed", function() XAutoSpeak.settingFrame:Hide() end)
-    contentEditBox:SetScript("OnEnterPressed", function()
-        local index = tonumber(XAutoSpeak.settingFrame.indexEditBox:GetText());
-        if XSpeakWordList[index] ~= nil then
-            local item = XSpeakWordList[index]
-            item['text'] = XAutoSpeak.settingFrame.contentEditBox:GetText()
-        else
-            XAutoSpeak.addItem(XAutoSpeak.settingFrame.contentEditBox:GetText(), true)
-        end
-        XAutoSpeak.settingFrame:Hide()
-    end)
-    settingFrame.contentEditBox = contentEditBox
-end
-
-local function initUI()
-    local mainFrame = XUI.createFrame("XAutoSpeakMainFrame", 250, 80)
-    mainFrame.title:SetText("自动喊话")
-    mainFrame:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -30, -50)
-    XAutoSpeak.mainFrame = mainFrame;
+-- Function implemention
+initUI = function()
+    mainFrame = XUI.createFrame('XAutoSpeakMainFrame', 250, 80)
+    mainFrame.title:SetText('自动喊话')
+    mainFrame:SetPoint('TOPRIGHT', UIParent, 'TOPRIGHT', -30, -50)
+    mainFrame:Hide()
 
     local startButton = XUI.createButton(mainFrame, 100, '开始喊话')
-    startButton:SetPoint("LEFT", mainFrame, "LEFT", 15, -10)
-    startButton:SetScript("OnClick", function()
-        toggle()
+    startButton:SetPoint('LEFT', mainFrame, 'LEFT', 15, -10)
+    startButton:SetScript('OnClick', function()
+        if not running and #XSpeakWordList <= 0 then
+            print('请先设置喊话内容')
+            return
+        end
+        running = not running
+        refreshUI()
     end)
     mainFrame.startButton = startButton
 
-    local settingButton = XUI.createButton(mainFrame, 30, 'S')
-    settingButton:SetPoint("RIGHT", mainFrame, "RIGHT", -15, -10)
-    settingButton:SetScript("OnClick", function()
-        if XAutoSpeak.settingFrame:IsVisible() then
-            XAutoSpeak.settingFrame:Hide()
-        else
-            XAutoSpeak.settingFrame.indexEditBox:SetText(#XSpeakWordList + 1)
-            XAutoSpeak.settingFrame.contentEditBox:SetText("喊话内容")
-            XAutoSpeak.settingFrame:Show()
-        end
+    local settingButton = XUI.createButton(mainFrame, 50, '设置')
+    settingButton:SetPoint('LEFT', startButton, 'RIGHT', 5, 0)
+    settingButton:SetScript('OnClick', function()
+        if not settingFrame then return end
+        settingFrame:Show()
+        refreshUI()
     end)
 
-    local clearButton = XUI.createButton(mainFrame, 30, 'C')
-    clearButton:SetPoint("RIGHT", settingButton, "LEFT", -10, 0)
-    clearButton:SetScript("OnClick", function()
-        XSpeakWordList = {}
-        print('cleared')
-    end)
-
-    local printButton = XUI.createButton(mainFrame, 30, 'P')
-    printButton:SetPoint("RIGHT", clearButton, "LEFT", -10, 0)
-    printButton:SetScript("OnClick", function()
+    local printButton = XUI.createButton(mainFrame, 50, '查看')
+    printButton:SetPoint('LEFT', settingButton, 'RIGHT', 5, 0)
+    printButton:SetScript('OnClick', function()
+        print('----------自动喊话设置----------')
         for idx, cnt in pairs(XSpeakWordList) do
             local status = 'disabled'
             if cnt['enabled'] ~= nil and cnt['enabled'] then
@@ -142,18 +68,229 @@ local function initUI()
     end)
 
     initUI_Setting()
+    initUI_Edit()
 
     mainFrame:Show()
 end
 
+initUI_Setting = function()
+    settingFrame = XUI.createFrame('XAutoSpeakSettingFrame', 500, 400)
+    settingFrame.title:SetText('自动喊话设置')
+    settingFrame:SetPoint('CENTER', UIParent, 'CENTER')
+
+    local preButton = XUI.createButton(settingFrame, dft_buttonWidth, '上页')
+    preButton:SetPoint('TOPLEFT', settingFrame, 'TOPLEFT', 15, -30)
+    preButton:SetScript('OnClick', function()
+        if displayPageNo > 0 then
+            displayPageNo = displayPageNo - 1
+            refreshUI()
+        end
+    end)
+
+    local nextButton = XUI.createButton(settingFrame, dft_buttonWidth, '下页')
+    nextButton:SetPoint('LEFT', preButton, 'RIGHT', dft_buttonGap, 0)
+    nextButton:SetScript('OnClick', function()
+        if displayPageNo < math.ceil(#XSpeakWordList / displayPageSize) - 1 then
+            displayPageNo = displayPageNo + 1
+            refreshUI()
+        end
+    end)
+
+    local clearButton = XUI.createButton(settingFrame, dft_buttonWidth, '清除')
+    clearButton:SetPoint('LEFT', nextButton, 'RIGHT', dft_buttonGap, 0)
+    clearButton:SetScript('OnClick', function()
+        XUIConfirmDialog.show(moduleName, '是否确认清除', '即将清除所有喊话数据', function()
+            XSpeakWordList = {}
+            refreshUI()
+            print('cleared')
+        end)
+    end)
+
+    local stopButton = XUI.createButton(settingFrame, dft_buttonWidth, '全停')
+    stopButton:SetPoint('LEFT', clearButton, 'RIGHT', dft_buttonGap, 0)
+    stopButton:SetScript('OnClick', function()
+        for _, item in ipairs(XSpeakWordList) do
+            item['enabled'] = false
+        end
+        refreshUI()
+    end)
+
+    local addButton = XUI.createButton(settingFrame, dft_buttonWidth, '新增')
+    addButton:SetPoint('LEFT', stopButton, 'RIGHT', dft_buttonGap, 0)
+    addButton:SetScript('OnClick', function()
+        if not editFrame then return end
+
+        displaySettingItem = nil
+        editFrame:Show()
+        editFrame.editBox:SetText('');
+        editFrame.editBox:SetFocus()
+        refreshUI()
+    end)
+
+    local printButton = XUI.createButton(settingFrame, dft_buttonWidth, '查看')
+    printButton:SetPoint('LEFT', addButton, 'RIGHT', dft_buttonGap, 0)
+    printButton:SetScript('OnClick', function()
+        print('----------自动喊话设置----------')
+        for idx, cnt in pairs(XSpeakWordList) do
+            local status = 'disabled'
+            if cnt['enabled'] ~= nil and cnt['enabled'] then
+                status = 'enabled'
+            end
+            print(idx .. '(' .. status .. '): ' .. cnt['text'])
+        end
+    end)
+
+    local lastWidget = preButton
+    for i = 1, displayPageSize do
+        local frame = CreateFrame('Frame', nil, settingFrame)
+        frame:SetSize(settingFrame:GetWidth(), 30)
+
+        if i == 1 then
+            frame:SetPoint('TOPLEFT', settingFrame, 'TOPLEFT', 0, -65)
+        else
+            frame:SetPoint('TOPLEFT', lastWidget, 'BOTTOMLEFT', 0, -5)
+        end
+
+        frame:Hide()
+
+        local indexButton = XUI.createButton(frame, 30, '')
+        indexButton:SetPoint('LEFT', frame, 'LEFT', 15, 0)
+        indexButton:SetScript('OnClick', function()
+            local idx = displayPageNo * displayPageSize + i
+            XUISortDialog.show(moduleName .. '_Sort', XSpeakWordList, idx, function()
+                refreshUI()
+            end)
+        end)
+        frame.indexButton = indexButton
+
+        local label = XUI.createLabel(frame, 330, '')
+        label:SetPoint('LEFT', indexButton, 'RIGHT', 8, 0)
+        frame.label = label
+
+        local editButton = XUI.createButton(frame, 32, '设')
+        editButton:SetPoint('LEFT', label, 'RIGHT', 3, 0)
+        editButton:SetScript('OnClick', function()
+            if not editFrame then return end
+
+            local idx = displayPageNo * displayPageSize + i
+            displaySettingItem = XSpeakWordList[idx]
+            editFrame:Show()
+            editFrame.editBox:SetText(displaySettingItem['text'])
+            editFrame.editBox:SetFocus()
+            refreshUI()
+        end)
+
+        local deleteButton = XUI.createButton(frame, 32, '删')
+        deleteButton:SetPoint('LEFT', editButton, 'RIGHT', 1, 0)
+        deleteButton:SetScript('OnClick', function()
+            local idx = displayPageNo * displayPageSize + i
+            if idx <= #XSpeakWordList then
+                XUIConfirmDialog.show(moduleName,
+                    '确认删除',
+                    '是否确认删除：' .. XSpeakWordList[idx]['text'],
+                    function()
+                        table.remove(XSpeakWordList, idx)
+                        refreshUI()
+                    end)
+            end
+        end)
+
+        local enableButton = XUI.createButton(frame, 32, '')
+        enableButton:SetPoint('LEFT', deleteButton, 'RIGHT', 1, 0)
+        enableButton:SetScript('OnClick', function(self)
+            local idx = displayPageNo * displayPageSize + i
+            local item = XSpeakWordList[idx]
+            if not item then return end
+            item['enabled'] = not item['enabled']
+            refreshUI()
+        end)
+        frame.enableButton = enableButton
+
+        table.insert(displayFrameList, frame)
+        lastWidget = frame
+    end
+end
+
+initUI_Edit = function()
+    editFrame = XUI.createFrame('XAutoSpeakEditFrame', 400, 200, 'DIALOG')
+    editFrame.title:SetText('自动喊话')
+    editFrame:SetPoint('CENTER', UIParent, 'CENTER', 0, -50)
+
+    editFrame:Hide()
+
+    local editBox = XUI.createEditboxMultiline(editFrame, editFrame:GetWidth() - 20, editFrame:GetHeight() - 40)
+    editBox:SetPoint('TOP', editFrame, 'TOP', 0, -30)
+    editBox.editBox:SetScript('OnEscapePressed', function(self) editFrame:Hide() end)
+    editBox.editBox:SetScript('OnEnterPressed', function(self)
+        if displaySettingItem then
+            displaySettingItem['text'] = self:GetText()
+        else
+            addItem(self:GetText())
+        end
+        editFrame:Hide()
+        refreshUI()
+    end)
+
+    editFrame.editBox = editBox.editBox
+end
+
+refreshUI = function()
+    if not mainFrame then return end
+
+    if running then
+        mainFrame.startButton:SetText('停止')
+    else
+        mainFrame.startButton:SetText('开始喊话')
+    end
+
+    if not settingFrame then return end
+    if settingFrame:IsVisible() then
+        for i = 1, displayPageSize do
+            local frame = displayFrameList[i]
+            local idx = displayPageNo * displayPageSize + i
+            if idx <= #XSpeakWordList then
+                local item = XSpeakWordList[idx]
+
+                frame.indexButton:SetText(idx)
+                frame.label:SetText(item['text'])
+
+                if item['enabled'] ~= true then
+                    frame.enableButton:SetText('|cFFFF0000停')
+                else
+                    frame.enableButton:SetText('|cFF00FF00起')
+                end
+                frame:Show()
+            else
+                frame:Hide()
+            end
+        end
+    end
+end
+
+addItem = function(text, enabled)
+    if enabled == nil then enabled = false end
+    table.insert(XSpeakWordList, { text = text, enabled = enabled })
+end
+
+getWordItem = function(index)
+    return XSpeakWordList[index]
+end
+
+-- Event callback
 local function onUpdate()
+    if mainFrame then
+        local time = lastUpdatetime + dft_interval - time()
+        mainFrame.title:SetText('自动喊话(' .. curIndex .. ')    ' .. XUtils.formatTimeLeft(time) .. ' / ' .. dft_interval)
+    end
+
     if not running or (time() - lastUpdatetime < dft_interval) then
         return
     end
     for i = curIndex, #XSpeakWordList do
         local item = XSpeakWordList[i]
         if item['enabled'] then
-            SendChatMessage(item['text'], "channel", nil, 1)
+            print(item['text'])
+            -- SendChatMessage(item['text'], 'channel', nil, 1)
             curIndex = curIndex + 1
             if curIndex > #XSpeakWordList then curIndex = 1 end
             lastUpdatetime = time()
@@ -165,18 +302,28 @@ local function onUpdate()
     end
 end
 
-XAutoAuction.registerEventCallback('XAutoSpeak', 'ADDON_LOADED', function()
+-- Events
+XAutoAuction.registerEventCallback(moduleName, 'ADDON_LOADED', function()
     initUI()
 end)
-XAutoAuction.registerUpdateCallback('XAutoSpeak', onUpdate)
+XAutoAuction.registerUpdateCallback(moduleName, onUpdate)
 
-SlashCmdList["XAUTOSPEAK"] = function()
-    if not XAutoSpeak then return end
-    if not XAutoSpeak.mainFrame then return end
-    if XAutoSpeak.mainFrame:IsVisible() then
-        XAutoSpeak.mainFrame:Hide()
-    else
-        XAutoSpeak.mainFrame:Show()
-    end
+-- Commands
+SlashCmdList['XAUTOSPEAK'] = function()
+    XUI.toggleVisible(mainFrame)
 end
-SLASH_XAUTOSPEAK1 = "/xautospeak"
+SLASH_XAUTOSPEAK1 = '/xautospeak'
+
+SlashCmdList['XAUTOSPEAKSHOW'] = function()
+    if mainFrame then mainFrame:Show() end
+end
+SLASH_XAUTOSPEAKSHOW1 = '/xautospeak_show'
+
+SlashCmdList['XAUTOSPEAKCLOSE'] = function()
+    if mainFrame then mainFrame:Hide() end
+end
+SLASH_XAUTOSPEAKCLOSE1 = '/xautospeak_close'
+
+-- Interface
+XAutoSpeak.addItem = addItem
+XAutoSpeak.getWordItem = getWordItem

@@ -1,10 +1,13 @@
-XUISortDialog = CreateFrame("Frame")
+XUISortDialog = {}
+local moduleName = 'XUISortDialog'
 
+-- Variable definition
 local callback = nil
 local sourceIndex = nil
 local targetList = nil
 
-local function onConfirm(input)
+-- Function implemention
+local function onConfirm(data)
     if not callback then return end
     if not sourceIndex then return end
     if not targetList then return end
@@ -13,6 +16,7 @@ local function onConfirm(input)
     local item = targetList[sourceIndex]
     if not item then return end
 
+    local input = data[1].Value
     local targetIndex = tonumber(input)
     if not targetIndex then return end
     if targetIndex < 1 then return end
@@ -35,5 +39,6 @@ XUISortDialog.show = function(pkey, ptargetList, psourceIndex, pcallback, title)
     sourceIndex = psourceIndex
     callback = pcallback
 
-    XUIInputDialog.show(pkey, onConfirm, sourceIndex, title)
+    local data = { { Name = '排序' } }
+    XUIInputDialog.show(pkey, onConfirm, data, title)
 end

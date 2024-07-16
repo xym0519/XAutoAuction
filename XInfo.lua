@@ -1,27 +1,34 @@
-XInfo = CreateFrame("Frame")
+XInfo = {}
+local moduleName = 'XInfo'
 
+-- Bag items
 XInfoBagList = {}
 XInfo.emptyBagCount = 0
 
 -- count, bankcount, totalcount, positions(x, y)
 XInfo.getBagItem = function(itemName)
-    if XInfoBagList ~= nil and XInfoBagList[itemName] ~= nil then
+    if XInfoBagList and XInfoBagList[itemName] then
         return XInfoBagList[itemName]
     end
     return nil
 end
 
+local lastBagUpdateTime = 0
 XInfo.reloadBag = function()
+    if time() - lastBagUpdateTime < 1 then return end
+
     local list = {}
     local emptyBagCount = 0
+
     for i = -1, NUM_BAG_SLOTS + NUM_BANKBAGSLOTS do
-        local slotCount = GetContainerNumSlots(i)
+        local slotCount = C_Container.GetContainerNumSlots(i)
         local isBag = (i >= 0 and i <= NUM_BAG_SLOTS)
         for j = 1, slotCount do
-            local _, count, _, _, _, _, link = GetContainerItemInfo(i, j)
-            if link ~= nil then
-                local itemName = GetItemInfo(link)
-                if list[itemName] ~= nil then
+            local itemInfo = C_Container.GetContainerItemInfo(i, j)
+            if itemInfo then
+                local itemName = itemInfo.itemName
+                local count = itemInfo.stackCount
+                if list[itemName] then
                     list[itemName]['totalcount'] = list[itemName]['totalcount'] + count
                     if isBag then
                         list[itemName]['count'] = list[itemName]['count'] + count
@@ -45,7 +52,7 @@ XInfo.reloadBag = function()
     end
 
     -- 银行未打开，从之前的数据中获取bankcount
-    if GetContainerNumSlots(5) <= 0 then
+    if C_Container.GetContainerNumSlots(5) <= 0 then
         for itemName, item in pairs(XInfoBagList) do
             local newItem = list[itemName]
             if not newItem then
@@ -58,28 +65,35 @@ XInfo.reloadBag = function()
     end
     XInfoBagList = list
     XInfo.emptyBagCount = emptyBagCount
+
+    lastBagUpdateTime = time()
 end
 
+-- Auction Items
 XInfo.auctionList = {}
 
 -- count, minprice, items(index, count, price)
 XInfo.getAuctionItem = function(itemName)
-    if XInfo.auctionList ~= nil and XInfo.auctionList[itemName] ~= nil then
+    if XInfo.auctionList and XInfo.auctionList[itemName] then
         return XInfo.auctionList[itemName]
     end
     return nil
 end
 
+local lastAuctionUpdateTime = 0
 XInfo.reloadAuction = function()
+    if time() - lastAuctionUpdateTime < 1 then return end
+    if not AuctionFrame or not AuctionFrame:IsVisible() then return end
+
     local list = {}
-    local numItems = GetNumAuctionItems("owner")
+    local numItems = GetNumAuctionItems('owner')
     if numItems <= 0 then
         XInfo.auctionList = {}
         return true
     end
     for i = 1, numItems do
-        local itemName, _, itemCount, _, _, _, buyoutPrice = GetAuctionItemInfo("owner", i)
-        if list[itemName] ~= nil then
+        local itemName, _, itemCount, _, _, _, _, _, _, buyoutPrice = GetAuctionItemInfo('owner', i)
+        if list[itemName] then
             local item = list[itemName]
             item['count'] = item['count'] + itemCount
             table.insert(list[itemName]['items'], { index = i, count = itemCount, price = buyoutPrice })
@@ -91,20 +105,26 @@ XInfo.reloadAuction = function()
         end
     end
     XInfo.auctionList = list
+
+    lastAuctionUpdateTime = time()
 end
 
+-- Trade skills
 XInfo.tradeSkillList = {}
 
 -- index, skillname
 XInfo.getTradeSkillItem = function(itemName)
-    if XInfo.tradeSkillList ~= nil and XInfo.tradeSkillList[itemName] ~= nil then
+    if XInfo.tradeSkillList and XInfo.tradeSkillList[itemName] then
         return XInfo.tradeSkillList[itemName]
     end
     return nil
 end
 
-XInfo.reloadTradeSkill = function()
-    local type = '珠宝加工'
+local lastTradeSkillUpdateTime = 0
+XInfo.reloadTradeSkill = function(type)
+    if time() - lastTradeSkillUpdateTime < 1 then return end
+
+    if not type then type = '珠宝加工' end
     if GetTradeSkillLine() ~= type then
         CastSpellByName(type)
         return false
@@ -114,18 +134,21 @@ XInfo.reloadTradeSkill = function()
     for i = 1, GetNumTradeSkills() do
         local itemLink = GetTradeSkillItemLink(i)
         local skillName = GetTradeSkillInfo(i)
-        if itemLink ~= nil and skillName ~= nil then
+        if itemLink and skillName then
             local itemName = GetItemInfo(itemLink)
             list[itemName] = { index = i, skillname = skillName }
         end
     end
 
     XInfo.tradeSkillList = list
+
+    lastTradeSkillUpdateTime = time()
     return true
 end
 
+-- Auction statistics info
 XInfo.getAuctionInfo = function(itemName)
-    if XAuctionInfoList ~= nil and XAuctionInfoList[itemName] ~= nil then
+    if XAuctionInfoList and XAuctionInfoList[itemName] then
         return XAuctionInfoList[itemName]
     end
     return nil
@@ -136,9 +159,9 @@ XInfo.getAuctionInfoField = function(itemName, fieldName, defaultValue)
     local item = XInfo.getAuctionInfo(itemName)
     if not item then return defaultValue end;
 
-    local fields = { "succrate", "dealcount", "lowestprice", "costprice", "sellprice", "minsellprice", "maxsellprice" }
+    local fields = { 'succrate', 'dealcount', 'lowestprice', 'costprice', 'sellprice', 'minsellprice', 'maxsellprice' }
     if not XInfo.allHistory and XUtils.inArray(fieldName, fields) then
-        fieldName = fieldName .. '10'
+        fieldName = fieldName .. '9'
     end
 
     if not item[fieldName] then return defaultValue end
@@ -146,6 +169,7 @@ XInfo.getAuctionInfoField = function(itemName, fieldName, defaultValue)
     return item[fieldName]
 end
 
+-- Material
 XInfo.materialList = { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼', '巨锆石', '恐惧石', '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石' }
 XInfo.getMaterialName = function(itemName)
     local materialName = nil
@@ -157,6 +181,7 @@ XInfo.getMaterialName = function(itemName)
     end
     return materialName
 end
+
 XInfo.getMaterialBagItem = function(itemName)
     local materialName = XInfo.getMaterialName(itemName)
     if materialName then
@@ -166,21 +191,30 @@ XInfo.getMaterialBagItem = function(itemName)
     end
 end
 
+-- Character
 XInfo.characterList = { '暗影肌', '默法', 'Miles', 'Bro' }
-XInfo.myName = UnitName("player")
+XInfo.myName = UnitName('player')
 XInfo.isMe = function(characterName)
     return XUtils.inArray(characterName, XInfo.characterList)
 end
 
+-- Other
 XInfo.allHistory = false
 
-
-XAutoAuction.registerEventCallback('XInfo', 'ADDON_LOADED', function()
+-- Events
+XAutoAuction.registerEventCallback(moduleName, 'ADDON_LOADED', function()
     XInfo.reloadBag()
 end)
-XAutoAuction.registerEventCallback('XInfo', 'BAG_UPDATE', XInfo.reloadBag)
 
-SlashCmdList["XINFOALLHISTORY"] = function()
+XAutoAuction.registerEventCallback(moduleName, 'BAG_UPDATE', XInfo.reloadBag)
+
+XAutoAuction.registerRefreshCallback(moduleName, function()
+    XInfo.reloadBag()
+    XInfo.reloadAuction()
+end)
+
+-- Commands
+SlashCmdList['XINFOALLHISTORY'] = function()
     XInfo.allHistory = not XInfo.allHistory
 end
-SLASH_XINFOALLHISTORY1 = "/xallhistory"
+SLASH_XINFOALLHISTORY1 = '/xinfo_allhistory'
