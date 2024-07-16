@@ -1,0 +1,25 @@
+## Interface: 40400
+## Version: 1.0.0
+## Title: XAutoAuction
+## Author: Broche
+## Notes: 自动拍卖(V3)
+## SavedVariablesPerCharacter: XInfoBagList, XSpeakWordList, XAutoAuctionList, XAutoBuyList, XJewWordList, XJewWordSetting, XFrameLevel
+## Dependencies: XAutoAuction_Data
+
+XUtils.lua
+XUI.lua
+XAutoAuction.lua
+
+XUIInputDialog.lua
+XUISortDialog.lua
+XUIConfirmDialog.lua
+
+XInfo.lua
+XAuctionTip.lua
+XAutoSpeak.lua
+XCraftQueue.lua
+XAuctionHistory.lua
+XAuctionCenter.lua
+XAutoBuy.lua
+XJewWords.lua
+XJewCount.lua
