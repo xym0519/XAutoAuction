@@ -69,8 +69,6 @@ initUI = function()
 
     initUI_Setting()
     initUI_Edit()
-
-    mainFrame:Show()
 end
 
 initUI_Setting = function()
