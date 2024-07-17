@@ -19,7 +19,6 @@ initUI = function()
     mainFrame.title:SetText('拍卖记录BTMAD')
     mainFrame:SetPoint('RIGHT', UIParent, 'RIGHT', -40, 0)
     mainFrame:Hide()
-    mainFrame = mainFrame
 
     local preButton = XUI.createButton(mainFrame, 45, '上')
     preButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -30)
@@ -50,13 +49,13 @@ initUI = function()
     local refreshButton = XUI.createButton(mainFrame, 45, '刷')
     refreshButton:SetPoint('LEFT', cleanButton, 'RIGHT', 5, 0)
     refreshButton:SetScript('OnClick', function()
-        refreshUI()
+        XAutoAuction.refreshUI()
     end)
 
     local lastWidget = preButton
     for i = 1, displayPageSize do
         local frame = CreateFrame('Frame', nil, mainFrame)
-        frame:SetSize(320, 30)
+        frame:SetSize(mainFrame:GetWidth(), 30)
 
         if i == 1 then
             frame:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 0, -65)
@@ -84,12 +83,18 @@ initUI = function()
                 count = autoAuctionItem['stackcount']
             end
 
-            XUIInputDialog.show('XAuctionHistory_Craft', function(input)
-                local itemName = item['itemname']
-                local count = tonumber(input)
-                XCraftQueue.addItem(itemName, count, 'fulfil')
-                XCraftQueue.start()
-            end, count, item['itemname'])
+            XUIInputDialog.show('XAuctionBoard_Craft', function(data)
+                local itemName = nil
+                local count = nil
+                for _, item in ipairs(data) do
+                    if item.Name == '类型' then itemName = item.Value end
+                    if item.Name == '数量' then count = item.Value end
+                end
+                if itemName and count then
+                    XCraftQueue.addItem(itemName, count, 'fulfil')
+                    XCraftQueue.start()
+                end
+            end, { { Name = '类型', Value = item['itemname'] }, { Name = '数量', Value = count } }, item['itemname'])
         end)
         frame.infoButton = infoButton
 
@@ -132,6 +137,8 @@ initUI = function()
 end
 
 refreshUI = function()
+    if not mainFrame then return end
+
     mainFrame.title:SetText('拍卖记录BTMAD (' ..
         (displayPageNo + 1) ..
         '/' .. (math.ceil(#dealList / displayPageSize)) .. ')')
@@ -242,6 +249,7 @@ XAutoAuction.registerEventCallback(moduleName, 'ADDON_LOADED', function()
 end)
 
 XAutoAuction.registerEventCallback(moduleName, 'CHAT_MSG_SYSTEM', function(self, event, text, context)
+    -- TODO 111
     if XUtils.stringStartsWith(text, '你拍卖的') and XUtils.stringEndsWith(text, '已经售出。') then
         local str = string.sub(text, string.len('你拍卖的') + 1, string.len(text) - string.len('已经售出。'))
         addItem(str)
@@ -276,5 +284,4 @@ end
 SLASH_XAUCTIONHISTORYHIDE1 = '/xauctionhistory_close'
 
 -- Interface
-XAuctionHistory.refreshUI = refreshUI
 XAuctionHistory.addItem = addItem

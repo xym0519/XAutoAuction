@@ -9,6 +9,7 @@
 XUtils.lua
 XUI.lua
 XAutoAuction.lua
+XExternal.lua
 
 XUIInputDialog.lua
 XUISortDialog.lua

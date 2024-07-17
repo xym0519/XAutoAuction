@@ -187,38 +187,6 @@ XUtils.round = function(v)
     return math.floor(v + 0.5);
 end
 
-XUtils.AHMail = function(mailIndex, mailType, msgSubject, msgMoney, playerName)
-    local itemName = nil
-    local isSell = nil
-    local isSuccess = nil
-    if mailType == 'AHCancelled' then
-        itemName = string.match(msgSubject, gsub(AUCTION_REMOVED_MAIL_SUBJECT, "%%s", "(.*)"))
-        isSell = true
-        isSuccess = false
-    elseif mailType == 'AHExpired' then
-        itemName = string.match(msgSubject, gsub(AUCTION_EXPIRED_MAIL_SUBJECT, "%%s", "(.*)"))
-        isSell = true
-        isSuccess = false
-    elseif mailType == 'AHOutbid' then
-        itemName = string.match(msgSubject, gsub(AUCTION_OUTBID_MAIL_SUBJECT, "%%s", "(.*)"))
-        isSell = false
-        isSuccess = false
-    elseif mailType == 'AHSuccess' then
-        itemName = string.match(msgSubject, gsub(AUCTION_SOLD_MAIL_SUBJECT, "%%s", "(.*)"))
-        isSell = true
-        isSuccess = true
-    elseif mailType == 'AHWon' then
-        itemName = string.match(msgSubject, gsub(AUCTION_WON_MAIL_SUBJECT, "%%s", "(.*)"))
-        isSell = false
-        isSuccess = true
-    end
-
-    print('---')
-    print(itemName)
-    print(isSell)
-    print(isSuccess)
-end
-
 XUtils.printFunction = function(obj, keyword)
     -- 获取对象的元表
     local meta = getmetatable(obj)
