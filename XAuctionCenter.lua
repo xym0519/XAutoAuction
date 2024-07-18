@@ -358,12 +358,28 @@ initUI = function()
         end)
         frame.itemNameButton = itemNameButton
 
-        local label = XUI.createLabel(frame, 470, '')
-        label:SetPoint('LEFT', itemNameButton, 'RIGHT', 3, 0)
-        frame.label = label
+        local labelTime = XUI.createLabel(frame, 50, '')
+        labelTime:SetPoint('LEFT', itemNameButton, 'RIGHT', 3, 0)
+        frame.labelTime = labelTime
+
+        local labelBag = XUI.createLabel(frame, 110, '')
+        labelBag:SetPoint('LEFT', labelTime, 'RIGHT', 3, 0)
+        frame.labelBag = labelBag
+
+        local labelAuction = XUI.createLabel(frame, 125, '')
+        labelAuction:SetPoint('LEFT', labelBag, 'RIGHT', 3, 0)
+        frame.labelAuction = labelAuction
+
+        local labelDeal = XUI.createLabel(frame, 70, '')
+        labelDeal:SetPoint('LEFT', labelAuction, 'RIGHT', 3, 0)
+        frame.labelDeal = labelDeal
+
+        local labelPrice = XUI.createLabel(frame, 100, '')
+        labelPrice:SetPoint('LEFT', labelDeal, 'RIGHT', 3, 0)
+        frame.labelPrice = labelPrice
 
         local deleteButton = XUI.createButton(frame, 30, '删')
-        deleteButton:SetPoint('LEFT', label, 'RIGHT', 0, 0)
+        deleteButton:SetPoint('LEFT', labelPrice, 'RIGHT', 0, 0)
         deleteButton:SetScript('OnClick', function()
             local idx = displayPageNo * displayPageSize + i
             local titem = XAutoAuctionList[idx]
@@ -641,7 +657,8 @@ refreshUI = function()
 
                 local updateTimeStr = XUtils.formatTime(item['updatetime'])
 
-                local bagCountStr = XUI.getColor_BagStackCount(bagCount, stackCount) .. 'B' .. XUtils.formatCount(bagCount, 1)
+                local bagCountStr = XUI.getColor_BagStackCount(bagCount, stackCount) ..
+                    'B' .. XUtils.formatCount(bagCount, 1)
 
                 local materialCountStr = 'M' .. XUtils.formatCount2(materialCount)
 
@@ -663,7 +680,7 @@ refreshUI = function()
                     lowerCountStr = XUI.White .. lowerCountStr
                 end
 
-                local allCountStr = 'A' .. XUtils.formatCount(allCount)
+                local allCountStr = 'G' .. XUtils.formatCount(allCount)
                 if allCount > 20 then
                     allCountStr = XUI.Red .. allCountStr
                 elseif allCount > 10 then
@@ -697,13 +714,14 @@ refreshUI = function()
 
                 frame.itemIndexButton:SetText(idx)
                 frame.itemNameButton:SetText(itemNameStr)
-                frame.label:SetText(updateTimeStr .. '  '
-                    .. bagCountStr .. XUI.White .. '/' .. bagAuctionCountStr .. XUI.White .. '/' .. materialCountStr
-                    .. XUI.White .. '|/' .. auctionCountStr .. XUI.White .. '/' .. minPriceCountStr
-                    .. XUI.White .. '|/' .. lowerCountStr .. XUI.White .. '/' .. allCountStr
-                    .. XUI.White .. '|/' .. stackCountStr .. '  ' .. dealRateStr
-                    .. XUI.White .. '|/' .. dealCountStr .. '  ' .. minPriceStr
-                    .. XUI.White .. '|/' .. lowestPriceStr)
+
+                frame.labelTime:SetText(updateTimeStr)
+                frame.labelBag:SetText(bagCountStr .. XUI.White .. '/' .. bagAuctionCountStr
+                    .. XUI.White .. '/' .. materialCountStr .. XUI.White .. '/' .. stackCountStr)
+                frame.labelAuction:SetText(auctionCountStr .. XUI.White .. '/' .. minPriceCountStr
+                    .. XUI.White .. '/' .. lowerCountStr .. XUI.White .. '/' .. allCountStr)
+                frame.labelDeal:SetText(dealRateStr .. XUI.White .. '/' .. dealCountStr)
+                frame.labelPrice:SetText(minPriceStr .. XUI.White .. '/' .. lowestPriceStr)
 
                 if enabled then
                     frame.enableButton:SetText(XUI.Green .. '起')
@@ -1070,7 +1088,7 @@ local function onQueryItemListUpdate()
 
     local item = XAutoAuctionList[curTask['index']]
 
-    local itemName, _, _, _, _, _, _, _, _, buyoutPrice, _, _, _, seller = GetAuctionItemInfo('list', index);
+    local itemName, _, _, _, _, _, _, _, _, buyoutPrice, _, _, _, seller = GetAuctionItemInfo('list', 1);
     if not itemName then
         curTask['queryfound'] = false
 
@@ -1190,7 +1208,7 @@ local function onUpdate()
             curTask['queryfound'] = nil
             curTask['queryresultprocessed'] = false
             isTasking = true
-            QueryAuctionItems(item['itemname'], nil, nil, curTask['page'], nil, nil, nil, true)
+            QueryAuctionItems(item['itemname'], nil, nil, curTask['page'], nil, nil, false, true)
 
             refreshUI()
             return
@@ -1339,11 +1357,11 @@ local function onUpdate()
             item['allcount'] = 0
             item['minpriceother'] = dft_minPrice
 
-            curTask['page'] = 1
+            curTask['page'] = 0
             curTask['starttime'] = time()
             curTask['queryfound'] = nil
             curTask['queryresultprocessed'] = false
-            QueryAuctionItems(item['itemname'], nil, nil, curTask['page'], nil, nil, nil, true)
+            QueryAuctionItems(item['itemname'], nil, nil, curTask['page'], nil, nil, false, true)
 
             refreshUI()
             return

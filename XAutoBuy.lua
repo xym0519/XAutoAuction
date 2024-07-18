@@ -22,7 +22,7 @@ local queryMode = 0 -- 0: 快速  1: 完整
 local isQuerying = false
 local queryStartTime = 0
 local queryIndex = 1
-local queryPage = 1
+local queryPage = 0
 local queryFound = nil
 local queryResultProcessed = true
 local queryRound = 1
@@ -284,7 +284,7 @@ startBuy = function()
     lastTaskFinishTime = 0
     isQuerying = false
     queryStartTime = 0
-    queryPage = 1
+    queryPage = 0
     queryFound = nil
     queryResultProcessed = true
     refreshUI()
@@ -295,7 +295,7 @@ stopBuy = function()
     lastTaskFinishTime = 0
     isQuerying = false
     queryStartTime = 0
-    queryPage = 1
+    queryPage = 0
     queryFound = nil
     queryResultProcessed = true
     refreshUI()
@@ -310,7 +310,7 @@ finishCurTask = function()
     if queryIndex > #XAutoBuyList then
         queryIndex = 1
     end
-    queryPage = 1
+    queryPage = 0
     queryFound = nil
     queryResultProcessed = true
 end
@@ -341,8 +341,8 @@ confirmBuy = function()
     end
 
     queryPage = queryPage - 1
-    if queryPage < 1 then
-        queryPage = 1
+    if queryPage < 0 then
+        queryPage = 0
     end
 
     queryResultProcessed = true
@@ -487,7 +487,7 @@ local function onUpdate()
 
     if item then
         queryStartTime = time()
-        queryPage = 1
+        queryPage = 0
         queryFound = nil
         isQuerying = true
         QueryAuctionItems(item['itemname'], nil, nil, queryPage, nil, nil, nil, true)
@@ -498,7 +498,7 @@ local function onUpdate()
     isQuerying = false
     queryStartTime = 0
     queryIndex = 1
-    queryPage = 1
+    queryPage = 0
     queryFound = nil
     queryRound = 1
     refreshUI()
