@@ -215,8 +215,26 @@ initUI = function()
         lastWidget = frame
     end
 
+    local billButton = XUI.createButton(mainFrame, 60, '记账')
+    billButton:SetPoint('TOPRIGHT', mainFrame, 'TOPRIGHT', -15, -30)
+    billButton:SetScript('OnClick', function(self)
+        XUIConfirmDialog.show(moduleName, '确认', '是否记账', function()
+            local count = 0
+            for _, item in ipairs(XJewWordList) do
+                local itemName = item['itemname']
+                local price1 = item['price1'] * 10000
+                local ccount = item['ccount']
+                if ccount > 0 then
+                    XExternal.addBuyHistory(itemName, time(), price1, ccount)
+                    count = count + 1
+                end
+            end
+            print('记账成功，新增' .. count .. '条购买记录')
+        end)
+    end)
+
     local setButton = XUI.createButton(mainFrame, 60, '设喊')
-    setButton:SetPoint('TOPRIGHT', mainFrame, 'TOPRIGHT', -15, -30)
+    setButton:SetPoint('RIGHT', billButton, 'LEFT', -5, 0)
     setButton:SetScript('OnClick', function(self)
         XUIConfirmDialog.show(moduleName, '确认', '是否设置喊话内容', function()
             local text = mainFrame.price1Editbox:GetText()
