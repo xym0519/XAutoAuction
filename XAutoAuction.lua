@@ -2,7 +2,6 @@ XAutoAuction = {}
 XAutoAuctionFrame = CreateFrame('Frame')
 
 -- Global variables definition
-XAuctionInfoList = {}
 XAutoAuctionList = {}
 XAutoBuyList = {}
 XSpeakWordList = {}

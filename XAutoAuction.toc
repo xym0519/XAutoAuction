@@ -3,7 +3,6 @@
 ## Title: XAutoAuction
 ## Author: Broche
 ## Notes: 自动拍卖(V2)
-## SavedVariables: XAuctionInfoList
 ## SavedVariablesPerCharacter: XInfoBagList, XSpeakWordList, XAutoAuctionList, XAutoBuyList, XJewWordList
 
 XUtils.lua
