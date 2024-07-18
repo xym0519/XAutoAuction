@@ -52,13 +52,13 @@ XUtils.formatCount2 = function(count)
     local result = countStr:sub(1, 1)
 
     if (length == 1) then
-        result = '|cFFFF0000' .. result
+        result = XUI.Red .. result
     elseif (length == 2) then
-        result = '|cFFFFFF00' .. result
+        result = XUI.Yellow .. result
     elseif (length == 3) then
-        result = '|cFF00FF00' .. result
+        result = XUI.Green .. result
     else
-        result = '|cFF00FFFF' .. result
+        result = XUI.Cyan .. result
     end
 
     return result

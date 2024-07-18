@@ -217,7 +217,7 @@ initUI = function()
     local dealCountTypeButton = XUI.createButton(mainFrame, dft_buttonWidth, '10D')
     dealCountTypeButton:SetPoint('LEFT', lastButton, 'RIGHT', dft_sectionGap, 0)
     dealCountTypeButton:SetScript('OnClick', function()
-        XInfo.allHistory = not XInfo.allHistory
+        XInfo.allHistory = (XInfo.allHistory + 1) % 3
         refreshUI()
     end)
     mainFrame.dealCountTypeButton = dealCountTypeButton
@@ -403,8 +403,8 @@ initUI = function()
                 local idx = displayPageNo * displayPageSize + i
                 local item = XAutoAuctionList[idx];
                 if not item then return end
-                local lowestPrice = XInfo.getAuctionInfoField(item['itemname'], 'lowestprice')
-                if lowestPrice ~= nil then
+                local lowestPrice = XInfo.getAuctionInfoField(item['itemname'], 'lowestprice', 9999999, 1)
+                if lowestPrice then
                     item['lowestprice'] = lowestPrice
                 end
                 refreshUI()
@@ -522,10 +522,12 @@ refreshUI = function()
         mainFrame.startButton:SetText('开始')
     end
 
-    if XInfo.allHistory then
+    if XInfo.allHistory == 0 then
         mainFrame.dealCountTypeButton:SetText('ALL')
-    else
+    elseif XInfo.allHistory == 1 then
         mainFrame.dealCountTypeButton:SetText('10D')
+    else
+        mainFrame.dealCountTypeButton:SetText('30D')
     end
 
     if multiAuction == 2 then
@@ -590,7 +592,7 @@ refreshUI = function()
             if auctionItem then auctionCount = auctionItem['count'] end
             local bagAuctionCount = bagTotalCount + auctionCount
 
-            local succRate = XInfo.getAuctionInfoField(itemName, 'succrate', 99)
+            local dealRate = XInfo.getAuctionInfoField(itemName, 'dealrate', 99)
             local dealCount = XInfo.getAuctionInfoField(itemName, 'dealcount', 0)
 
             local disFlag = false
@@ -629,138 +631,90 @@ refreshUI = function()
                 end
                 if enabled then
                     if minPriceCount > 0 then
-                        itemNameStr = '|cFF00FF00' .. itemNameStr
+                        itemNameStr = XUI.Green .. itemNameStr
                     else
-                        itemNameStr = '|cFFFF0000' .. itemNameStr
+                        itemNameStr = XUI.Red .. itemNameStr
                     end
                 else
-                    itemNameStr = '|cFF999999' .. itemNameStr
+                    itemNameStr = XUI.Gray .. itemNameStr
                 end
 
                 local updateTimeStr = XUtils.formatTime(item['updatetime'])
 
-                local bagCountStr = 'B' .. XUtils.formatCount(bagCount, 1)
-                if bagCount >= stackCount * 2 then
-                    bagCountStr = '|cFF00FFFF' .. bagCountStr
-                elseif bagCount >= stackCount then
-                    bagCountStr = '|cFF00FF00' .. bagCountStr
-                elseif bagCount > 0 then
-                    bagCountStr = '|cFFFFFF00' .. bagCountStr
-                else
-                    bagCountStr = '|cFFFF0000' .. bagCountStr
-                end
+                local bagCountStr = XUI.getColor_BagStackCount(bagCount, stackCount) .. 'B' .. XUtils.formatCount(bagCount, 1)
 
                 local materialCountStr = 'M' .. XUtils.formatCount2(materialCount)
 
-                local auctionCountStr = 'A' .. XUtils.formatCount(auctionCount, 1)
-                if auctionCount >= stackCount * 2 or auctionCount <= 0 then
-                    auctionCountStr = '|cFFFF0000' .. auctionCountStr
-                elseif auctionCount > stackCount or auctionCount < stackCount then
-                    auctionCountStr = '|cFFFFFF00' .. auctionCountStr
-                else
-                    auctionCountStr = '|cFF00FF00' .. auctionCountStr
-                end
+                local auctionCountStr = XUI.getColor_AuctionStackCount(auctionCount, stackCount) ..
+                    'A' .. XUtils.formatCount(auctionCount, 1)
 
-                local minPriceCountStr = 'M' .. XUtils.formatCount(minPriceCount, 1)
-                if minPriceCount >= stackCount * 2 or minPriceCount <= 0 then
-                    minPriceCountStr = '|cFFFF0000' .. minPriceCountStr
-                elseif minPriceCount > stackCount or minPriceCount < stackCount then
-                    minPriceCountStr = '|cFFFFFF00' .. minPriceCountStr
-                else
-                    minPriceCountStr = '|cFF00FF00' .. minPriceCountStr
-                end
+                local minPriceCountStr = XUI.getColor_AuctionStackCount(minPriceCount, stackCount) ..
+                    'M' .. XUtils.formatCount(minPriceCount, 1)
 
-                local bagAuctionCountStr = 'T' .. XUtils.formatCount(bagAuctionCount, 2)
-                if bagAuctionCount >= stackCount * 2 then
-                    bagAuctionCountStr = '|cFF00FFFF' .. bagAuctionCountStr
-                elseif bagAuctionCount >= stackCount then
-                    bagAuctionCountStr = '|cFF00FF00' .. bagAuctionCountStr
-                elseif bagAuctionCount > 0 then
-                    bagAuctionCountStr = '|cFFFFFF00' .. bagAuctionCountStr
-                else
-                    bagAuctionCountStr = '|cFFFF0000' .. bagAuctionCountStr
-                end
+                local bagAuctionCountStr = XUI.getColor_BagStackCount(bagAuctionCount, stackCount) ..
+                    'T' .. XUtils.formatCount(bagAuctionCount, 2)
 
                 local lowerCountStr = 'L' .. XUtils.formatCount(lowerCount)
                 if lowerCount > 5 then
-                    lowerCountStr = '|cFFFF0000' .. lowerCountStr
+                    lowerCountStr = XUI.Red .. lowerCountStr
                 elseif lowerCount > 0 then
-                    lowerCountStr = '|cFFFFFF00' .. lowerCountStr
+                    lowerCountStr = XUI.Yellow .. lowerCountStr
                 else
-                    lowerCountStr = '|cFFFFFFFF' .. lowerCountStr
+                    lowerCountStr = XUI.White .. lowerCountStr
                 end
 
                 local allCountStr = 'A' .. XUtils.formatCount(allCount)
                 if allCount > 20 then
-                    allCountStr = '|cFFFF0000' .. allCountStr
+                    allCountStr = XUI.Red .. allCountStr
                 elseif allCount > 10 then
-                    allCountStr = '|cFFFFFF00' .. allCountStr
+                    allCountStr = XUI.Yellow .. allCountStr
                 else
-                    allCountStr = '|cFF00FF00' .. allCountStr
+                    allCountStr = XUI.Green .. allCountStr
                 end
 
                 local stackCountStr = 'S' .. XUtils.formatCount(stackCount, 1)
                 if stackCount > 2 then
-                    stackCountStr = '|cFF00FFFF' .. stackCountStr
+                    stackCountStr = XUI.Cyan .. stackCountStr
                 elseif stackCount > 1 then
-                    stackCountStr = '|cFF00FF00' .. stackCountStr
+                    stackCountStr = XUI.Green .. stackCountStr
                 end
 
                 local minPriceStr = XUtils.priceToString(minPrice)
                 if minPrice < lowestPrice then
-                    minPriceStr = '|cFFFF0000' .. minPriceStr
+                    minPriceStr = XUI.Red .. minPriceStr
                 elseif minPrice < lowestPrice * dft_lowestPriceRate then
-                    minPriceStr = '|cFFFFFF00' .. minPriceStr
+                    minPriceStr = XUI.Yellow .. minPriceStr
                 elseif minPrice < lowestPrice * dft_lowestPriceRate * dft_lowestPriceRate then
-                    minPriceStr = '|cFF00FF00' .. minPriceStr
+                    minPriceStr = XUI.Green .. minPriceStr
                 else
-                    minPriceStr = '|cFF00FFFF' .. minPriceStr
+                    minPriceStr = XUI.Cyan .. minPriceStr
                 end
 
-                local lowestPriceStr = '|cFFFFFFFF' .. XUtils.priceToString(lowestPrice)
+                local lowestPriceStr = XUI.White .. XUtils.priceToString(lowestPrice)
 
-                local succRateStr = 'R' .. XUtils.formatCount(XUtils.round(succRate))
-                if succRate > 5 then
-                    succRateStr = '|cFFFF0000' .. succRateStr
-                elseif succRate > 3 then
-                    succRateStr = '|cFFFFFF00' .. succRateStr
-                elseif succRate > 2 then
-                    succRateStr = '|cFF00FF00' .. succRateStr
-                else
-                    succRateStr = '|cFF00FFFF' .. succRateStr
-                end
-
-                local dealCountStr = 'D' .. XUtils.formatCount(dealCount)
-                if dealCount > 20 then
-                    dealCountStr = '|cFF00FFFF' .. dealCountStr
-                elseif dealCount > 10 then
-                    dealCountStr = '|cFF00FF00' .. dealCountStr
-                elseif dealCount > 3 then
-                    dealCountStr = '|cFFFFFF00' .. dealCountStr
-                else
-                    dealCountStr = '|cFFFF0000' .. dealCountStr
-                end
+                local dealRateStr = XUI.getColor_DealRate(dealRate) .. 'R' .. XUtils.formatCount(XUtils.round(dealRate))
+                local dealCountStr = XUI.getColor_DealCount(dealCount) .. 'D' .. XUtils.formatCount(dealCount)
 
                 frame.itemIndexButton:SetText(idx)
                 frame.itemNameButton:SetText(itemNameStr)
                 frame.label:SetText(updateTimeStr .. '  '
-                    .. bagCountStr .. '|cFFFFFFFF/' .. bagAuctionCountStr .. '|cFFFFFFFF/' .. materialCountStr
-                    .. '|cFFFFFFFF/' .. auctionCountStr .. '|cFFFFFFFF/' .. minPriceCountStr
-                    .. '|cFFFFFFFF/' .. lowerCountStr .. '|cFFFFFFFF/' .. allCountStr
-                    .. '|cFFFFFFFF/' .. stackCountStr .. '  ' .. succRateStr
-                    .. '|cFFFFFFFF/' .. dealCountStr .. '  ' .. minPriceStr
-                    .. '|cFFFFFFFF/' .. lowestPriceStr)
+                    .. bagCountStr .. XUI.White .. '/' .. bagAuctionCountStr .. XUI.White .. '/' .. materialCountStr
+                    .. XUI.White .. '|/' .. auctionCountStr .. XUI.White .. '/' .. minPriceCountStr
+                    .. XUI.White .. '|/' .. lowerCountStr .. XUI.White .. '/' .. allCountStr
+                    .. XUI.White .. '|/' .. stackCountStr .. '  ' .. dealRateStr
+                    .. XUI.White .. '|/' .. dealCountStr .. '  ' .. minPriceStr
+                    .. XUI.White .. '|/' .. lowestPriceStr)
 
                 if enabled then
-                    frame.enableButton:SetText('|cFF00FF00起')
+                    frame.enableButton:SetText(XUI.Green .. '起')
                 else
-                    frame.enableButton:SetText('|cFFFF0000停')
+                    frame.enableButton:SetText(XUI.Red .. '停')
                 end
 
                 if star then
-                    frame.starButton:SetText('|cFF00FF00星')
+                    frame.starButton:SetText(XUI.Green .. '星')
                 else
-                    frame.starButton:SetText('|cFFFF0000星')
+                    frame.starButton:SetText(XUI.Red .. '星')
                 end
                 frame:Show()
             else
@@ -938,10 +892,12 @@ addCraftQueue = function(printCount, manualAdd)
                     local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0)
                     local materialCount = getMaterialCount(item['itemname'])
                     local minPriceCount = #item['myvalidlist']
+                    local multiRate = 3
+                    if XInfo.allHistory == 1 then multiRate = 1 end
 
                     local subCount = stackCount - auctionCount - bagCount
                     if queryRound > 1 or manualAdd then
-                        if item['star'] or dealCount >= 20 then
+                        if item['star'] or dealCount >= 20 * multiRate then
                             if auctionCount + bagCount < stackCount * 3 then
                                 subCount = stackCount * 2 - minPriceCount - bagCount
                             end
@@ -993,10 +949,12 @@ puton = function(printCount)
             if minPriceCount < auctionCount then auctionCount = minPriceCount end
             local stackCount = item['stackcount']
             local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0)
+            local multiRate = 3
+            if XInfo.allHistory == 1 then multiRate = 1 end
             if multiAuction == 2 then
                 stackCount = 999
             elseif multiAuction == 1 then
-                if item['star'] or dealCount >= 20 then
+                if item['star'] or dealCount >= 20 * multiRate then
                     stackCount = stackCount * 2
                 end
             end
@@ -1271,6 +1229,8 @@ local function onUpdate()
             end
 
             local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0)
+            local multiRate = 3
+            if XInfo.allHistory == 1 then multiRate = 1 end
             local myValidCount = 0
             local auctionItem = XInfo.getAuctionItem(item['itemname'])
             if auctionItem then myValidCount = auctionItem['count'] end
@@ -1281,7 +1241,7 @@ local function onUpdate()
             if multiAuction == 2 then
                 targetCount = 999
             elseif multiAuction == 1 then
-                if item['star'] or dealCount >= 20 then
+                if item['star'] or dealCount >= 20 * multiRate then
                     targetCount = targetCount * 2
                 end
             end

@@ -214,31 +214,99 @@ XUI.toggleVisible = function(frame)
     end
 end
 
+XUI.Red = '|cFFFF0000'
+XUI.Green = '|cFF00FF00'
+XUI.Blue = '|cFF0000FF'
+XUI.Yellow = '|cFFFFFF00'
+XUI.Cyan = '|cFF00FFFF'
+XUI.Purple = '|cFFFF00FF'
+XUI.White = '|cFFFFFFFF'
+XUI.Gray = '|cFF999999'
 
-XUI.getColor_SuccRate = function(succRate)
-    local res = '|cFFFFFFFF'
-    if succRate > 5 then
-        res = '|cFFFF0000'
-    elseif succRate > 3 then
-        res = '|cFFFFFF00'
-    elseif succRate > 2 then
-        res = '|cFF00FF00'
+-- <20%(>5): 红 / 20%-33%(3~5): 黄 / 33%-50%(2~3): 绿 / >50%(<2) 青
+XUI.getColor_DealRate = function(dealRate)
+    local res = XUI.White
+    if dealRate > 5 then
+        res = XUI.Red
+    elseif dealRate > 3 then
+        res = XUI.Yellow
+    elseif dealRate > 2 then
+        res = XUI.Green
     else
-        res = '|cFF00FFFF'
+        res = XUI.Cyan
     end
     return res
 end
 
+-- >20: 青 / 10~20: 绿 / 3~10: 黄 / <3: 红
 XUI.getColor_DealCount = function(dealCount)
-    local res = '|cFFFFFFFF'
-    if dealCount > 20 then
-        res = '|cFF00FFFF'
-    elseif dealCount > 10 then
-        res = '|cFF00FF00'
-    elseif dealCount > 3 then
-        res = '|cFFFFFF00'
+    local multiRate = 3
+    if XInfo.allHistory == 1 then
+        multiRate = 1
+    end
+    local res = XUI.White
+    if dealCount > 20 * multiRate then
+        res = XUI.Cyan
+    elseif dealCount > 10 * multiRate then
+        res = XUI.Green
+    elseif dealCount > 3 * multiRate then
+        res = XUI.Yellow
     else
-        res = '|cFFFF0000'
+        res = XUI.Red
+    end
+    return res
+end
+
+XUI.getColor_BagCount = function(bagCount)
+    local res = XUI.White
+    if bagCount >= 40 then
+        res = XUI.Cyan
+    elseif bagCount >= 20 then
+        res = XUI.Green
+    elseif bagCount >= 10 then
+        res = XUI.Yellow
+    else
+        res = XUI.Red
+    end
+    return res
+end
+
+XUI.getColor_BagBankCount = function(totalCount)
+    local res = XUI.White
+    if totalCount >= 100 then
+        res = XUI.Cyan
+    elseif totalCount >= 60 then
+        res = XUI.Green
+    elseif totalCount >= 40 then
+        res = XUI.Yellow
+    else
+        res = XUI.Red
+    end
+    return res
+end
+
+XUI.getColor_BagStackCount = function(bagCount, stackCount)
+    local res = XUI.White
+    if bagCount >= stackCount * 2 then
+        res = XUI.Cyan
+    elseif bagCount >= stackCount then
+        res = XUI.Green
+    elseif bagCount > 0 then
+        res = XUI.Yellow
+    else
+        res = XUI.Red
+    end
+    return res
+end
+
+XUI.getColor_AuctionStackCount = function(auctionCount, stackCount)
+    local res = XUI.White
+    if auctionCount >= stackCount * 2 or auctionCount <= 0 then
+        res = XUI.Red
+    elseif auctionCount > stackCount or auctionCount < stackCount then
+        res = XUI.Yellow
+    else
+        res = XUI.Green
     end
     return res
 end

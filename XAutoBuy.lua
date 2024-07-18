@@ -233,7 +233,7 @@ refreshUI = function()
         if idx <= #XAutoBuyList then
             local item = XAutoBuyList[idx]
             local itemName = item['itemname']
-            local priceStr = '|cFFFFFFFF' .. XUtils.priceToMoneyString(item['price'])
+            local priceStr = XUI.White .. XUtils.priceToMoneyString(item['price'])
             local bagCount = 0
             local bankCount = 0
             local itemBag = XInfo.getBagItem(itemName)
@@ -246,12 +246,12 @@ refreshUI = function()
 
             frame.indexButton:SetText(idx)
             frame.itemNameButton:SetText(string.sub(itemName, 1, 18))
-            frame.label:SetText(bagCountStr .. '|cFFFFFFFF/' .. bankCountStr .. '|cFFFFFFFF  ' .. priceStr)
+            frame.label:SetText(bagCountStr .. XUI.White .. '/' .. bankCountStr .. XUI.White .. '  ' .. priceStr)
 
             if item['enabled'] ~= true then
-                frame.enableButton:SetText('|cFFFF0000停')
+                frame.enableButton:SetText(XUI.Red .. '停')
             else
-                frame.enableButton:SetText('|cFF00FF00起')
+                frame.enableButton:SetText(XUI.Green .. '起')
             end
             frame:Show()
         else
@@ -435,15 +435,15 @@ local function onUpdate()
                     local queryBuyoutCountStr = queryBuyoutCount .. ''
                     local queryBidCountStr = queryBidCount .. ''
                     if queryBuyoutCount > 0 then
-                        queryBuyoutCountStr = '|cFF00FF00' .. queryBuyoutCountStr
+                        queryBuyoutCountStr = XUI.Green .. queryBuyoutCountStr
                     end
                     if queryBidCount > 0 then
-                        queryBidCountStr = '|cFF00FF00' .. queryBidCountStr
+                        queryBidCountStr = XUI.Green .. queryBidCountStr
                     end
 
                     XUIConfirmDialog.show('XAutoBuy_Buy', XAutoBuyList[queryIndex]['itemname'],
-                        { '|cFFFFFFFFBuyout:  ' .. queryBuyoutCountStr
-                        .. '       |cFFFFFFFFBid:  ' .. queryBidCountStr,
+                        { XUI.White .. 'Buyout:  ' .. queryBuyoutCountStr
+                        .. XUI.White .. '       Bid:  ' .. queryBidCountStr,
                             'AvgPrice: ' .. XUtils.priceToMoneyString(queryAvgPrice) },
                         confirmBuy, finishCurTask)
                 end

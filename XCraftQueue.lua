@@ -191,16 +191,7 @@ refreshUI = function()
             if materialBagItem then
                 materialCountNum = materialBagItem['totalcount']
             end
-            local materialCount = XUtils.formatCount(materialCountNum, 2)
-            if materialCountNum >= 40 then
-                materialCount = '|cFF00FFFF' .. materialCount
-            elseif materialCountNum >= 20 then
-                materialCount = '|cFF00FF00' .. materialCount
-            elseif materialCountNum > 5 then
-                materialCount = '|cFFFFFF00' .. materialCount
-            else
-                materialCount = '|cFFFF0000' .. materialCount
-            end
+            local materialCount = XUI.getColor_BagCount(materialCountNum).. XUtils.formatCount(materialCountNum, 2)
 
             local itemBag = XInfo.getBagItem(item['itemname'])
             local bagTotalCount = 0
@@ -217,7 +208,7 @@ refreshUI = function()
             local name2 = string.sub(string.sub(item['itemname'], -9), 1, 6)
             frame.nameLabel:SetText(name1 .. name2, 1, 12)
             frame.countLabel:SetText(XUtils.formatCount(item['count'], 1) ..
-                '|cFFFFFFFF/' .. bagAuctionCount .. '|cFFFFFFFF/' .. materialCount)
+                XUI.White .. '/' .. bagAuctionCount .. XUI.White .. '/' .. materialCount)
             frame:Show()
         else
             frame:Hide()

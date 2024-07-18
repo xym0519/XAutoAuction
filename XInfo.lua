@@ -154,14 +154,22 @@ XInfo.getAuctionInfo = function(itemName)
     return nil
 end
 
-XInfo.getAuctionInfoField = function(itemName, fieldName, defaultValue)
+XInfo.getAuctionInfoField = function(itemName, fieldName, defaultValue, allHistory)
     itemName = strtrim(itemName)
     local item = XInfo.getAuctionInfo(itemName)
     if not item then return defaultValue end;
 
-    local fields = { 'succrate', 'dealcount', 'lowestprice', 'costprice', 'sellprice', 'minsellprice', 'maxsellprice' }
-    if not XInfo.allHistory and XUtils.inArray(fieldName, fields) then
-        fieldName = fieldName .. '9'
+    if allHistory == nil then
+        allHistory = XInfo.allHistory
+    end
+
+    local fields = { 'itemname', 'vendorprice', 'sort', 'category', 'group' }
+    if not XUtils.inArray(fieldName, fields) then
+        if allHistory == 1 then
+            fieldName = fieldName .. '10'
+        elseif allHistory == 2 then
+            fieldName = fieldName .. '30'
+        end
     end
 
     if not item[fieldName] then return defaultValue end
@@ -198,8 +206,8 @@ XInfo.isMe = function(characterName)
     return XUtils.inArray(characterName, XInfo.characterList)
 end
 
--- Other
-XInfo.allHistory = false
+-- Other 0-all 1-10 2-30
+XInfo.allHistory = 2
 
 -- Events
 XAutoAuction.registerEventCallback(moduleName, 'ADDON_LOADED', function()
@@ -215,6 +223,7 @@ end)
 
 -- Commands
 SlashCmdList['XINFOALLHISTORY'] = function()
-    XInfo.allHistory = not XInfo.allHistory
+    XInfo.allHistory = (XInfo.allHistory + 1) % 3
+    XAutoAuction.refreshUI()
 end
 SLASH_XINFOALLHISTORY1 = '/xinfo_allhistory'

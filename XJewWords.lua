@@ -301,33 +301,24 @@ refreshUI = function()
                 totalCount = itemBag['totalcount']
             end
 
-            local totalCountStr = totalCount .. ''
-            if totalCount >= 100 then
-                totalCountStr = '|cFF00FFFF' .. totalCountStr
-            elseif totalCount >= 60 then
-                totalCountStr = '|cFF00FF00' .. totalCountStr
-            elseif totalCount >= 40 then
-                totalCountStr = '|cFFFFFF00' .. totalCountStr
-            else
-                totalCountStr = '|cFFFF0000' .. totalCountStr
-            end
+            local totalCountStr = XUI.getColor_BagBankCount(totalCount) .. totalCount
 
             local price1Str = '喊' .. price1
             local price2Str = '扫' .. price2
 
             if item['enabled'] ~= true then
-                itemName = '|cFFFF0000' .. itemName
-                price1Str = '|cFFFF0000' .. price1Str
-                unit = '|cFFFF0000' .. unit
+                itemName = XUI.Red .. itemName
+                price1Str = XUI.Red .. price1Str
+                unit = XUI.Red .. unit
             else
-                itemName = '|cFF00FF00' .. itemName
-                price1Str = '|cFF00FF00' .. price1Str
-                unit = '|cFF00FF00' .. unit
+                itemName = XUI.Green .. itemName
+                price1Str = XUI.Green .. price1Str
+                unit = XUI.Green .. unit
             end
             if price1 .. '' == price2 .. '' then
-                price2Str = '|cFF00FF00' .. price2Str
+                price2Str = XUI.Green .. price2Str
             else
-                price2Str = '|cFFFF0000' .. price2Str
+                price2Str = XUI.Red .. price2Str
             end
 
             frame.indexButton:SetText(idx)
@@ -339,9 +330,9 @@ refreshUI = function()
             frame.unitLabel:SetText(unit)
 
             if item['enabled'] ~= true then
-                frame.enableButton:SetText('|cFFFF0000停')
+                frame.enableButton:SetText(XUI.Red .. '停')
             else
-                frame.enableButton:SetText('|cFF00FF00起')
+                frame.enableButton:SetText(XUI.Green .. '起')
             end
             frame:Show()
         else

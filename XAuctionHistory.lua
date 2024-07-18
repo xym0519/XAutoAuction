@@ -163,27 +163,9 @@ refreshUI = function()
                 bagCount = bagItem['count']
                 totalCount = bagItem['totalcount']
             end
-            local bagCountStr = XUtils.formatCount(bagCount, 1)
-            if bagCount >= stackCount * 2 then
-                bagCountStr = '|cFF00FFFF' .. bagCountStr
-            elseif bagCount >= stackCount then
-                bagCountStr = '|cFF00FF00' .. bagCountStr
-            elseif bagCount > 0 then
-                bagCountStr = '|cFFFFFF00' .. bagCountStr
-            else
-                bagCountStr = '|cFFFF0000' .. bagCountStr
-            end
+            local bagCountStr = XUI.getColor_BagStackCount(bagCount, stackCount) .. XUtils.formatCount(bagCount, 1)
 
-            local totalCountStr = XUtils.formatCount(totalCount, 1)
-            if totalCount >= stackCount * 2 then
-                totalCountStr = '|cFF00FFFF' .. totalCountStr
-            elseif totalCount >= stackCount then
-                totalCountStr = '|cFF00FF00' .. totalCountStr
-            elseif totalCount > 0 then
-                totalCountStr = '|cFFFFFF00' .. totalCountStr
-            else
-                totalCountStr = '|cFFFF0000' .. totalCountStr
-            end
+            local totalCountStr = XUI.getColor_BagStackCount(totalCount, stackCount) .. XUtils.formatCount(totalCount, 1)
 
             local materialCount = 0
             local materialBagItem = XInfo.getMaterialBagItem(item['itemname'])
@@ -197,25 +179,21 @@ refreshUI = function()
             if auctionItem then
                 auctionCount = auctionItem['count']
             end
-            local auctionCountStr = XUtils.formatCount(auctionCount, 1)
-            if auctionCount <= 0 then
-                auctionCountStr = '|cFFFF0000' .. auctionCountStr
-            else
-                auctionCountStr = '|cFF00FF00' .. auctionCountStr
-            end
+            local auctionCountStr = XUI.getColor_AuctionStackCount(auctionCount, stackCount) ..
+                XUtils.formatCount(auctionCount, 1)
 
-            local dealCountStr = '|cFFFFFFFF' .. XUtils.formatCount(item['count'], 1)
+            local dealCountStr = XUI.White .. XUtils.formatCount(item['count'], 1)
 
             frame.nameLabel:SetText(string.sub(item['itemname'], 1, 18))
             frame.infoButton:SetText(
                 bagCountStr ..
-                '|cFFFFFFFF/' ..
+                XUI.White .. '/' ..
                 totalCountStr ..
-                '|cFFFFFFFF/' ..
+                XUI.White .. '/' ..
                 materialCountStr ..
-                '|cFFFFFFFF/' ..
+                XUI.White .. '/' ..
                 auctionCountStr ..
-                '|cFFFFFFFF/' ..
+                XUI.White .. '/' ..
                 dealCountStr)
             frame:Show()
         else

@@ -116,29 +116,11 @@ getItemInfo = function(itemName)
 
     itemName = string.sub(itemName, 1, 3)
 
-    local bagCountStr = bagCount .. ''
-    if bagCount >= 40 then
-        bagCountStr = '|cFF00FFFF' .. bagCountStr
-    elseif bagCount >= 20 then
-        bagCountStr = '|cFF00FF00' .. bagCountStr
-    elseif bagCount >= 10 then
-        bagCountStr = '|cFFFFFF00' .. bagCountStr
-    else
-        bagCountStr = '|cFFFF0000' .. bagCountStr
-    end
+    local bagCountStr = XUI.getColor_BagCount(bagCount) .. bagCount
 
-    local totalCountStr = totalCount .. ''
-    if totalCount >= 100 then
-        totalCountStr = '|cFF00FFFF' .. totalCountStr
-    elseif totalCount >= 60 then
-        totalCountStr = '|cFF00FF00' .. totalCountStr
-    elseif totalCount >= 40 then
-        totalCountStr = '|cFFFFFF00' .. totalCountStr
-    else
-        totalCountStr = '|cFFFF0000' .. totalCountStr
-    end
+    local totalCountStr = XUI.getColor_BagBankCount(totalCount) .. totalCount
 
-    return itemName .. '： ' .. bagCountStr .. '|cFFFFFFFF / ' .. totalCountStr
+    return itemName .. '： ' .. bagCountStr .. XUI.White .. ' / ' .. totalCountStr
 end
 
 -- Events

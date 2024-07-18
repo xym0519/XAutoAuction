@@ -253,9 +253,9 @@ refreshUI = function()
                 frame.label:SetText(item['text'])
 
                 if item['enabled'] ~= true then
-                    frame.enableButton:SetText('|cFFFF0000停')
+                    frame.enableButton:SetText(XUI.Red .. '停')
                 else
-                    frame.enableButton:SetText('|cFF00FF00起')
+                    frame.enableButton:SetText(XUI.Green .. '起')
                 end
                 frame:Show()
             else
