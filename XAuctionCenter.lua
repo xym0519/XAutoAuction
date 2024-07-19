@@ -1168,6 +1168,8 @@ local function onUpdate()
 
                     if not itemName then break end
 
+                    XExternal.addScanHistory(itemName, time(), buyoutPrice)
+
                     if buyoutPrice ~= nil and buyoutPrice > 0 then
                         if buyoutPrice < item['minprice'] then
                             item['minprice'] = buyoutPrice

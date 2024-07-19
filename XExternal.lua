@@ -58,13 +58,15 @@ end
 
 XExternal.addBuyHistory = function(itemName, time, price, count)
     if XBuyList then
-        table.insert(XBuyList, { itemName = itemName, time = time, price = price, count = count })
+        table.insert(XBuyList, { itemname = itemName, time = time, price = price, count = count })
+        XExternal.addScanHistory(itemName, time, price)
     end
 end
 
 XExternal.addSellHistory = function(itemName, time, isSuccess, price, count)
     if XSellList then
-        table.insert(XSellList, { itemName = itemName, time = time, isSuccess = isSuccess, price = price, count = count })
+        table.insert(XSellList, { itemname = itemName, time = time, issuccess = isSuccess, price = price, count = count })
+        XExternal.addScanHistory(itemName, time, price)
     end
 end
 
@@ -82,7 +84,23 @@ XExternal.addScanHistory = function(itemName, time, price)
                 end
             end
         else
-            XScanList[itemName] = { timestamp = time, list = { { time = time, price = price } } }
+            local auctionInfo = XInfo.getAuctionInfo(itemName)
+            local item = {}
+            item.timestamp = time;
+            item.list = { { time = time, price = price } }
+
+            if auctionInfo then
+                item.vendorprice = auctionInfo.vendorprice
+                item.category = auctionInfo.category
+                item.class = auctionInfo.class
+            end
+
+            local _, _, _, _, _, itemType, itemSubType, _, _, _, vendorPrice = GetItemInfo(itemName)
+            item.vendorprice = vendorPrice
+            item.category = itemType
+            item.class = itemSubType
+
+            XScanList[itemName] = item
         end
     end
 end
