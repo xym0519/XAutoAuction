@@ -219,7 +219,7 @@ local function onUpdate()
 
     for itemName, item in pairs(XScanList) do
         if not item.category or item.category == '' then
-            print(XUI.Red .. 'Found a new Item')
+            print(XUI.Red .. 'Found a new Item: ' .. itemName)
             local auctionInfo = XInfo.getAuctionInfo(itemName)
             if auctionInfo then
                 print('AuctionInfo existed')
@@ -309,7 +309,8 @@ local function onItemInfoReceived(self, event, itemID, success)
             item.vendorprice = vendorPrice
             item.category = itemType
             item.class = itemSubType
-            print(XUI.Green .. 'ScanInfo updated from callback')
+            print(XUI.Green .. 'ScanInfo updated from callback: ' .. itemName)
+            XExternal.addScanHistory(itemName, itemID, 0, 0)
         end
 
         local auctionInfo = XInfo.getAuctionInfo(itemName)
@@ -318,7 +319,7 @@ local function onItemInfoReceived(self, event, itemID, success)
             auctionInfo.vendorprice = vendorPrice
             auctionInfo.category = itemType
             auctionInfo.class = itemSubType
-            print(XUI.Green .. 'AuctionInfo updated callback')
+            print(XUI.Green .. 'AuctionInfo updated callback: ' .. itemName)
         end
     end
 end
