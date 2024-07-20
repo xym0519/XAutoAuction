@@ -88,7 +88,7 @@ initUI = function()
                 local count = nil
                 for _, item in ipairs(data) do
                     if item.Name == '类型' then itemName = item.Value end
-                    if item.Name == '数量' then count = item.Value end
+                    if item.Name == '数量' then count = tonumber(item.Value) end
                 end
                 if itemName and count then
                     XCraftQueue.addItem(itemName, count, 'fulfil')

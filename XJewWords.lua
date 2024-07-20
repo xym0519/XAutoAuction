@@ -49,7 +49,7 @@ initUI = function()
                 local unit = ''
                 for _, item in ipairs(data) do
                     if item.Name == '物品名称' then itemName = item.Value end
-                    if item.Name == '喊话价格' then price1 = item.Value end
+                    if item.Name == '喊话价格' then price1 = tonumber(item.Value) end
                     if item.Name == '收购单位' then unit = item.Value end
                 end
 
@@ -117,7 +117,7 @@ initUI = function()
                     local unit = ''
                     for _, item in ipairs(data) do
                         if item.Name == '物品名称' then itemName = item.Value end
-                        if item.Name == '喊话价格' then price1 = item.Value end
+                        if item.Name == '喊话价格' then price1 = tonumber(item.Value) end
                         if item.Name == '收购单位' then unit = item.Value end
                     end
 
