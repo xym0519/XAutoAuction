@@ -405,7 +405,8 @@ local function onUpdate()
 
                 if not itemName then break end
 
-                XExternal.addScanHistory(itemName, itemId, time(), buyoutPrice)
+                XExternal.updateItemInfo(itemName, itemId)
+                XExternal.addScanHistory(itemName, time(), buyoutPrice)
 
                 local nextBidPrice = 0
                 if bidPrice == 0 then

@@ -213,81 +213,54 @@ XInfo.allHistory = 2
 local lastUpdateTime = 0
 local dft_interval = 3
 local function onUpdate()
-    if not XScanList then return end
+    if not XItemUpdateList then return end
     if time() - lastUpdateTime < dft_interval then return end
     lastUpdateTime = time()
 
-    for itemName, item in pairs(XScanList) do
-        if not item.category or item.category == '' then
-            local auctionInfo = XInfo.getAuctionInfo(itemName)
-            if auctionInfo then
-                if auctionInfo.category and auctionInfo.category ~= '' then
-                    item.itemid = auctionInfo.itemid
-                    item.category = auctionInfo.category
-                    item.class = auctionInfo.class
-                    item.vendorprice = auctionInfo.vendorprice
-                else
-                    if item.itemid and item.itemid > 0 then
-                        print('Update from itemid')
-                        local tname, itemLink, _, _, _, itemType,
-                        itemSubType, _, _, _, vendorPrice = GetItemInfo(item.itemid)
-                        if tname then
-                            item.vendorprice = vendorPrice
-                            item.category = itemType
-                            item.class = itemSubType
-
-                            auctionInfo.itemid = item.itemid
-                            auctionInfo.vendorprice = vendorPrice
-                            auctionInfo.category = itemType
-                            auctionInfo.class = itemSubType
-                            print(XUI.Green .. 'Updated from itemid success')
-                        end
+    for itemName, item in pairs(XItemUpdateList) do
+        if item.itemid and item.itemid > 0 then
+            if item.category and item.category ~= '' then
+                -- do nothing
+            else
+                local tname, itemLink, _, _, _, itemType,
+                itemSubType, _, _, _, vendorPrice = GetItemInfo(item.itemid)
+                if tname then
+                    if tname == itemName then
+                        XExternal.updateItemInfo(itemName, item.itemid, itemType, itemSubType, vendorPrice)
+                        print(XUI.Green .. 'Item updated from onupdate: ' .. itemName)
                     else
-                        print('Update from itemname')
-                        local tname, itemLink, _, _, _, itemType,
-                        itemSubType, _, _, _, vendorPrice = GetItemInfo(itemName)
-                        if tname then
-                            local itemId = GetItemInfoInstant(itemLink)
-
-                            item.itemid = itemId
-                            item.vendorprice = vendorPrice
-                            item.category = itemType
-                            item.class = itemSubType
-
-                            auctionInfo.itemid = item.itemid
-                            auctionInfo.vendorprice = vendorPrice
-                            auctionInfo.category = itemType
-                            auctionInfo.class = itemSubType
-                            print(XUI.Green .. 'Updated from itemnamesuccess')
-                        end
+                        XExternal.updateItemInfo(tname, item.itemid, itemType, itemSubType, vendorPrice)
+                        XItemUpdateList[itemName] = nil
+                        print(XUI.Green .. 'Item updated from onupdate: ' .. tname)
+                        print(XUI.Red .. 'Item removed from onupdate: ' .. itemName)
                     end
+                else
+                    XItemUpdateList[itemName] = nil
+                    print(XUI.Red .. 'Item removed from onupdate: ' .. itemName)
+                end
+            end
+        else
+            local tname, itemLink, _, _, _, itemType,
+            itemSubType, _, _, _, vendorPrice = GetItemInfo(itemName)
+            local itemId = GetItemInfoInstant(itemLink)
+            if tname then
+                if itemId then
+                    if tname == itemName then
+                        XExternal.updateItemInfo(itemName, itemId, itemType, itemSubType, vendorPrice)
+                        print(XUI.Green .. 'Item updated from onupdate: ' .. itemName)
+                    else
+                        XExternal.updateItemInfo(tname, itemId, itemType, itemSubType, vendorPrice)
+                        XItemUpdateList[itemName] = nil
+                        print(XUI.Green .. 'Item updated from onupdate: ' .. tname)
+                        print(XUI.Red .. 'Item removed from onupdate: ' .. itemName)
+                    end
+                else
+                    XItemUpdateList[itemName] = nil
+                    print(XUI.Red .. 'Item removed from onupdate: ' .. itemName)
                 end
             else
-                print('AuctionInfo not exist')
-                if item.itemid and item.itemid > 0 then
-                    print('Update from itemid')
-                    local tname, itemLink, _, _, _, itemType,
-                    itemSubType, _, _, _, vendorPrice = GetItemInfo(item.itemid)
-                    if tname then
-                        item.vendorprice = vendorPrice
-                        item.category = itemType
-                        item.class = itemSubType
-                        print(XUI.Green .. 'Update from itemid success')
-                    end
-                else
-                    print('Update from itemname')
-                    local tname, itemLink, _, _, _, itemType,
-                    itemSubType, _, _, _, vendorPrice = GetItemInfo(itemName)
-                    if tname then
-                        local itemId = GetItemInfoInstant(itemLink)
-
-                        item.itemid = itemId
-                        item.vendorprice = vendorPrice
-                        item.category = itemType
-                        item.class = itemSubType
-                        print(XUI.Green .. 'Update from itemname success')
-                    end
-                end
+                XItemUpdateList[itemName] = nil
+                print(XUI.Red .. 'Item removed from onupdate: ' .. itemName)
             end
         end
     end
@@ -297,25 +270,8 @@ local function onItemInfoReceived(self, event, itemID, success)
     local itemName, itemLink, _, _, _, itemType,
     itemSubType, _, _, _, vendorPrice = GetItemInfo(itemID)
     if itemName then
-        print('ItemInfo received: ' .. itemName)
-        if XScanList and XScanList[itemName] then
-            local item = XScanList[itemName]
-            item.itemid = itemID
-            item.vendorprice = vendorPrice
-            item.category = itemType
-            item.class = itemSubType
-            print(XUI.Green .. 'ScanInfo updated from callback: ' .. itemName)
-            XExternal.addScanHistory(itemName, itemID, 0, 0)
-        end
-
-        local auctionInfo = XInfo.getAuctionInfo(itemName)
-        if auctionInfo then
-            auctionInfo.itemid = itemID
-            auctionInfo.vendorprice = vendorPrice
-            auctionInfo.category = itemType
-            auctionInfo.class = itemSubType
-            print(XUI.Green .. 'AuctionInfo updated callback: ' .. itemName)
-        end
+        XExternal.updateItemInfo(itemName, itemID, itemType, itemSubType, vendorPrice)
+        print(XUI.Green .. 'Item updated from event: ' .. itemName)
     end
 end
 

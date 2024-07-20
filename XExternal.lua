@@ -57,46 +57,23 @@ XExternal.processMail = function(mailIndex, mailType, msgSubject)
 end
 
 XExternal.addBuyHistory = function(itemName, time, price, count)
-    if XBuyList then
-        table.insert(XBuyList, { itemname = itemName, time = time, price = price, count = count })
-        XExternal.addScanHistory(itemName, nil, time, price)
-    end
+    if not XBuyList then return end
+
+    table.insert(XBuyList, { itemname = itemName, time = time, price = price, count = count })
+    XExternal.addScanHistory(itemName, time, price)
 end
 
 XExternal.addSellHistory = function(itemName, time, isSuccess, price, count)
-    if XSellList then
-        table.insert(XSellList, { itemname = itemName, time = time, issuccess = isSuccess, price = price, count = count })
-        XExternal.addScanHistory(itemName, nil, time, price)
-    end
+    if not XSellList then return end
+
+    table.insert(XSellList, { itemname = itemName, time = time, issuccess = isSuccess, price = price, count = count })
+    XExternal.addScanHistory(itemName, time, price)
 end
 
--- TODO debug
-local lastIndex = 1
-XExternal.Test = function()
-    local count = 0
-    local index = 0
-    XScanList = {}
-    for itemName, item in pairs(XAuctionInfoList) do
-        if count > 3 then break end
-        if index > lastIndex then
-            if item.itemid and item.itemid == -1 then
-                XExternal.addScanHistory(itemName, nil, time(), 0)
-                print(itemName)
-                count = count + 1
-            end
-            lastIndex = index
-        end
-        index = index + 1
-    end
-end
-
-XExternal.addScanHistory = function(itemName, itemId, time, price)
-    if not itemId then itemId = -1 end
-
+XExternal.addScanHistory = function(itemName, time, price)
     if XScanList then
         if XScanList[itemName] then
             local item = XScanList[itemName]
-            if item['itemid'] == -1 then item['itemid'] = itemId end
             local list = item['list']
 
             if not list then list = {} end
@@ -118,10 +95,6 @@ XExternal.addScanHistory = function(itemName, itemId, time, price)
         else
             local item = {}
             item.timestamp = time
-            item.itemid = itemId
-            item.vendorprice = 0
-            item.category = ''
-            item.class = ''
             if price and price > 0 then
                 item.list = { { time = time, price = price } }
             else
@@ -129,6 +102,187 @@ XExternal.addScanHistory = function(itemName, itemId, time, price)
             end
 
             XScanList[itemName] = item
+        end
+    end
+end
+
+XExternal.updateItemInfo = function(itemName, itemId, category, class, vendorPrice)
+    if not itemName then return end
+    if not XItemUpdateList then return end
+    if not XAuctionInfoList then return end
+
+    if not itemId then itemId = -1 end
+    if not category then category = '' end
+    if not class then class = '' end
+    if not vendorPrice then vendorPrice = 0 end
+
+    if XAuctionInfoList[itemName] then
+        local auctionInfo = XAuctionInfoList[itemName]
+        if auctionInfo.itemid and auctionInfo.itemid > 0 then
+            if auctionInfo.category and auctionInfo.category ~= '' then
+                if itemId and itemId > 0 then
+                    if category and category ~= '' then
+                        if auctionInfo.itemid == itemId
+                            and auctionInfo.category == category
+                            and auctionInfo.class == class
+                            and auctionInfo.vendorprice == vendorPrice then
+                            -- do nothing
+                        else
+                            auctionInfo.itemid = itemId
+                            auctionInfo.category = category
+                            auctionInfo.class = class
+                            auctionInfo.vendorprice = vendorPrice
+
+                            if XItemUpdateList[itemName] then
+                                local updateItem = XItemUpdateList[itemName]
+                                updateItem.itemid = itemId
+                                updateItem.category = category
+                                updateItem.class = class
+                                updateItem.vendorprice = vendorPrice
+                            else
+                                XItemUpdateList[itemName] = {
+                                    itemid = itemId,
+                                    category = category,
+                                    class = class,
+                                    vendorprice = vendorPrice
+                                }
+                            end
+                        end
+                    else
+                        if auctionInfo.itemid == itemId then
+                            -- do nothing
+                        else
+                            auctionInfo.itemid = itemId
+                            auctionInfo.category = category
+                            auctionInfo.class = class
+                            auctionInfo.vendorprice = vendorPrice
+
+                            if XItemUpdateList[itemName] then
+                                local updateItem = XItemUpdateList[itemName]
+                                updateItem.itemid = itemId
+                                updateItem.category = category
+                                updateItem.class = class
+                                updateItem.vendorprice = vendorPrice
+                            else
+                                XItemUpdateList[itemName] = {
+                                    itemid = itemId,
+                                    category = category,
+                                    class = class,
+                                    vendorprice = vendorPrice
+                                }
+                            end
+                        end
+                    end
+                else
+                    -- do nothing
+                end
+            else
+                if itemId and itemId > 0 then
+                    auctionInfo.itemid = itemId
+                    auctionInfo.category = category
+                    auctionInfo.class = class
+                    auctionInfo.vendorprice = vendorPrice
+
+                    if XItemUpdateList[itemName] then
+                        local updateItem = XItemUpdateList[itemName]
+                        updateItem.itemid = itemId
+                        updateItem.category = category
+                        updateItem.class = class
+                        updateItem.vendorprice = vendorPrice
+                    else
+                        XItemUpdateList[itemName] = {
+                            itemid = itemId,
+                            category = category,
+                            class = class,
+                            vendorprice = vendorPrice
+                        }
+                    end
+                else
+                    if XItemUpdateList[itemName] then
+                        local updateItem = XItemUpdateList[itemName]
+                        updateItem.itemid = auctionInfo.itemid
+                        updateItem.category = category
+                        updateItem.class = class
+                        updateItem.vendorprice = vendorPrice
+                    else
+                        XItemUpdateList[itemName] = {
+                            itemid = auctionInfo.itemid,
+                            category = category,
+                            class = class,
+                            vendorprice = vendorPrice
+                        }
+                    end
+                end
+            end
+        else
+            auctionInfo.itemid = itemId
+            auctionInfo.category = category
+            auctionInfo.class = class
+            auctionInfo.vendorprice = vendorPrice
+
+            if XItemUpdateList[itemName] then
+                local updateItem = XItemUpdateList[itemName]
+                updateItem.itemid = itemId
+                updateItem.category = category
+                updateItem.class = class
+                updateItem.vendorprice = vendorPrice
+            else
+                XItemUpdateList[itemName] = {
+                    itemid = itemId,
+                    category = category,
+                    class = class,
+                    vendorprice = vendorPrice
+                }
+            end
+        end
+    else
+        if itemId and itemId > 0 then
+            if category and category ~= '' then
+                if XItemUpdateList[itemName] then
+                    local updateItem = XItemUpdateList[itemName]
+                    updateItem.itemid = itemId
+                    updateItem.category = category
+                    updateItem.class = class
+                    updateItem.vendorprice = vendorPrice
+                else
+                    XItemUpdateList[itemName] = {
+                        itemid = itemId,
+                        category = category,
+                        class = class,
+                        vendorprice = vendorPrice
+                    }
+                end
+            else
+                if XItemUpdateList[itemName] then
+                    local updateItem = XItemUpdateList[itemName]
+                    if updateItem.itemid == itemId then
+                        -- do nothing
+                    else
+                        updateItem.itemid = itemId
+                        updateItem.category = category
+                        updateItem.class = class
+                        updateItem.vendorprice = vendorPrice
+                    end
+                else
+                    XItemUpdateList[itemName] = {
+                        itemid = itemId,
+                        category = category,
+                        class = class,
+                        vendorprice = vendorPrice
+                    }
+                end
+            end
+        else
+            if XItemUpdateList[itemName] then
+                -- do nothing
+            else
+                XItemUpdateList[itemName] = {
+                    itemid = itemId,
+                    category = category,
+                    class = class,
+                    vendorprice = vendorPrice
+                }
+            end
         end
     end
 end

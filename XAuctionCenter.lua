@@ -1171,7 +1171,9 @@ local function onUpdate()
                     if not itemName then break end
 
                     buyoutPrice = buyoutPrice / stackCount
-                    XExternal.addScanHistory(itemName, itemId, time(), buyoutPrice)
+
+                    XExternal.updateItemInfo(itemName, itemId)
+                    XExternal.addScanHistory(itemName, time(), buyoutPrice)
 
                     if buyoutPrice ~= nil and buyoutPrice > 0 then
                         if buyoutPrice < item['minprice'] then
