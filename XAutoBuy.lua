@@ -158,12 +158,20 @@ initUI = function()
         end)
         frame.itemNameButton = itemNameButton
 
-        local label = XUI.createLabel(frame, 160, '')
+        local label = XUI.createLabel(frame, 60, '')
         label:SetPoint('LEFT', itemNameButton, 'RIGHT', 8, 0)
         frame.label = label
 
+        local label2 = XUI.createLabel(frame, 40, '')
+        label2:SetPoint('LEFT', label, 'RIGHT', 0, 0)
+        frame.label2 = label2
+
+        local label3 = XUI.createLabel(frame, 60, '')
+        label3:SetPoint('LEFT', label2, 'RIGHT', 0, 0)
+        frame.label3 = label3
+
         local deleteButton = XUI.createButton(frame, 32, '删')
-        deleteButton:SetPoint('LEFT', label, 'RIGHT', 3, 0)
+        deleteButton:SetPoint('LEFT', label3, 'RIGHT', 3, 0)
         deleteButton:SetScript('OnClick', function()
             local idx = displayPageNo * displayPageSize + i
             if idx <= #XAutoBuyList then
@@ -225,7 +233,23 @@ refreshUI = function()
         if idx <= #XAutoBuyList then
             local item = XAutoBuyList[idx]
             local itemName = item['itemname']
-            local priceStr = XUI.White .. XUtils.priceToMoneyString(item['price'])
+
+            local price = item['price'] / 10000
+            local priceStr = XUI.White .. price
+
+            local minPrice = 0
+            if item['minprice'] then minPrice = item['minprice'] / 10000 end
+            local minPriceStr = XUI.White .. minPrice
+            if minPrice <= price then
+                minPriceStr = XUI.White .. minPrice
+            elseif minPrice <= price * 1.2 then
+                minPriceStr = XUI.Yellow .. minPrice
+            elseif minPrice <= price * 1.5 then
+                minPriceStr = XUI.Orange .. minPrice
+            else
+                minPriceStr = XUI.Red .. minPrice
+            end
+
             local bagCount = 0
             local bankCount = 0
             local itemBag = XInfo.getBagItem(itemName)
@@ -238,7 +262,9 @@ refreshUI = function()
 
             frame.indexButton:SetText(idx)
             frame.itemNameButton:SetText(string.sub(itemName, 1, 18))
-            frame.label:SetText(bagCountStr .. XUI.White .. '/' .. bankCountStr .. XUI.White .. '  ' .. priceStr)
+            frame.label:SetText(bagCountStr .. XUI.White .. '/' .. bankCountStr)
+            frame.label2:SetText(priceStr)
+            frame.label3:SetText(minPriceStr)
 
             if item['enabled'] ~= true then
                 frame.enableButton:SetText(XUI.Red .. '停')
@@ -348,6 +374,8 @@ local function onAuctionItemListUpdate()
         return
     end
 
+    local item = XAutoBuyList[queryIndex]
+
     local itemName, _, stackCount, _, _, _, _, bidStart, bidIncrease, buyoutPrice, bidPrice, isMine, _, seller =
         GetAuctionItemInfo('list', 1)
 
@@ -358,16 +386,33 @@ local function onAuctionItemListUpdate()
         return
     end
 
-    if itemName ~= XAutoBuyList[queryIndex]['itemname'] then return end
+    if itemName ~= item['itemname'] then return end
+
+    local nextBidPrice = 0
+    if bidPrice == 0 then
+        nextBidPrice = bidStart
+    else
+        nextBidPrice = bidPrice + bidIncrease
+    end
+
+    local minPrice = buyoutPrice / stackCount
+    if minPrice > 0 then
+        if nextBidPrice / stackCount < minPrice then
+            minPrice = nextBidPrice / stackCount
+        end
+    else
+        minPrice = nextBidPrice / stackCount
+    end
+    if item.minprice then
+        if minPrice < item.minprice then
+            item.minprice = minPrice
+        end
+    else
+        item.minprice = minPrice
+    end
 
     if queryMode == 0 then -- 快速模式
-        local nextBidPrice = 0
-        if bidPrice == 0 then
-            nextBidPrice = bidStart
-        else
-            nextBidPrice = bidPrice + bidIncrease
-        end
-        if nextBidPrice / stackCount <= XAutoBuyList[queryIndex]['price'] then
+        if nextBidPrice / stackCount <= item['price'] then
             queryFound = true
         else
             queryFound = false
@@ -414,6 +459,7 @@ local function onUpdate()
                 else
                     nextBidPrice = bidPrice + bidIncrease
                 end
+
                 if (not XInfo.isMe(seller)) and buyoutPrice / stackCount <= item['price'] and itemName == item['itemname'] and buyoutPrice > 0 then
                     queryBuyoutCount = queryBuyoutCount + stackCount
                     totalPrice = totalPrice + buyoutPrice
