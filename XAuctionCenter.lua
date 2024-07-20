@@ -278,7 +278,7 @@ initUI = function()
             local defaultPrice = nil
             local stackCount = nil
             for _, item in ipairs(data) do
-                if item.Name == '宝石名称' then itemName = tonumber(item.Value) end
+                if item.Name == '宝石名称' then itemName = item.Value end
                 if item.Name == '最低售价' then lowestPrice = tonumber(item.Value) end
                 if item.Name == '默认价格' then defaultPrice = tonumber(item.Value) end
                 if item.Name == '拍卖数量' then stackCount = tonumber(item.Value) end

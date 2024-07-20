@@ -96,7 +96,7 @@ initUI = function()
             local name = nil
             local price = nil
             for _, item in ipairs(data) do
-                if item.Name == '物品' then name = tonumber(item.Value) end
+                if item.Name == '物品' then name = item.Value end
                 if item.Name == '价格' then price = tonumber(item.Value) end
             end
             if name and price then
@@ -141,12 +141,16 @@ initUI = function()
 
             XUIInputDialog.show(moduleName,
                 function(data)
+                    print(data)
                     local name = nil
                     local price = nil
                     for _, item in ipairs(data) do
-                        if item.Name == '物品' then name = tonumber(item.Value) end
+                        if item.Name == '物品' then name = item.Value end
                         if item.Name == '价格' then price = tonumber(item.Value) end
                     end
+                    print(name)
+                    print(price)
+                    print(type(price))
                     if name and price then
                         displaySettingItem['itemname'] = name
                         displaySettingItem['price'] = price
