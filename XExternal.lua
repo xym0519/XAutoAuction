@@ -59,46 +59,74 @@ end
 XExternal.addBuyHistory = function(itemName, time, price, count)
     if XBuyList then
         table.insert(XBuyList, { itemname = itemName, time = time, price = price, count = count })
-        XExternal.addScanHistory(itemName, time, price)
+        XExternal.addScanHistory(itemName, nil, time, price)
     end
 end
 
 XExternal.addSellHistory = function(itemName, time, isSuccess, price, count)
     if XSellList then
         table.insert(XSellList, { itemname = itemName, time = time, issuccess = isSuccess, price = price, count = count })
-        XExternal.addScanHistory(itemName, time, price)
+        XExternal.addScanHistory(itemName, nil, time, price)
     end
 end
 
-XExternal.addScanHistory = function(itemName, time, price)
+-- TODO debug
+local lastIndex = 1
+XExternal.Test = function()
+    local count = 0
+    local index = 0
+    XScanList = {}
+    for itemName, item in pairs(XAuctionInfoList) do
+        if count > 3 then break end
+        if index > lastIndex then
+            if item.itemid and item.itemid == -1 then
+                XExternal.addScanHistory(itemName, nil, time(), 0)
+                print(itemName)
+                count = count + 1
+            end
+            lastIndex = index
+        end
+        index = index + 1
+    end
+end
+
+XExternal.addScanHistory = function(itemName, itemId, time, price)
+    if not itemId then itemId = -1 end
+
     if XScanList then
         if XScanList[itemName] then
             local item = XScanList[itemName]
+            if item['itemid'] == -1 then item['itemid'] = itemId end
             local list = item['list']
-            if item['timestamp'] + 300 < time then
-                table.insert(list, { time = time, price = price })
-                item['timestamp'] = time
-            else
-                if list[#list]['price'] > price then
-                    list[#list]['price'] = price
+
+            if not list then list = {} end
+
+            if price and price > 0 then
+                if item['timestamp'] + 300 < time then
+                    table.insert(list, { time = time, price = price })
+                    item['timestamp'] = time
+                else
+                    if #list <= 0 then
+                        table.insert(list, { time = time, price = price })
+                    else
+                        if list[#list]['price'] > price then
+                            list[#list]['price'] = price
+                        end
+                    end
                 end
             end
         else
-            local auctionInfo = XInfo.getAuctionInfo(itemName)
             local item = {}
-            item.timestamp = time;
-            item.list = { { time = time, price = price } }
-
-            if auctionInfo then
-                item.vendorprice = auctionInfo.vendorprice
-                item.category = auctionInfo.category
-                item.class = auctionInfo.class
+            item.timestamp = time
+            item.itemid = itemId
+            item.vendorprice = 0
+            item.category = ''
+            item.class = ''
+            if price and price > 0 then
+                item.list = { { time = time, price = price } }
+            else
+                item.list = {}
             end
-
-            local _, _, _, _, _, itemType, itemSubType, _, _, _, vendorPrice = GetItemInfo(itemName)
-            item.vendorprice = vendorPrice
-            item.category = itemType
-            item.class = itemSubType
 
             XScanList[itemName] = item
         end

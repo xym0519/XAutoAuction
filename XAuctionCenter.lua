@@ -1088,7 +1088,7 @@ local function onQueryItemListUpdate()
 
     local item = XAutoAuctionList[curTask['index']]
 
-    local itemName, _, _, _, _, _, _, _, _, buyoutPrice, _, _, _, seller = GetAuctionItemInfo('list', 1);
+    local itemName, _, stackCount, _, _, _, _, _, _, buyoutPrice, _, _, _, seller = GetAuctionItemInfo('list', 1);
     if not itemName then
         curTask['queryfound'] = false
 
@@ -1098,6 +1098,8 @@ local function onQueryItemListUpdate()
     end
 
     if itemName ~= item['itemname'] then return end
+
+    buyoutPrice = buyoutPrice / stackCount
 
     if fastAuction then -- 快速模式
         if buyoutPrice <= item['lowestprice'] then
@@ -1163,12 +1165,13 @@ local function onUpdate()
 
                 local index = 1
                 while true do
-                    local itemName, _, _, _, _, _, _, _, _, buyoutPrice, _, _, _, seller = GetAuctionItemInfo('list',
-                        index);
+                    local itemName, _, stackCount, _, _, _, _, _, _, buyoutPrice, _, _, _, seller, _, _, itemId =
+                        GetAuctionItemInfo('list', index);
 
                     if not itemName then break end
 
-                    XExternal.addScanHistory(itemName, time(), buyoutPrice)
+                    buyoutPrice = buyoutPrice / stackCount
+                    XExternal.addScanHistory(itemName, itemId, time(), buyoutPrice)
 
                     if buyoutPrice ~= nil and buyoutPrice > 0 then
                         if buyoutPrice < item['minprice'] then

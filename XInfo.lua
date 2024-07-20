@@ -163,7 +163,7 @@ XInfo.getAuctionInfoField = function(itemName, fieldName, defaultValue, allHisto
         allHistory = XInfo.allHistory
     end
 
-    local fields = { 'itemname', 'vendorprice', 'sort', 'category', 'group' }
+    local fields = { 'itemname', 'vendorprice', 'sort', 'category', 'class', 'group' }
     if not XUtils.inArray(fieldName, fields) then
         if allHistory == 1 then
             fieldName = fieldName .. '10'
@@ -200,7 +200,7 @@ XInfo.getMaterialBagItem = function(itemName)
 end
 
 -- Character
-XInfo.characterList = { '暗影肌', '默法', 'Miles', 'Bro' }
+XInfo.characterList = { '暗影肌', '阿肌' }
 XInfo.myName = UnitName('player')
 XInfo.isMe = function(characterName)
     return XUtils.inArray(characterName, XInfo.characterList)
@@ -209,12 +209,130 @@ end
 -- Other 0-all 1-10 2-30
 XInfo.allHistory = 2
 
+-- Event callback
+local lastUpdateTime = 0
+local dft_interval = 5
+local function onUpdate()
+    if not XScanList then return end
+    if time() - lastUpdateTime < dft_interval then return end
+    lastUpdateTime = time()
+
+    for itemName, item in pairs(XScanList) do
+        if not item.category or item.category == '' then
+            print(XUI.Red .. 'Found a new Item')
+            local auctionInfo = XInfo.getAuctionInfo(itemName)
+            if auctionInfo then
+                print('AuctionInfo existed')
+                if auctionInfo.category and auctionInfo.category ~= '' then
+                    item.itemid = auctionInfo.itemid
+                    item.category = auctionInfo.category
+                    item.class = auctionInfo.class
+                    item.vendorprice = auctionInfo.vendorprice
+                    print(XUI.Green .. 'Updated from auction info')
+                else
+                    if item.itemid and item.itemid > 0 then
+                        print('Update from itemid')
+                        local tname, itemLink, _, _, _, itemType,
+                        itemSubType, _, _, _, vendorPrice = GetItemInfo(item.itemid)
+                        if tname then
+                            item.vendorprice = vendorPrice
+                            item.category = itemType
+                            item.class = itemSubType
+
+                            auctionInfo.itemid = item.itemid
+                            auctionInfo.vendorprice = vendorPrice
+                            auctionInfo.category = itemType
+                            auctionInfo.class = itemSubType
+                            print(XUI.Green .. 'Updated from itemid success')
+                        end
+                    else
+                        print('Update from itemname')
+                        local tname, itemLink, _, _, _, itemType,
+                        itemSubType, _, _, _, vendorPrice = GetItemInfo(itemName)
+                        if tname then
+                            local itemId = GetItemInfoInstant(itemLink)
+
+                            item.itemid = itemId
+                            item.vendorprice = vendorPrice
+                            item.category = itemType
+                            item.class = itemSubType
+
+                            auctionInfo.itemid = item.itemid
+                            auctionInfo.vendorprice = vendorPrice
+                            auctionInfo.category = itemType
+                            auctionInfo.class = itemSubType
+                            print(XUI.Green .. 'Updated from itemnamesuccess')
+                        end
+                    end
+                end
+            else
+                print('AuctionInfo not exist')
+                if item.itemid and item.itemid > 0 then
+                    print('Update from itemid')
+                    local tname, itemLink, _, _, _, itemType,
+                    itemSubType, _, _, _, vendorPrice = GetItemInfo(item.itemid)
+                    if tname then
+                        item.vendorprice = vendorPrice
+                        item.category = itemType
+                        item.class = itemSubType
+                        print(XUI.Green .. 'Update from itemid success')
+                    end
+                else
+                    print('Update from itemname')
+                    local tname, itemLink, _, _, _, itemType,
+                    itemSubType, _, _, _, vendorPrice = GetItemInfo(itemName)
+                    if tname then
+                        local itemId = GetItemInfoInstant(itemLink)
+
+                        item.itemid = itemId
+                        item.vendorprice = vendorPrice
+                        item.category = itemType
+                        item.class = itemSubType
+                        print(XUI.Green .. 'Update from itemname success')
+                    end
+                end
+            end
+        end
+    end
+end
+
+local function onItemInfoReceived(self, event, itemID, success)
+    print('ItemInfo received')
+
+    local itemName, itemLink, _, _, _, itemType,
+    itemSubType, _, _, _, vendorPrice = GetItemInfo(itemID)
+    print(itemName)
+    if itemName then
+        if XScanList and XScanList[itemName] then
+            local item = XScanList[itemName]
+            item.itemid = itemID
+            item.vendorprice = vendorPrice
+            item.category = itemType
+            item.class = itemSubType
+            print(XUI.Green .. 'ScanInfo updated from callback')
+        end
+
+        local auctionInfo = XInfo.getAuctionInfo(itemName)
+        if auctionInfo then
+            auctionInfo.itemid = itemID
+            auctionInfo.vendorprice = vendorPrice
+            auctionInfo.category = itemType
+            auctionInfo.class = itemSubType
+            print(XUI.Green .. 'AuctionInfo updated callback')
+        end
+    end
+end
+
 -- Events
 XAutoAuction.registerEventCallback(moduleName, 'ADDON_LOADED', function()
     XInfo.reloadBag()
 end)
 
 XAutoAuction.registerEventCallback(moduleName, 'BAG_UPDATE', XInfo.reloadBag)
+
+XAutoAuction.registerEventCallback(moduleName, 'GET_ITEM_INFO_RECEIVED', onItemInfoReceived)
+
+XAutoAuction.registerUpdateCallback(moduleName, onUpdate)
 
 XAutoAuction.registerRefreshCallback(moduleName, function()
     XInfo.reloadBag()

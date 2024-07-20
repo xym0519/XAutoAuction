@@ -11,14 +11,20 @@ XFrameLevel = 10
 
 -- Register system events
 XAutoAuctionFrame:RegisterEvent('ADDON_LOADED')
-XAutoAuctionFrame:RegisterEvent('AUCTION_ITEM_LIST_UPDATE')
-XAutoAuctionFrame:RegisterEvent('CHAT_MSG_SYSTEM')
+
 XAutoAuctionFrame:RegisterEvent('AUCTION_HOUSE_CLOSED')
 XAutoAuctionFrame:RegisterEvent('AUCTION_HOUSE_SHOW')
+XAutoAuctionFrame:RegisterEvent('AUCTION_ITEM_LIST_UPDATE')
+
+XAutoAuctionFrame:RegisterEvent('CHAT_MSG_SYSTEM')
+
 XAutoAuctionFrame:RegisterEvent('BAG_UPDATE')
+XAutoAuctionFrame:RegisterEvent('GET_ITEM_INFO_RECEIVED')
+
 XAutoAuctionFrame:RegisterEvent('UNIT_SPELLCAST_SUCCEEDED')
 XAutoAuctionFrame:RegisterEvent('UNIT_SPELLCAST_FAILED')
 XAutoAuctionFrame:RegisterEvent('UNIT_SPELLCAST_INTERRUPTED')
+
 XAutoAuctionFrame:RegisterEvent('PLAYER_MONEY')
 
 -- Event registion interface

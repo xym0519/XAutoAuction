@@ -408,10 +408,12 @@ local function onUpdate()
             local queryBuyoutCount = 0
             local queryBidCount = 0
             while true do
-                local itemName, _, stackCount, _, _, _, _, bidStart, bidIncrease, buyoutPrice, bidPrice, isMine, _, seller =
+                local itemName, _, stackCount, _, _, _, _, bidStart, bidIncrease, buyoutPrice, bidPrice, isMine, _, seller, _, _, itemId =
                     GetAuctionItemInfo('list', index)
 
                 if not itemName then break end
+
+                XExternal.addScanHistory(itemName, itemId, time(), buyoutPrice)
 
                 local nextBidPrice = 0
                 if bidPrice == 0 then

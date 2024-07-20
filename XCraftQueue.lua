@@ -149,7 +149,6 @@ initUI = function()
         local auctionButton = XUI.createButton(frame, 20, 'A')
         auctionButton:SetPoint('LEFT', priceButton, 'RIGHT', 1, 0)
         auctionButton:SetScript('OnClick', function()
-            -- TODO check XAuctionCenter
             local idx = displayPageNo * displayPageSize + i
             if idx <= #craftQueue then
                 XAuctionCenter.addQueryTaskByItemName(craftQueue[idx]['itemname'])
@@ -191,7 +190,7 @@ refreshUI = function()
             if materialBagItem then
                 materialCountNum = materialBagItem['totalcount']
             end
-            local materialCount = XUI.getColor_BagCount(materialCountNum).. XUtils.formatCount(materialCountNum, 2)
+            local materialCount = XUI.getColor_BagCount(materialCountNum) .. XUtils.formatCount(materialCountNum, 2)
 
             local itemBag = XInfo.getBagItem(item['itemname'])
             local bagTotalCount = 0
@@ -336,11 +335,6 @@ end)
 XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_CLOSED', function(self, event, text, context)
     if mainFrame then mainFrame:Hide() end
 end)
-
--- TODO
--- XAutoAuction.registerActionCallback(moduleName, function()
---     start()
--- end)
 
 XAutoAuction.registerRefreshCallback(moduleName, refreshUI);
 
