@@ -211,7 +211,7 @@ XInfo.allHistory = 2
 
 -- Event callback
 local lastUpdateTime = 0
-local dft_interval = 5
+local dft_interval = 3
 local function onUpdate()
     if not XScanList then return end
     if time() - lastUpdateTime < dft_interval then return end
@@ -219,16 +219,13 @@ local function onUpdate()
 
     for itemName, item in pairs(XScanList) do
         if not item.category or item.category == '' then
-            print(XUI.Red .. 'Found a new Item: ' .. itemName)
             local auctionInfo = XInfo.getAuctionInfo(itemName)
             if auctionInfo then
-                print('AuctionInfo existed')
                 if auctionInfo.category and auctionInfo.category ~= '' then
                     item.itemid = auctionInfo.itemid
                     item.category = auctionInfo.category
                     item.class = auctionInfo.class
                     item.vendorprice = auctionInfo.vendorprice
-                    print(XUI.Green .. 'Updated from auction info')
                 else
                     if item.itemid and item.itemid > 0 then
                         print('Update from itemid')
@@ -297,12 +294,10 @@ local function onUpdate()
 end
 
 local function onItemInfoReceived(self, event, itemID, success)
-    print('ItemInfo received')
-
     local itemName, itemLink, _, _, _, itemType,
     itemSubType, _, _, _, vendorPrice = GetItemInfo(itemID)
-    print(itemName)
     if itemName then
+        print('ItemInfo received: ' .. itemName)
         if XScanList and XScanList[itemName] then
             local item = XScanList[itemName]
             item.itemid = itemID
