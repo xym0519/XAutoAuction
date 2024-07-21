@@ -227,16 +227,16 @@ local function onUpdate()
                 if tname then
                     if tname == itemName then
                         XExternal.updateItemInfo(itemName, item.itemid, itemType, itemSubType, vendorPrice)
-                        print(XUI.Green .. 'Item updated from onupdate: ' .. itemName)
+                        -- print(XUI.Green .. 'Item updated from onupdate: ' .. itemName)
                     else
                         XExternal.updateItemInfo(tname, item.itemid, itemType, itemSubType, vendorPrice)
                         XItemUpdateList[itemName] = nil
-                        print(XUI.Green .. 'Item updated from onupdate: ' .. tname)
-                        print(XUI.Red .. 'Item removed from onupdate: ' .. itemName)
+                        -- print(XUI.Green .. 'Item updated from onupdate: ' .. tname)
+                        -- print(XUI.Red .. 'Item removed from onupdate: ' .. itemName)
                     end
                 else
                     XItemUpdateList[itemName] = nil
-                    print(XUI.Red .. 'Item removed from onupdate: ' .. itemName)
+                    -- print(XUI.Red .. 'Item removed from onupdate: ' .. itemName)
                 end
             end
         else
@@ -247,20 +247,20 @@ local function onUpdate()
                 if itemId then
                     if tname == itemName then
                         XExternal.updateItemInfo(itemName, itemId, itemType, itemSubType, vendorPrice)
-                        print(XUI.Green .. 'Item updated from onupdate: ' .. itemName)
+                        -- print(XUI.Green .. 'Item updated from onupdate: ' .. itemName)
                     else
                         XExternal.updateItemInfo(tname, itemId, itemType, itemSubType, vendorPrice)
                         XItemUpdateList[itemName] = nil
-                        print(XUI.Green .. 'Item updated from onupdate: ' .. tname)
-                        print(XUI.Red .. 'Item removed from onupdate: ' .. itemName)
+                        -- print(XUI.Green .. 'Item updated from onupdate: ' .. tname)
+                        -- print(XUI.Red .. 'Item removed from onupdate: ' .. itemName)
                     end
                 else
                     XItemUpdateList[itemName] = nil
-                    print(XUI.Red .. 'Item removed from onupdate: ' .. itemName)
+                    -- print(XUI.Red .. 'Item removed from onupdate: ' .. itemName)
                 end
             else
                 XItemUpdateList[itemName] = nil
-                print(XUI.Red .. 'Item removed from onupdate: ' .. itemName)
+                -- print(XUI.Red .. 'Item removed from onupdate: ' .. itemName)
             end
         end
     end
@@ -271,7 +271,7 @@ local function onItemInfoReceived(self, event, itemID, success)
     itemSubType, _, _, _, vendorPrice = GetItemInfo(itemID)
     if itemName then
         XExternal.updateItemInfo(itemName, itemID, itemType, itemSubType, vendorPrice)
-        print(XUI.Green .. 'Item updated from event: ' .. itemName)
+        -- print(XUI.Green .. 'Item updated from event: ' .. itemName)
     end
 end
 
