@@ -235,9 +235,9 @@ XAutoAuction.registerEventCallback(moduleName, 'CHAT_MSG_SYSTEM', function(self,
     end
 end)
 
-XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_SHOW', function(self, event, text, context)
-    if mainFrame then mainFrame:Show() end
-end)
+-- XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_SHOW', function(self, event, text, context)
+--     if mainFrame then mainFrame:Show() end
+-- end)
 
 XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_CLOSED', function(self, event, text, context)
     if mainFrame then mainFrame:Hide() end

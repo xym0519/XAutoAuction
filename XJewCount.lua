@@ -129,9 +129,9 @@ XAutoAuction.registerEventCallback(moduleName, 'ADDON_LOADED', function()
     refreshUI()
 end)
 
-XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_SHOW', function()
-    if mainFrame then mainFrame:Show() end
-end)
+-- XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_SHOW', function()
+--     if mainFrame then mainFrame:Show() end
+-- end)
 
 XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_CLOSED', function()
     if mainFrame then mainFrame:Hide() end

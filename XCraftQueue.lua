@@ -3,7 +3,6 @@ local moduleName = 'XCraftQueue'
 
 -- Variable definition
 local mainFrame
-local largeStartButton
 
 local craftQueue = {}
 local displayPageNo = 0
@@ -19,15 +18,6 @@ local addItem
 
 -- Function implemention
 initUI = function()
-    largeStartButton = XUI.createButton(UIParent, 70, '开始')
-    largeStartButton:SetHeight(70)
-    largeStartButton:SetPoint('BOTTOMRIGHT', UIParent, 'BOTTOMRIGHT', -15, 30)
-    largeStartButton:SetScript('OnClick', function()
-        start()
-        refreshUI()
-    end)
-    largeStartButton:Hide()
-
     mainFrame = XUI.createFrame('XCraftQueueMainFrame', 265, 430)
     mainFrame.title:SetText('制造队列')
     mainFrame:SetPoint('LEFT', UIParent, 'LEFT', 0, 0)
@@ -165,18 +155,10 @@ refreshUI = function()
 
     mainFrame.title:SetText('制造队列  (' .. #craftQueue .. ')');
 
-    if #craftQueue > 0 then
-        largeStartButton:Show()
-    else
-        largeStartButton:Hide()
-    end
-
     if isCrafting then
         mainFrame.startButton:SetText('停')
-        largeStartButton:SetText('停止')
     else
         mainFrame.startButton:SetText('起')
-        largeStartButton:SetText('开始')
     end
 
     for i = 1, displayPageSize do
@@ -328,9 +310,9 @@ XAutoAuction.registerEventCallback(moduleName, 'UNIT_SPELLCAST_INTERRUPTED', fun
     onFailed(context)
 end)
 
-XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_SHOW', function(self, event, text, context)
-    if mainFrame then mainFrame:Show() end
-end)
+-- XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_SHOW', function(self, event, text, context)
+--     if mainFrame then mainFrame:Show() end
+-- end)
 
 XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_CLOSED', function(self, event, text, context)
     if mainFrame then mainFrame:Hide() end

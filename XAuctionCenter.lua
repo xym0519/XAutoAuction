@@ -1479,10 +1479,10 @@ end)
 
 XAutoAuction.registerEventCallback(moduleName, 'AUCTION_ITEM_LIST_UPDATE', onQueryItemListUpdate)
 
-XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_SHOW', function(self, event, text, context)
-    stop()
-    if mainFrame then mainFrame:Show() end
-end)
+-- XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_SHOW', function(self, event, text, context)
+--     stop()
+--     if mainFrame then mainFrame:Show() end
+-- end)
 
 XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_CLOSED', function(self, event, text, context)
     stop()
