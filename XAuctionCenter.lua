@@ -11,7 +11,7 @@ local dft_lowestPriceRate = 1.5
 local dft_roundInterval = 3
 local dft_taskInterval = 1
 local dft_taskTimeout = 30
-local dft_filterList = { '全部', '可售', '优质', '价低' }
+local dft_filterList = { '全部', '可售', '优质', '价低', '有效' }
 local dft_deltaPrice = 10
 
 local dft_buttonWidth = 45
@@ -230,7 +230,7 @@ initUI = function()
         refreshUI()
     end)
 
-    local filterDropDown = XUI.createDropDown(mainFrame, 80, dft_filterList, '全部',
+    local filterDropDown = XUI.createDropDown(mainFrame, 80, dft_filterList, '有效',
         function(value) refreshUI() end)
     filterDropDown:SetPoint('LEFT', filterResetButton, 'RIGHT', -15, 0)
     mainFrame.filterDropDown = filterDropDown
@@ -649,6 +649,10 @@ refreshUI = function()
                     if minPriceOther <= materialPrice then
                         disFlag = true
                     end
+                end
+            elseif displayFilter == '有效' then
+                if enabled then
+                    disFlag = true
                 end
             end
 
