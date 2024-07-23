@@ -199,6 +199,7 @@ end
 
 -- type: add, reset, fulfil
 addItem = function(itemName, count, type)
+    count = tonumber(count)
     if count == nil then count = 1 end
     if type == nil then type = 'add' end
     local found = false

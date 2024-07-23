@@ -100,7 +100,7 @@ end
 
 initUI = function()
     if debug then print('initUI') end
-    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 905, 430)
+    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 935, 430)
     mainFrame:SetFrameStrata('HIGH')
     mainFrame.title:SetText('自动拍卖')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
@@ -349,12 +349,12 @@ initUI = function()
             local item = XAutoAuctionList[idx];
             if not item then return end
 
-            XUIInputDialog.show('XAuctionCenter_Craft', function(input)
+            XUIInputDialog.show(moduleName, function(input)
                 local itemName = item['itemname']
-                local count = tonumber(input)
+                local count = input[1].Value
                 XCraftQueue.addItem(itemName, count, 'fulfil')
                 XCraftQueue.start()
-            end, item['stackcount'], item['itemname'])
+            end, { { Name = '数量', Value = item['stackcount'] } }, item['itemname'])
         end)
         frame.itemNameButton = itemNameButton
 
@@ -497,6 +497,20 @@ initUI = function()
             if not item then return end
 
             addQueryTaskByIndex(idx)
+        end)
+
+        local viewButton = XUI.createButton(frame, 30, '看')
+        viewButton:SetPoint('LEFT', itemRefreshButton, 'RIGHT', 0, 0)
+        viewButton:SetScript('OnClick', function(self)
+            local idx = displayPageNo * displayPageSize + i
+            local item = XAutoAuctionList[idx];
+            if not item then return end
+
+            local auctionInfo = XInfo.getAuctionInfo(item['itemname'])
+            if not auctionInfo then return end
+            local itemLink = select(2, GetItemInfo(auctionInfo['itemid']))
+            print('----------AuctionInfo----------')
+            print(itemLink)
         end)
 
         table.insert(displayFrameList, frame)
