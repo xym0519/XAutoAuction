@@ -1201,6 +1201,30 @@ local function onUpdate()
 
     if curTask then
         if curTask['action'] == 'auction' then
+            local index = curTask['index']
+            local item = XAutoAuctionList[index]
+            if not item then
+                finishTask()
+                refreshUI()
+                return
+            end
+
+            if GetAuctionSellItemInfo() ~= item['itemname'] then
+                finishTask()
+                refreshUI()
+                return
+            end
+
+            -- PostAuction(startPrice, buyoutPrice, duration, stackSize, stacks)
+            local price = curTask['price']
+            local count = curTask['count']
+
+            PostAuction(price, price, 1, 1, count)
+
+            for _ = 1, count do
+                table.insert(item['myvalidlist'], price)
+            end
+
             finishTask()
             refreshUI()
             return
@@ -1352,8 +1376,6 @@ local function onUpdate()
             isTasking = true
             curTask['starttime'] = time()
 
-            local price = curTask['price']
-            local count = curTask['count']
             local index = curTask['index']
 
             local item = XAutoAuctionList[index]
@@ -1377,19 +1399,6 @@ local function onUpdate()
             ClearCursor()
             C_Container.PickupContainerItem(position[1], position[2])
             ClickAuctionSellItemButton()
-
-            if GetAuctionSellItemInfo() == nil then
-                finishTask()
-                refreshUI()
-                return
-            end
-
-            -- PostAuction(startPrice, buyoutPrice, duration, stackSize, stacks)
-            PostAuction(price, price, 1, 1, count)
-
-            for _ = 1, count do
-                table.insert(item['myvalidlist'], price)
-            end
 
             refreshUI()
             return
