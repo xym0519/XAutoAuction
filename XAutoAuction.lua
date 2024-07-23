@@ -51,7 +51,7 @@ end
 
 -- Update cycle per second
 local lastUpdateTime = 0
-XAutoAuctionFrame:SetScript('OnUpdate', function()
+local onUpdate = function()
     local currentTime = time()
     if currentTime - lastUpdateTime < 1 then
         return
@@ -62,7 +62,9 @@ XAutoAuctionFrame:SetScript('OnUpdate', function()
             callback()
         end
     end
-end)
+end
+
+-- XAutoAuctionFrame:SetScript('OnUpdate', onUpdate)
 
 -- Event listener
 XAutoAuctionFrame:SetScript('OnEvent', function(self, event, text, context)
@@ -104,3 +106,6 @@ SlashCmdList['XAUTOAUCTIONREFRESH'] = function()
     XAutoAuction.refreshUI()
 end
 SLASH_XAUTOAUCTIONREFRESH1 = '/xautoauction_refresh'
+
+SlashCmdList['XAUTOAUCTIONUPDATE'] = onUpdate
+SLASH_XAUTOAUCTIONUPDATE1 = '/xautoauction_update'
