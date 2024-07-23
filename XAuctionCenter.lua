@@ -611,6 +611,8 @@ refreshUI = function()
             local dealRate = XInfo.getAuctionInfoField(itemName, 'dealrate', 99)
             local dealCount = XInfo.getAuctionInfoField(itemName, 'dealcount', 0)
 
+            local recipe = XInfo.getTradeSkillItem(itemName)
+
             local disFlag = false
             if displayFilter == '全部' then
                 disFlag = true
@@ -642,9 +644,6 @@ refreshUI = function()
 
             if disFlag then
                 local itemNameStr = string.sub(itemName, 1, 18);
-                if star then
-                    itemNameStr = '*' .. itemNameStr
-                end
                 if enabled then
                     if minPriceCount > 0 then
                         itemNameStr = XUI.Green .. itemNameStr
@@ -653,6 +652,14 @@ refreshUI = function()
                     end
                 else
                     itemNameStr = XUI.Gray .. itemNameStr
+                end
+
+                if star then
+                    itemNameStr = XUI.Green .. '*' .. itemNameStr
+                end
+
+                if not recipe then
+                    itemNameStr = itemNameStr .. XUI.Green .. '-'
                 end
 
                 local updateTimeStr = XUtils.formatTime(item['updatetime'])

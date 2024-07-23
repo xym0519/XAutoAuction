@@ -72,7 +72,7 @@ XUtils.itemIDfromLink = function(itemLink)
     local found, _, itemString = string.find(itemLink, '^|c%x+|H(.+)|h%[.*%]')
     local _, itemId, _, _, _, _, _, suffixId, uniqueId = strsplit(':', itemString)
 
-    return itemId, suffixId, uniqueId;
+    return tonumber(itemId), tonumber(suffixId), tonumber(uniqueId);
 end
 
 XUtils.priceToMoneyString = function(money, noZeroCoppers)

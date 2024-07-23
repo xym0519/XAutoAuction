@@ -6,7 +6,7 @@ local mainFrame = nil
 local settingFrame = nil
 local editFrame = nil
 
-local dft_interval = 100
+local dft_interval = 600
 local dft_buttonWidth = 60
 local dft_buttonGap = 1
 
