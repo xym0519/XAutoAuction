@@ -49,6 +49,16 @@ GameTooltip:HookScript('OnTooltipSetItem', function(self)
             self:AddDoubleLine('配方:', XUI.Red .. '未学')
         end
     end
+    local recipePrefix = '图鉴：'
+    if XUtils.stringContains(itemName, recipePrefix) then
+        local tItemName = string.sub(itemName, #recipePrefix + 1)
+        local tradeSkillItem = XInfo.getTradeSkillItem(tItemName)
+        if tradeSkillItem then
+            self:AddDoubleLine('配方:', XUI.Green .. '已学')
+        else
+            self:AddDoubleLine('配方:', XUI.Red .. '未学')
+        end
+    end
 
     self:AddDoubleLine(dealRateColor .. '成交几率:', dealRateColor .. dealRate .. '次')
     self:AddDoubleLine(dealCountColor .. '成交次数:', dealCountColor .. dealCount .. '次')
