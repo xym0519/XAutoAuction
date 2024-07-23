@@ -239,6 +239,7 @@ initUI = function()
     filterBox:SetPoint('LEFT', filterDropDown, 'RIGHT', -5, 0)
     filterBox:SetScript('OnEnterPressed', function(self)
         self:ClearFocus();
+        displayPageNo = 0
         refreshUI()
     end)
     filterBox:SetScript('OnEscapePressed', function(self)
@@ -333,19 +334,19 @@ initUI = function()
 
         local itemIndexButton = XUI.createButton(frame, 35, '999')
         itemIndexButton:SetPoint('LEFT', frame, 'LEFT', 15, 0)
-        itemIndexButton:SetScript('OnClick', function()
-            local idx = displayPageNo * displayPageSize + i
-
+        itemIndexButton:SetScript('OnClick', function(self)
+            local idx = self.frame.index
             XUISortDialog.show('XAuctionCenter_Sort', XAutoAuctionList, idx, function()
                 refreshUI()
             end)
         end)
         frame.itemIndexButton = itemIndexButton
+        itemIndexButton.frame = frame
 
         local itemNameButton = XUI.createButton(frame, 160, '')
         itemNameButton:SetPoint('LEFT', itemIndexButton, 'RIGHT', 0, 0)
-        itemNameButton:SetScript('OnClick', function()
-            local idx = displayPageNo * displayPageSize + i
+        itemNameButton:SetScript('OnClick', function(self)
+            local idx = self.frame.index
             local item = XAutoAuctionList[idx];
             if not item then return end
 
@@ -357,6 +358,7 @@ initUI = function()
             end, { { Name = '数量', Value = item['stackcount'] } }, item['itemname'])
         end)
         frame.itemNameButton = itemNameButton
+        itemNameButton.frame = frame
 
         local labelTime = XUI.createLabel(frame, 50, '')
         labelTime:SetPoint('LEFT', itemNameButton, 'RIGHT', 3, 0)
@@ -380,8 +382,8 @@ initUI = function()
 
         local deleteButton = XUI.createButton(frame, 30, '删')
         deleteButton:SetPoint('LEFT', labelPrice, 'RIGHT', 0, 0)
-        deleteButton:SetScript('OnClick', function()
-            local idx = displayPageNo * displayPageSize + i
+        deleteButton:SetScript('OnClick', function(self)
+            local idx = self.frame.index
             local titem = XAutoAuctionList[idx]
             if idx <= #XAutoAuctionList then
                 XUIConfirmDialog.show(moduleName, '删除', '是否确定删除：' .. titem['itemname'], function()
@@ -390,11 +392,12 @@ initUI = function()
                 end)
             end
         end)
+        deleteButton.frame = frame
 
         local cleanButton = XUI.createButton(frame, 30, '清')
         cleanButton:SetPoint('LEFT', deleteButton, 'RIGHT', 0, 0)
-        cleanButton:SetScript('OnClick', function()
-            local idx = displayPageNo * displayPageSize + i
+        cleanButton:SetScript('OnClick', function(self)
+            local idx = self.frame.index
             local item = XAutoAuctionList[idx];
             if not item then return end
             XInfo.reloadBag()
@@ -409,14 +412,15 @@ initUI = function()
             XInfo.reloadBag()
             XInfo.reloadAuction()
         end)
+        cleanButton.frame = frame
 
         local lowestButton = XUI.createButton(frame, 30, '底')
         lowestButton:SetPoint('LEFT', cleanButton, 'RIGHT', 0, 0)
-        lowestButton:SetScript('OnClick', function()
+        lowestButton:SetScript('OnClick', function(self)
+            local idx = self.frame.index
             XUIConfirmDialog.show(moduleName, '确认', '是否确认重设低价', function()
                 XInfo.reloadBag()
                 XInfo.reloadAuction()
-                local idx = displayPageNo * displayPageSize + i
                 local item = XAutoAuctionList[idx];
                 if not item then return end
                 local lowestPrice = XInfo.getAuctionInfoField(item['itemname'], 'lowestprice', 9999999, 1)
@@ -426,11 +430,12 @@ initUI = function()
                 refreshUI()
             end)
         end)
+        lowestButton.frame = frame
 
         local craftButton = XUI.createButton(frame, 30, '设')
         craftButton:SetPoint('LEFT', lowestButton, 'RIGHT', 0, 0)
-        craftButton:SetScript('OnClick', function()
-            local idx = displayPageNo * displayPageSize + i
+        craftButton:SetScript('OnClick', function(self)
+            local idx = self.frame.index
             displaySettingItem = XAutoAuctionList[idx]
             if not displaySettingItem then return end
 
@@ -458,11 +463,12 @@ initUI = function()
                 { Name = '拍卖数量', Value = displaySettingItem['stackcount'] }
             }, '添加')
         end)
+        craftButton.frame = frame
 
         local enableButton = XUI.createButton(frame, 30, '')
         enableButton:SetPoint('LEFT', craftButton, 'RIGHT', 0, 0)
         enableButton:SetScript('OnClick', function(self)
-            local idx = displayPageNo * displayPageSize + i
+            local idx = self.frame.index
             local item = XAutoAuctionList[idx];
             if not item then return end
             if item['enabled'] ~= true then
@@ -473,11 +479,12 @@ initUI = function()
             refreshUI()
         end)
         frame.enableButton = enableButton
+        enableButton.frame = frame
 
         local starButton = XUI.createButton(frame, 30, '星')
         starButton:SetPoint('LEFT', enableButton, 'RIGHT', 0, 0)
         starButton:SetScript('OnClick', function(self)
-            local idx = displayPageNo * displayPageSize + i
+            local idx = self.frame.index
             local item = XAutoAuctionList[idx];
             if not item then return end
             if item['star'] == nil or item['star'] == false then
@@ -488,21 +495,23 @@ initUI = function()
             refreshUI()
         end)
         frame.starButton = starButton
+        startButton.frame = frame
 
         local itemRefreshButton = XUI.createButton(frame, 30, '刷')
         itemRefreshButton:SetPoint('LEFT', starButton, 'RIGHT', 0, 0)
         itemRefreshButton:SetScript('OnClick', function(self)
-            local idx = displayPageNo * displayPageSize + i
+            local idx = self.frame.index
             local item = XAutoAuctionList[idx];
             if not item then return end
 
             addQueryTaskByIndex(idx)
         end)
+        itemRefreshButton.frame = frame
 
         local viewButton = XUI.createButton(frame, 30, '看')
         viewButton:SetPoint('LEFT', itemRefreshButton, 'RIGHT', 0, 0)
         viewButton:SetScript('OnClick', function(self)
-            local idx = displayPageNo * displayPageSize + i
+            local idx = self.frame.index
             local item = XAutoAuctionList[idx];
             if not item then return end
 
@@ -512,6 +521,7 @@ initUI = function()
             print('----------AuctionInfo----------')
             print(itemLink)
         end)
+        viewButton.frame = frame
 
         table.insert(displayFrameList, frame)
         lastWidget = frame
@@ -528,11 +538,6 @@ refreshUI = function()
 
     XInfo.reloadBag()
     XInfo.reloadAuction()
-
-    mainFrame.title:SetText('自动拍卖 (' .. (displayPageNo + 1) .. '/'
-        .. (math.ceil(#XAutoAuctionList / displayPageSize)) .. ')    Querying: '
-        .. queryIndex .. '    StarQuerying: ' .. starQueryIndex .. '    Round: ' .. queryRound
-        .. '    Queue: ' .. #taskList .. '    EmptyBag: ' .. XInfo.emptyBagCount)
 
     if fastAuction then
         mainFrame.fastAuctionButton:SetText('快速')
@@ -588,17 +593,72 @@ refreshUI = function()
 
     local filterWord = mainFrame.filterBox:GetText();
     local displayFilter = UIDropDownMenu_GetText(mainFrame.filterDropDown)
+    local dataList = {}
+    for i, item in ipairs(XAutoAuctionList) do
+        item.index = i
+        local itemName = item['itemname']
+        local enabled = item['enabled']
+        if enabled == nil then enabled = false end
+        local star = item['star']
+        if star == nil then star = false end
+        local minPriceOther = item['minpriceother']
+        local lowestPrice = item['lowestprice']
+        local materialPrice = getMaterialPrice(itemName)
+
+        local dealCount = XInfo.getAuctionInfoField(itemName, 'dealcount', 0)
+
+        local disFlag = false
+        if displayFilter == '全部' then
+            disFlag = true
+        elseif displayFilter == '可售' then
+            if enabled then
+                if star or minPriceOther >= lowestPrice then
+                    disFlag = true
+                end
+            end
+        elseif displayFilter == '优质' then
+            if enabled then
+                if star or minPriceOther >= lowestPrice then
+                    if dealCount > 20 then
+                        disFlag = true
+                    end
+                end
+            end
+        elseif displayFilter == '价低' then
+            if enabled then
+                if minPriceOther <= materialPrice then
+                    disFlag = true
+                end
+            end
+        elseif displayFilter == '有效' then
+            if enabled then
+                disFlag = true
+            end
+        end
+
+        if filterWord ~= '' and not XUtils.stringContains(itemName, filterWord) then
+            disFlag = false
+        end
+
+        if disFlag then table.insert(dataList, item) end
+    end
+
+    mainFrame.title:SetText('自动拍卖 (' .. (displayPageNo + 1) .. '/'
+        .. (math.ceil(#dataList / displayPageSize)) .. ')    Querying: '
+        .. queryIndex .. '    StarQuerying: ' .. starQueryIndex .. '    Round: ' .. queryRound
+        .. '    Queue: ' .. #taskList .. '    EmptyBag: ' .. XInfo.emptyBagCount)
+
     for i = 1, displayPageSize do
         local frame = displayFrameList[i]
         local idx = displayPageNo * displayPageSize + i
-        if idx <= #XAutoAuctionList then
-            local item = XAutoAuctionList[idx]
+        if idx <= #dataList then
+            local item = dataList[idx]
+            frame.index = item.index
             local itemName = item['itemname']
             local enabled = item['enabled']
             if enabled == nil then enabled = false end
             local star = item['star']
             if star == nil then star = false end
-            local minPriceOther = item['minpriceother']
             local lowestPrice = item['lowestprice']
             local minPrice = item['minprice']
             local minPriceCount = 0
@@ -607,7 +667,6 @@ refreshUI = function()
             local lowerCount = item['lowercount']
             local allCount = item['allcount']
             local materialCount = getMaterialCount(itemName)
-            local materialPrice = getMaterialPrice(itemName)
 
             local itemBag = XInfo.getBagItem(itemName)
             local bagCount = 0
@@ -627,142 +686,106 @@ refreshUI = function()
 
             local recipe = XInfo.getTradeSkillItem(itemName)
 
-            local disFlag = false
-            if displayFilter == '全部' then
-                disFlag = true
-            elseif displayFilter == '可售' then
-                if enabled then
-                    if star or minPriceOther >= lowestPrice then
-                        disFlag = true
-                    end
-                end
-            elseif displayFilter == '优质' then
-                if enabled then
-                    if star or minPriceOther >= lowestPrice then
-                        if dealCount > 20 then
-                            disFlag = true
-                        end
-                    end
-                end
-            elseif displayFilter == '价低' then
-                if enabled then
-                    if minPriceOther <= materialPrice then
-                        disFlag = true
-                    end
-                end
-            elseif displayFilter == '有效' then
-                if enabled then
-                    disFlag = true
-                end
-            end
 
-            if filterWord ~= '' and not XUtils.stringContains(itemName, filterWord) then
-                disFlag = false
-            end
-
-            if disFlag then
-                local itemNameStr = string.sub(itemName, 1, 18);
-                if enabled then
-                    if minPriceCount > 0 then
-                        itemNameStr = XUI.Green .. itemNameStr
-                    else
-                        itemNameStr = XUI.Red .. itemNameStr
-                    end
+            local itemNameStr = string.sub(itemName, 1, 18);
+            if enabled then
+                if minPriceCount > 0 then
+                    itemNameStr = XUI.Green .. itemNameStr
                 else
-                    itemNameStr = XUI.Gray .. itemNameStr
+                    itemNameStr = XUI.Red .. itemNameStr
                 end
-
-                if star then
-                    itemNameStr = XUI.Green .. '*' .. itemNameStr
-                end
-
-                if not recipe then
-                    itemNameStr = itemNameStr .. XUI.Green .. '-'
-                end
-
-                local updateTimeStr = XUtils.formatTime(item['updatetime'])
-
-                local bagCountStr = XUI.getColor_BagStackCount(bagCount, stackCount) ..
-                    'B' .. XUtils.formatCount(bagCount, 1)
-
-                local materialCountStr = 'M' .. XUtils.formatCount2(materialCount)
-
-                local auctionCountStr = XUI.getColor_AuctionStackCount(auctionCount, stackCount) ..
-                    'A' .. XUtils.formatCount(auctionCount, 1)
-
-                local minPriceCountStr = XUI.getColor_AuctionStackCount(minPriceCount, stackCount) ..
-                    'M' .. XUtils.formatCount(minPriceCount, 1)
-
-                local bagAuctionCountStr = XUI.getColor_BagStackCount(bagAuctionCount, stackCount) ..
-                    'T' .. XUtils.formatCount(bagAuctionCount, 2)
-
-                local lowerCountStr = 'L' .. XUtils.formatCount(lowerCount)
-                if lowerCount > 5 then
-                    lowerCountStr = XUI.Red .. lowerCountStr
-                elseif lowerCount > 0 then
-                    lowerCountStr = XUI.Yellow .. lowerCountStr
-                else
-                    lowerCountStr = XUI.White .. lowerCountStr
-                end
-
-                local allCountStr = 'G' .. XUtils.formatCount(allCount)
-                if allCount > 20 then
-                    allCountStr = XUI.Red .. allCountStr
-                elseif allCount > 10 then
-                    allCountStr = XUI.Yellow .. allCountStr
-                else
-                    allCountStr = XUI.Green .. allCountStr
-                end
-
-                local stackCountStr = 'S' .. XUtils.formatCount(stackCount, 1)
-                if stackCount > 2 then
-                    stackCountStr = XUI.Cyan .. stackCountStr
-                elseif stackCount > 1 then
-                    stackCountStr = XUI.Green .. stackCountStr
-                end
-
-                local minPriceStr = XUtils.priceToString(minPrice)
-                if minPrice < lowestPrice then
-                    minPriceStr = XUI.Red .. minPriceStr
-                elseif minPrice < lowestPrice * dft_lowestPriceRate then
-                    minPriceStr = XUI.Yellow .. minPriceStr
-                elseif minPrice < lowestPrice * dft_lowestPriceRate * dft_lowestPriceRate then
-                    minPriceStr = XUI.Green .. minPriceStr
-                else
-                    minPriceStr = XUI.Cyan .. minPriceStr
-                end
-
-                local lowestPriceStr = XUI.White .. XUtils.priceToString(lowestPrice)
-
-                local dealRateStr = XUI.getColor_DealRate(dealRate) .. 'R' .. XUtils.formatCount(XUtils.round(dealRate))
-                local dealCountStr = XUI.getColor_DealCount(dealCount) .. 'D' .. XUtils.formatCount(dealCount)
-
-                frame.itemIndexButton:SetText(idx)
-                frame.itemNameButton:SetText(itemNameStr)
-
-                frame.labelTime:SetText(updateTimeStr)
-                frame.labelBag:SetText(bagCountStr .. XUI.White .. '/' .. bagAuctionCountStr
-                    .. XUI.White .. '/' .. materialCountStr .. XUI.White .. '/' .. stackCountStr)
-                frame.labelAuction:SetText(auctionCountStr .. XUI.White .. '/' .. minPriceCountStr
-                    .. XUI.White .. '/' .. lowerCountStr .. XUI.White .. '/' .. allCountStr)
-                frame.labelDeal:SetText(dealRateStr .. XUI.White .. '/' .. dealCountStr)
-                frame.labelPrice:SetText(minPriceStr .. XUI.White .. '/' .. lowestPriceStr)
-
-                if enabled then
-                    frame.enableButton:SetText(XUI.Green .. '起')
-                else
-                    frame.enableButton:SetText(XUI.Red .. '停')
-                end
-
-                if star then
-                    frame.starButton:SetText(XUI.Green .. '星')
-                else
-                    frame.starButton:SetText(XUI.Red .. '星')
-                end
-                frame:Show()
             else
-                frame:Hide()
+                itemNameStr = XUI.Gray .. itemNameStr
             end
+
+            if star then
+                itemNameStr = XUI.Green .. '*' .. itemNameStr
+            end
+
+            if not recipe then
+                itemNameStr = itemNameStr .. XUI.Green .. '-'
+            end
+
+            local updateTimeStr = XUtils.formatTime(item['updatetime'])
+
+            local bagCountStr = XUI.getColor_BagStackCount(bagCount, stackCount) ..
+                'B' .. XUtils.formatCount(bagCount, 1)
+
+            local materialCountStr = 'M' .. XUtils.formatCount2(materialCount)
+
+            local auctionCountStr = XUI.getColor_AuctionStackCount(auctionCount, stackCount) ..
+                'A' .. XUtils.formatCount(auctionCount, 1)
+
+            local minPriceCountStr = XUI.getColor_AuctionStackCount(minPriceCount, stackCount) ..
+                'M' .. XUtils.formatCount(minPriceCount, 1)
+
+            local bagAuctionCountStr = XUI.getColor_BagStackCount(bagAuctionCount, stackCount) ..
+                'T' .. XUtils.formatCount(bagAuctionCount, 2)
+
+            local lowerCountStr = 'L' .. XUtils.formatCount(lowerCount)
+            if lowerCount > 5 then
+                lowerCountStr = XUI.Red .. lowerCountStr
+            elseif lowerCount > 0 then
+                lowerCountStr = XUI.Yellow .. lowerCountStr
+            else
+                lowerCountStr = XUI.White .. lowerCountStr
+            end
+
+            local allCountStr = 'G' .. XUtils.formatCount(allCount)
+            if allCount > 20 then
+                allCountStr = XUI.Red .. allCountStr
+            elseif allCount > 10 then
+                allCountStr = XUI.Yellow .. allCountStr
+            else
+                allCountStr = XUI.Green .. allCountStr
+            end
+
+            local stackCountStr = 'S' .. XUtils.formatCount(stackCount, 1)
+            if stackCount > 2 then
+                stackCountStr = XUI.Cyan .. stackCountStr
+            elseif stackCount > 1 then
+                stackCountStr = XUI.Green .. stackCountStr
+            end
+
+            local minPriceStr = XUtils.priceToString(minPrice)
+            if minPrice < lowestPrice then
+                minPriceStr = XUI.Red .. minPriceStr
+            elseif minPrice < lowestPrice * dft_lowestPriceRate then
+                minPriceStr = XUI.Yellow .. minPriceStr
+            elseif minPrice < lowestPrice * dft_lowestPriceRate * dft_lowestPriceRate then
+                minPriceStr = XUI.Green .. minPriceStr
+            else
+                minPriceStr = XUI.Cyan .. minPriceStr
+            end
+
+            local lowestPriceStr = XUI.White .. XUtils.priceToString(lowestPrice)
+
+            local dealRateStr = XUI.getColor_DealRate(dealRate) .. 'R' .. XUtils.formatCount(XUtils.round(dealRate))
+            local dealCountStr = XUI.getColor_DealCount(dealCount) .. 'D' .. XUtils.formatCount(dealCount)
+
+            frame.itemIndexButton:SetText(idx)
+            frame.itemNameButton:SetText(itemNameStr)
+
+            frame.labelTime:SetText(updateTimeStr)
+            frame.labelBag:SetText(bagCountStr .. XUI.White .. '/' .. bagAuctionCountStr
+                .. XUI.White .. '/' .. materialCountStr .. XUI.White .. '/' .. stackCountStr)
+            frame.labelAuction:SetText(auctionCountStr .. XUI.White .. '/' .. minPriceCountStr
+                .. XUI.White .. '/' .. lowerCountStr .. XUI.White .. '/' .. allCountStr)
+            frame.labelDeal:SetText(dealRateStr .. XUI.White .. '/' .. dealCountStr)
+            frame.labelPrice:SetText(minPriceStr .. XUI.White .. '/' .. lowestPriceStr)
+
+            if enabled then
+                frame.enableButton:SetText(XUI.Green .. '起')
+            else
+                frame.enableButton:SetText(XUI.Red .. '停')
+            end
+
+            if star then
+                frame.starButton:SetText(XUI.Green .. '星')
+            else
+                frame.starButton:SetText(XUI.Red .. '星')
+            end
+            frame:Show()
         else
             frame:Hide()
         end

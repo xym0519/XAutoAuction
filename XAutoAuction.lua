@@ -98,7 +98,9 @@ end
 
 -- Commands
 SlashCmdList['XAUTOAUCTIONREFRESH'] = function()
+    XInfo.reloadBag()
+    XInfo.reloadAuction()
+    XInfo.reloadTradeSkill()
     XAutoAuction.refreshUI()
 end
 SLASH_XAUTOAUCTIONREFRESH1 = '/xautoauction_refresh'
-

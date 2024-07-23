@@ -124,12 +124,6 @@ local lastTradeSkillUpdateTime = 0
 XInfo.reloadTradeSkill = function(type)
     if time() - lastTradeSkillUpdateTime < 1 then return end
 
-    if not type then type = '珠宝加工' end
-    if GetTradeSkillLine() ~= type then
-        CastSpellByName(type)
-        return false
-    end
-
     local list = {}
     for i = 1, GetNumTradeSkills() do
         local itemLink = GetTradeSkillItemLink(i)

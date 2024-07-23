@@ -242,7 +242,7 @@ start = function()
         return false
     end
 
-    if not XInfo.reloadTradeSkill() then
+    if GetTradeSkillLine() ~= '珠宝加工' then
         isCrafting = false
         refreshUI()
         return false

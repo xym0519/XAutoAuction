@@ -39,6 +39,6 @@ XUISortDialog.show = function(pkey, ptargetList, psourceIndex, pcallback, title)
     sourceIndex = psourceIndex
     callback = pcallback
 
-    local data = { { Name = '排序' } }
+    local data = { { Name = '排序', Value = psourceIndex } }
     XUIInputDialog.show(pkey, onConfirm, data, title)
 end

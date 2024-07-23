@@ -74,8 +74,17 @@ initUI = function()
     end)
     mainFrame.startButton = startButton
 
+    local resetButton = XUI.createButton(mainFrame, dft_buttonWidth, '清')
+    resetButton:SetPoint('LEFT', startButton, 'RIGHT', dft_buttonGap, 0)
+    resetButton:SetScript('OnClick', function()
+        for _, item in ipairs(XAutoBuyList) do
+            item.minprice = 0
+        end
+        refreshUI()
+    end)
+
     local modeButton = XUI.createButton(mainFrame, dft_buttonWidth, '快')
-    modeButton:SetPoint('LEFT', startButton, 'RIGHT', dft_buttonGap, 0)
+    modeButton:SetPoint('LEFT', resetButton, 'RIGHT', dft_buttonGap, 0)
     modeButton:SetScript('OnClick', function()
         queryMode = (queryMode + 1) % 2
         refreshUI()
