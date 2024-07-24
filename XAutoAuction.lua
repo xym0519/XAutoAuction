@@ -31,8 +31,9 @@ XAutoAuctionFrame:RegisterEvent('PLAYER_MONEY')
 -- Event registion interface
 -- OnUpdate callback
 local updateCallback = {}
-XAutoAuction.registerUpdateCallback = function(key, callback)
-    updateCallback[key] = callback
+XAutoAuction.registerUpdateCallback = function(key, callback, interval)
+    if interval == nil then interval = 1 end
+    updateCallback[key] = { callback = callback, interval = interval, lastUpdateTime = 0 }
 end
 
 -- OnUIUpdate callback
@@ -65,9 +66,12 @@ local onUpdate = function()
         return
     end
     lastUpdateTime = currentTime
-    for _, callback in pairs(updateCallback) do
-        if type(callback) == 'function' then
-            callback()
+    for _, item in pairs(updateCallback) do
+        if item.lastUpdateTime + item.interval < time() then
+            if type(item.callback) == 'function' then
+                item.callback()
+                item.lastUpdateTime = time()
+            end
         end
     end
 end

@@ -212,12 +212,9 @@ end
 XInfo.allHistory = 2
 
 -- Event callback
-local lastUpdateTime = 0
 local dft_interval = 3
 local function onUpdate()
     if not XItemUpdateList then return end
-    if time() - lastUpdateTime < dft_interval then return end
-    lastUpdateTime = time()
 
     for itemName, item in pairs(XItemUpdateList) do
         if item.itemid and item.itemid > 0 then
@@ -287,7 +284,7 @@ XAutoAuction.registerEventCallback(moduleName, 'BAG_UPDATE', XInfo.reloadBag)
 
 XAutoAuction.registerEventCallback(moduleName, 'GET_ITEM_INFO_RECEIVED', onItemInfoReceived)
 
-XAutoAuction.registerUpdateCallback(moduleName, onUpdate)
+XAutoAuction.registerUpdateCallback(moduleName, onUpdate, dft_interval)
 
 XAutoAuction.registerRefreshCallback(moduleName, function()
     XInfo.reloadBag()

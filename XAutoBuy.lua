@@ -4,7 +4,7 @@ local moduleName = 'XAutoBuy'
 -- Variable definition
 local mainFrame = nil
 
-local dft_taskInterval = 1
+local dft_interval = 2
 local dft_taskTimeout = 30
 
 local dft_buttonWidth = 40
@@ -16,7 +16,6 @@ local displayPageSize = 10
 local displaySettingItem = nil
 
 local isStarted = false
-local lastTaskFinishTime = 0
 
 local queryMode = 0 -- 0: 快速  1: 完整
 local isQuerying = false
@@ -399,11 +398,7 @@ local function onAuctionItemListUpdate()
     isQuerying = false
 end
 
-local lastUpdateTime = 0
-local dft_interval = 2
 local function onUpdate()
-    if lastUpdateTime + dft_interval > time() then return end
-    lastUpdateTime = time()
     if not isStarted then return end
 
     if isQuerying then
@@ -459,7 +454,6 @@ local function onUpdate()
             return
         end
 
-        if time() - lastTaskFinishTime < dft_taskInterval then return end
         if not CanSendAuctionQuery() then return end
 
         queryStartTime = time()
@@ -477,7 +471,6 @@ local function onUpdate()
         return
     end
 
-    if time() - lastTaskFinishTime < dft_taskInterval then return end
     if not CanSendAuctionQuery() then return end
 
     local item = nil
@@ -525,7 +518,7 @@ XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_CLOSED', function(
     if mainFrame then mainFrame:Hide() end
 end)
 
-XAutoAuction.registerUpdateCallback(moduleName, onUpdate)
+XAutoAuction.registerUpdateCallback(moduleName, onUpdate, dft_interval)
 
 XAutoAuction.registerRefreshCallback(moduleName, refreshUI)
 
