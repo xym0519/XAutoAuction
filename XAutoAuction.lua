@@ -34,6 +34,12 @@ XAutoAuction.registerUpdateCallback = function(key, callback)
     updateCallback[key] = callback
 end
 
+-- OnUIUpdate callback
+local uiUpdateCallback = {}
+XAutoAuction.registerUIUpdateCallback = function(key, callback)
+    uiUpdateCallback[key] = callback
+end
+
 -- Refresh callback
 local refreshCallback = {}
 XAutoAuction.registerRefreshCallback = function(key, callback)
@@ -49,7 +55,8 @@ XAutoAuction.registerEventCallback = function(key, event, callback)
     eventCallback[event][key] = callback
 end
 
--- Update cycle per second
+-- Event callback
+-- Update callback
 local lastUpdateTime = 0
 local onUpdate = function()
     local currentTime = time()
@@ -64,9 +71,24 @@ local onUpdate = function()
     end
 end
 
--- XAutoAuctionFrame:SetScript('OnUpdate', onUpdate)
+-- UIUpdate callback
+local lastUIUpdateTime = 0
+local onUIUpdate = function()
+    local currentTime = time()
+    if currentTime - lastUIUpdateTime < 1 then
+        return
+    end
+    lastUIUpdateTime = currentTime
+    for _, callback in pairs(uiUpdateCallback) do
+        if type(callback) == 'function' then
+            callback()
+        end
+    end
+end
 
 -- Event listener
+XAutoAuctionFrame:SetScript('OnUpdate', onUIUpdate)
+
 XAutoAuctionFrame:SetScript('OnEvent', function(self, event, text, context)
     if event == 'ADDON_LOADED' then
         if text == 'XAutoAuction' then

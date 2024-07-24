@@ -6,7 +6,7 @@ local mainFrame = nil
 local settingFrame = nil
 local editFrame = nil
 
-local dft_interval = 300
+local dft_interval = 30
 local dft_buttonWidth = 60
 local dft_buttonGap = 1
 
@@ -16,6 +16,7 @@ local displayPageSize = 10
 local displaySettingItem = nil
 
 local lastUpdatetime = 0
+local isRunning = false
 local curIndex = 1;
 
 -- Function definition
@@ -34,17 +35,21 @@ initUI = function()
     mainFrame:SetPoint('TOPRIGHT', UIParent, 'TOPRIGHT', -30, -50)
     mainFrame:Hide()
 
-    local startButton = XUI.createButton(mainFrame, 50, '喊话')
+    local startButton = XUI.createButton(mainFrame, 50, '开始')
     startButton:SetPoint('LEFT', mainFrame, 'LEFT', 15, -10)
     startButton:SetScript('OnClick', function()
-        send()
+        isRunning = not isRunning
+        lastUpdatetime = 0
         refreshUI()
     end)
+    mainFrame.startButton = startButton
 
     local resetButton = XUI.createButton(mainFrame, 50, '重置')
     resetButton:SetPoint('LEFT', startButton, 'RIGHT', 5, 0)
     resetButton:SetScript('OnClick', function()
+        isRunning = false
         lastUpdatetime = 0
+        curIndex = 1
         refreshUI()
     end)
 
@@ -237,6 +242,14 @@ end
 refreshUI = function()
     if not mainFrame then return end
 
+    if mainFrame.startButton then
+        if isRunning then
+            mainFrame.startButton:SetText('停止')
+        else
+            mainFrame.startButton:SetText('开始')
+        end
+    end
+
     if not settingFrame then return end
     if settingFrame:IsVisible() then
         for i = 1, displayPageSize do
@@ -293,7 +306,7 @@ send = function()
 end
 
 -- Event callback
-local function onUpdate()
+local function onUIUpdate()
     if mainFrame then
         local time = time() - lastUpdatetime
         if lastUpdatetime == 0 then time = 0 end
@@ -302,10 +315,24 @@ local function onUpdate()
     end
 end
 
+local function onUpdate()
+    if isRunning then
+        if #XSpeakWordList <= 0 then
+            print('请先设置喊话内容')
+            lastUpdatetime = 0
+            curIndex = 1
+            isRunning = false
+            return
+        end
+        send()
+    end
+end
+
 -- Events
 XAutoAuction.registerEventCallback(moduleName, 'ADDON_LOADED', function()
     initUI()
 end)
+XAutoAuction.registerUIUpdateCallback(moduleName, onUIUpdate)
 XAutoAuction.registerUpdateCallback(moduleName, onUpdate)
 
 -- Commands
