@@ -215,19 +215,58 @@ XUtils.printFunction = function(obj, keyword)
     end
 end
 
-XUtils.printProperty = function(obj, keyword)
+XUtils.printProperty = function(obj, keyword, color)
+    if color == nil then color = '' end
+    if keyword == nil then keyword = '' end
+
     for key, value in pairs(obj) do
         local valueType = type(value)
         local valueStr = ''
         if valueType == 'string' or valueType == 'number' or valueType == 'boolean' then
             valueStr = value .. ''
         end
-        if keyword then
+        if keyword ~= '' then
             if XUtils.stringContains(key, keyword) then
-                print(key .. ': ' .. valueStr)
+                print(color .. key .. '(' .. valueType .. '): ' .. valueStr)
             end
         else
-            print(key .. '(' .. valueType .. ')' .. ': ' .. valueStr)
+            print(color .. key .. '(' .. valueType .. '): ' .. valueStr)
         end
     end
+end
+
+XUtils.log = function(content, key, color)
+    if key == nil then key = '' end
+    if color == nil then color = '' end
+
+    local valueType = type(content)
+    if valueType == 'string' or valueType == 'number' or valueType == 'boolean' then
+        if key == '' then
+            print(color .. content)
+        else
+            print(color .. key .. '(' .. valueType .. '): ' .. content)
+        end
+    elseif valueType == 'table' then
+        XUtils.printProperty(content, '', color)
+    end
+end
+
+XUtils.error = function(content, key)
+    XUtils.log(content, key, XUI.Red)
+end
+
+XUtils.warn = function(content, key)
+    XUtils.log(content, key, XUI.Orange)
+end
+
+XUtils.debug = function(content, key)
+    XUtils.log(content, key, XUI.Green)
+end
+
+XUtils.info = function(content, key)
+    XUtils.log(content, key, XUI.Cyan)
+end
+
+XUtils.verbose = function(content, key)
+    XUtils.log(content, key, XUI.Gray)
 end
