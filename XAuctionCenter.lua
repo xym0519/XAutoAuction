@@ -3,7 +3,6 @@ local moduleName = 'XAuctionCenter'
 
 -- Variable definition
 local mainFrame = nil
-local debug = false
 
 local dft_minPrice = 9999999
 local dft_maxPrice = 2180000
@@ -99,7 +98,6 @@ resetData = function()
 end
 
 initUI = function()
-    if debug then print('initUI') end
     mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 935, 430)
     mainFrame:SetFrameStrata('HIGH')
     mainFrame.title:SetText('自动拍卖')
@@ -528,11 +526,10 @@ initUI = function()
     end
 
     refreshUI()
-
-    if debug then print('initUI Finished') end
 end
 
 refreshUI = function()
+    local debug = false
     if debug then print('refreshUI') end
     if not mainFrame then return end
 
@@ -855,6 +852,7 @@ getAuctionItem = function(itemName)
 end
 
 addQueryTaskByIndex = function(index)
+    local debug = false
     if debug then print('addQueryTaskByIndex') end
     for _, task in ipairs(taskList) do
         if task['action'] == 'query' and task['index'] == index then
@@ -878,6 +876,7 @@ addQueryTaskByIndex = function(index)
 end
 
 addQueryTaskByItemName = function(itemName)
+    local debug = false
     if debug then print('addQueryTaskByItemName') end
     for i, item in ipairs(XAutoAuctionList) do
         if item['itemname'] == itemName then
@@ -889,6 +888,7 @@ addQueryTaskByItemName = function(itemName)
 end
 
 insertAuctionTaskByIndex = function(index, price, count)
+    local debug = false
     if debug then print('insertAuctionTaskByIndex') end
     for _, task in ipairs(taskList) do
         if task['action'] == 'auction' and task['index'] == index then
@@ -927,6 +927,7 @@ getMaterialPrice = function(itemName)
 end
 
 addCraftQueue = function(printCount, manualAdd)
+    local debug = false
     if debug then print('addCraftQueue') end
     XInfo.reloadBag()
     XInfo.reloadAuction()
@@ -997,6 +998,7 @@ addCraftQueue = function(printCount, manualAdd)
 end
 
 puton = function(printCount)
+    local debug = false
     if debug then print('puton') end
     XInfo.reloadBag()
     XInfo.reloadAuction()
@@ -1048,6 +1050,7 @@ puton = function(printCount)
 end
 
 clearAll = function(printCount)
+    local debug = false
     if debug then print('clearAll') end
     XInfo.reloadBag()
     XInfo.reloadAuction()
@@ -1073,6 +1076,7 @@ clearAll = function(printCount)
 end
 
 shortPeriod = function(printCount)
+    local debug = false
     if debug then print('shortPeriod') end
     local numItems = GetNumAuctionItems('owner')
     if numItems <= 0 then
@@ -1128,6 +1132,7 @@ end
 
 -- Event callback
 local function onQueryItemListUpdate()
+    local debug = false
     if debug then print('onQueryItemListUpdate') end
     if not isTasking then return end
     if not curTask then return end
@@ -1170,6 +1175,7 @@ local function onQueryItemListUpdate()
 end
 
 local function onAuctionSuccess()
+    local debug = false
     if debug then print('onAuctionSuccess') end
     if not isTasking then return end
     if not curTask then return end
@@ -1180,7 +1186,8 @@ local function onAuctionSuccess()
 end
 
 local function onUpdate()
-    if debug then print('onUpdate') end
+    local debug = true
+    if debug then XUtils.info('onUpdate') end
     refreshUI()
 
     if not isStarted then return end
@@ -1524,7 +1531,7 @@ local function onUpdate()
     end
 
     addQueryTaskByIndex(nextTaskIndex)
-    if debug then print('onUpdate Finished') end
+    if debug then XUtils.info('onUpdate Finished') end
 end
 
 -- Events
