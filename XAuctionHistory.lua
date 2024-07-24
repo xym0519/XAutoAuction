@@ -92,7 +92,6 @@ initUI = function()
                 end
                 if itemName and count then
                     XCraftQueue.addItem(itemName, count, 'fulfil')
-                    XCraftQueue.start()
                 end
             end, { { Name = '类型', Value = item['itemname'] }, { Name = '数量', Value = count } }, item['itemname'])
         end)

@@ -352,7 +352,6 @@ initUI = function()
                 local itemName = item['itemname']
                 local count = input[1].Value
                 XCraftQueue.addItem(itemName, count, 'fulfil')
-                XCraftQueue.start()
             end, { { Name = '数量', Value = item['stackcount'] } }, item['itemname'])
         end)
         frame.itemNameButton = itemNameButton
@@ -992,7 +991,6 @@ addCraftQueue = function(printCount, manualAdd)
     if printCount then
         print('Craft: ' .. count)
     end
-    XCraftQueue.start()
     refreshUI()
     if debug then print('addCraftQueue Finished') end
 end
@@ -1186,7 +1184,7 @@ local function onAuctionSuccess()
 end
 
 local function onUpdate()
-    local debug = true
+    local debug = false
     if debug then XUtils.info('onUpdate') end
     refreshUI()
 

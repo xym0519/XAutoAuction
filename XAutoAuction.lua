@@ -21,6 +21,7 @@ XAutoAuctionFrame:RegisterEvent('CHAT_MSG_SYSTEM')
 XAutoAuctionFrame:RegisterEvent('BAG_UPDATE')
 XAutoAuctionFrame:RegisterEvent('GET_ITEM_INFO_RECEIVED')
 
+XAutoAuctionFrame:RegisterEvent('UNIT_SPELLCAST_START')
 XAutoAuctionFrame:RegisterEvent('UNIT_SPELLCAST_SUCCEEDED')
 XAutoAuctionFrame:RegisterEvent('UNIT_SPELLCAST_FAILED')
 XAutoAuctionFrame:RegisterEvent('UNIT_SPELLCAST_INTERRUPTED')
@@ -89,13 +90,14 @@ end
 -- Event listener
 XAutoAuctionFrame:SetScript('OnUpdate', onUIUpdate)
 
-XAutoAuctionFrame:SetScript('OnEvent', function(self, event, text, context)
+XAutoAuctionFrame:SetScript('OnEvent', function(...)
+    local event, text = select(2, ...)
     if event == 'ADDON_LOADED' then
         if text == 'XAutoAuction' then
             if eventCallback[event] then
                 for _, callback in pairs(eventCallback[event]) do
                     if type(callback) == 'function' then
-                        callback(self, event, text, context)
+                        callback(...)
                     end
                 end
             end
@@ -104,7 +106,7 @@ XAutoAuctionFrame:SetScript('OnEvent', function(self, event, text, context)
         if eventCallback[event] then
             for _, callback in pairs(eventCallback[event]) do
                 if type(callback) == 'function' then
-                    callback(self, event, text, context)
+                    callback(...)
                 end
             end
         end

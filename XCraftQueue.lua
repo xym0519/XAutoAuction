@@ -4,17 +4,23 @@ local moduleName = 'XCraftQueue'
 -- Variable definition
 local mainFrame
 
+local dft_smalltime = 5
+local dft_largetime = 1.5
+
 local craftQueue = {}
 local displayPageNo = 0
 local displayPageSize = 10
 local displayFrameList = {}
-local isCrafting = false
+local isRunning = false
+local curTask = nil
+local taskExpires = 0
+local lastFailTime = 0
 
 -- Function definition
 local initUI
 local refreshUI
-local start
 local addItem
+local finishCurTask
 
 -- Function implemention
 initUI = function()
@@ -26,7 +32,13 @@ initUI = function()
     local startButton = XUI.createButton(mainFrame, 35, '起')
     startButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -30)
     startButton:SetScript('OnClick', function()
-        start()
+        if not isRunning then
+            if not XInfo.reloadTradeSkill('珠宝加工') then
+                refreshUI()
+                return
+            end
+        end
+        isRunning = not isRunning
         refreshUI()
     end)
     mainFrame.startButton = startButton
@@ -54,7 +66,7 @@ initUI = function()
     cleanButton:SetScript('OnClick', function()
         XUIConfirmDialog.show(moduleName, '确认', '是否确认清除制造列表', function()
             craftQueue = {}
-            isCrafting = false
+            isRunning = false
             refreshUI()
         end)
     end)
@@ -153,9 +165,13 @@ end
 refreshUI = function()
     XInfo.reloadBag()
 
-    mainFrame.title:SetText('制造队列  (' .. #craftQueue .. ')');
+    if curTask then
+        mainFrame.title:SetText(curTask['itemname'] .. '/' .. curTask['count'] .. '  (' .. #craftQueue .. ')')
+    else
+        mainFrame.title:SetText('制造队列  (' .. #craftQueue .. ')');
+    end
 
-    if isCrafting then
+    if isRunning then
         mainFrame.startButton:SetText('停')
     else
         mainFrame.startButton:SetText('起')
@@ -235,62 +251,86 @@ addItem = function(itemName, count, type)
     refreshUI()
 end
 
-start = function()
-    if #craftQueue <= 0 then
-        isCrafting = false
-        refreshUI()
-        return false
-    end
-
-    if GetTradeSkillLine() ~= '珠宝加工' then
-        isCrafting = false
-        refreshUI()
-        return false
-    end
-
-    local item = craftQueue[1];
-
-    local tradeSkillItem = XInfo.getTradeSkillItem(item['itemname'])
-    if not tradeSkillItem then
-        table.remove(craftQueue, 1)
-        isCrafting = false
-        refreshUI()
-        return false
-    end
-
-    if not isCrafting then
-        isCrafting = true
-        refreshUI()
-    end
-    DoTradeSkill(tradeSkillItem['index'], item['count'])
-    return true
+finishCurTask = function()
+    curTask = nil
+    taskExpires = 0
 end
 
 -- Event callback
-local function onSuccess(skillName)
-    if not isCrafting then return end
-    if #craftQueue <= 0 then return end
-
-    local item = craftQueue[1]
-    local tradeSkillItem = XInfo.getTradeSkillItem(item['itemname'])
-    if not tradeSkillItem then return end
-    if skillName ~= tradeSkillItem['skillname'] then return end
-
-    if item['count'] <= 1 then
-        table.remove(craftQueue, 1)
-        isCrafting = false
-    else
-        item['count'] = item['count'] - 1
+local function onUpdate()
+    if curTask then
+        if time() > taskExpires then
+            finishCurTask()
+            refreshUI()
+            return
+        end
+        return
     end
-    refreshUI()
+
+    if #craftQueue <= 0 then
+        refreshUI()
+        return
+    end
+
+    curTask = craftQueue[1];
+    table.remove(craftQueue, 1)
+
+    local materialName = XInfo.getMaterialName(curTask['itemname'])
+    taskExpires = dft_smalltime * curTask['count'] + 2
+    if XUtils.inArray(materialName, { '赤玉石', '紫黄晶', '王者琥珀', '森林翡翠', '巨锆石', '恐惧石' }) then
+        taskExpires = dft_largetime * curTask['count'] + 2
+    end
+
+    local tradeSkillItem = XInfo.getTradeSkillItem(curTask['itemname'])
+    if not tradeSkillItem then
+        finishCurTask()
+        refreshUI()
+        return
+    end
+
+    XUtils.debug('------111')
+    XUtils.debug(tradeSkillItem['index'])
+    XUtils.debug(curTask['count'])
+    DoTradeSkill(tradeSkillItem['index'], curTask['count'])
 end
 
-local function onFailed(skillName)
-    if not isCrafting then return end
-    if #craftQueue <= 0 then return end
-    table.remove(craftQueue, 1)
-    isCrafting = false
+local function onStart(...)
+    if not curTask then return end
+    local unit, castId = select(3, ...)
+    if unit ~= 'player' then return end
+
+    curTask['castid'] = castId
     refreshUI()
+    XUtils.info('start')
+end
+
+local function onSuccess(...)
+    if not curTask then return end
+    local unit, castId = select(3, ...)
+    if unit ~= 'player' then return end
+    if curTask['castid'] ~= castId then return end
+
+    if curTask['count'] <= 1 then
+        finishCurTask()
+    else
+        curTask['count'] = curTask['count'] - 1
+    end
+
+    refreshUI()
+    XUtils.info('success')
+end
+
+local function onFailed(...)
+    if not curTask then return end
+    if time() - lastFailTime < 1 then return end
+    local unit, castId = select(3, ...)
+    if unit ~= 'player' then return end
+    if curTask['castid'] ~= castId then return end
+
+    lastFailTime = time()
+    -- finishCurTask()
+    refreshUI()
+    XUtils.error('failed')
 end
 
 -- Events
@@ -299,17 +339,15 @@ XAutoAuction.registerEventCallback(moduleName, 'ADDON_LOADED', function()
     refreshUI()
 end)
 
-XAutoAuction.registerEventCallback(moduleName, 'UNIT_SPELLCAST_SUCCEEDED', function(self, event, text, context)
-    onSuccess(context)
-end)
+XAutoAuction.registerUpdateCallback(moduleName, onUpdate)
 
-XAutoAuction.registerEventCallback(moduleName, 'UNIT_SPELLCAST_FAILED', function(self, event, text, context)
-    onFailed(context)
-end)
+XAutoAuction.registerEventCallback(moduleName, 'UNIT_SPELLCAST_START', onStart)
 
-XAutoAuction.registerEventCallback(moduleName, 'UNIT_SPELLCAST_INTERRUPTED', function(self, event, text, context)
-    onFailed(context)
-end)
+XAutoAuction.registerEventCallback(moduleName, 'UNIT_SPELLCAST_SUCCEEDED', onSuccess)
+
+XAutoAuction.registerEventCallback(moduleName, 'UNIT_SPELLCAST_FAILED', onFailed)
+
+XAutoAuction.registerEventCallback(moduleName, 'UNIT_SPELLCAST_INTERRUPTED', onFailed)
 
 -- XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_SHOW', function(self, event, text, context)
 --     if mainFrame then mainFrame:Show() end
@@ -338,10 +376,18 @@ end
 SLASH_XCRAFTQUEUECLOSE1 = '/xcraftqueue_close'
 
 SlashCmdList['XCRAFTQUEUESTART'] = function()
-    start()
+    isRunning = true
+    refreshUI()
 end
 SLASH_XCRAFTQUEUESTART1 = '/xcraftqueue_start'
 
+SlashCmdList['XCRAFTQUEUESTOP'] = function()
+    isRunning = false
+    refreshUI()
+end
+SLASH_XCRAFTQUEUESTOP1 = '/xcraftqueue_stop'
+
 -- Interfaces
-XCraftQueue.start = start
+-- TODO 111
+-- XCraftQueue.start = start
 XCraftQueue.addItem = addItem
