@@ -3,7 +3,6 @@ local dft_updateInterval = 10
 GameTooltip:HookScript('OnTooltipSetItem', function(self)
     if lastUpdateTime + dft_updateInterval < time() then
         XInfo.reloadBag()
-        XInfo.reloadTradeSkill('珠宝加工')
         lastUpdateTime = time()
     end
 
@@ -41,7 +40,6 @@ GameTooltip:HookScript('OnTooltipSetItem', function(self)
 
     local category = XInfo.getAuctionInfoField(itemName, 'category', '')
     if category == '珠宝' then
-        XInfo.reloadTradeSkill('珠宝加工')
         local tradeSkillItem = XInfo.getTradeSkillItem(itemName)
         if tradeSkillItem then
             self:AddDoubleLine('配方:', XUI.Green .. '已学')
