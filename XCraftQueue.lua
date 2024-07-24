@@ -353,11 +353,11 @@ XAutoAuction.registerEventCallback(moduleName, 'UNIT_SPELLCAST_INTERRUPTED', onF
 --     if mainFrame then mainFrame:Show() end
 -- end)
 
-XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_CLOSED', function(self, event, text, context)
+XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_CLOSED', function()
     if mainFrame then mainFrame:Hide() end
 end)
 
-XAutoAuction.registerRefreshCallback(moduleName, refreshUI);
+XAutoAuction.registerRefreshCallback(moduleName, refreshUI)
 
 -- Commands
 SlashCmdList['XCRAFTQUEUE'] = function()

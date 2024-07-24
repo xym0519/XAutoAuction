@@ -268,7 +268,8 @@ local function onUpdate()
     end
 end
 
-local function onItemInfoReceived(self, event, itemID, success)
+local function onItemInfoReceived(...)
+    local itemID = select(3, ...)
     local itemName, itemLink, _, _, _, itemType,
     itemSubType, _, _, _, vendorPrice = GetItemInfo(itemID)
     if itemName then

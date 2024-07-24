@@ -1546,13 +1546,14 @@ XAutoAuction.registerEventCallback(moduleName, 'AUCTION_ITEM_LIST_UPDATE', onQue
 --     if mainFrame then mainFrame:Show() end
 -- end)
 
-XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_CLOSED', function(self, event, text, context)
+XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_CLOSED', function()
     stop()
     if mainFrame then mainFrame:Hide() end
 end)
 
-XAutoAuction.registerEventCallback(moduleName, 'CHAT_MSG_SYSTEM', function(self, event, text, context)
+XAutoAuction.registerEventCallback(moduleName, 'CHAT_MSG_SYSTEM', function(...)
     -- TODO 确定文字内容，以及拍卖的回调
+    local text = select(3, ...)
     if text == '已开始拍卖。' then
         onAuctionSuccess()
     elseif XUtils.stringStartsWith(text, '你拍卖的') and XUtils.stringEndsWith(text, '已经售出。') then
