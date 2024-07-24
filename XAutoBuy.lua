@@ -35,7 +35,6 @@ local addItem
 local startBuy
 local stopBuy
 local finishCurTask
-local confirmBuy
 
 -- Function implemention
 initUI = function()
@@ -78,7 +77,7 @@ initUI = function()
     resetButton:SetPoint('LEFT', startButton, 'RIGHT', dft_buttonGap, 0)
     resetButton:SetScript('OnClick', function()
         for _, item in ipairs(XAutoBuyList) do
-            item.minprice = 0
+            item.minprice = 999999
         end
         refreshUI()
     end)
@@ -246,7 +245,7 @@ refreshUI = function()
             local price = item['price'] / 10000
             local priceStr = XUI.White .. price
 
-            local minPrice = 0
+            local minPrice = 999999
             if item['minprice'] then minPrice = item['minprice'] / 10000 end
             local minPriceStr = XUI.White .. minPrice
             if minPrice <= price then
@@ -342,40 +341,6 @@ finishCurTask = function()
     queryResultProcessed = true
 end
 
-confirmBuy = function()
-    local tindex = 1
-    while true do
-        local itemName, _, stackCount, _, _, _, _, bidStart, bidIncrease, buyoutPrice, bidPrice, isMine, _, seller =
-            GetAuctionItemInfo('list', tindex)
-        if not itemName then break end
-
-        local nextBidPrice = 0
-        if bidPrice == 0 then
-            nextBidPrice = bidStart
-        else
-            nextBidPrice = bidPrice + bidIncrease
-        end
-        if (not XInfo.isMe(seller)) and buyoutPrice / stackCount <= XAutoBuyList[queryIndex]['price'] and itemName == XAutoBuyList[queryIndex]['itemname'] and buyoutPrice > 0 then
-            print('Buyout: ' .. itemName .. ' (' .. stackCount .. ')'
-                .. '    ' .. XUtils.priceToMoneyString(buyoutPrice / stackCount))
-            PlaceAuctionBid('list', tindex, buyoutPrice)
-        elseif (not XInfo.isMe(seller)) and (not isMine) and nextBidPrice / stackCount <= XAutoBuyList[queryIndex]['price'] and itemName == XAutoBuyList[queryIndex]['itemname'] then
-            print('Bid: ' .. itemName .. ' (' .. stackCount .. ')'
-                .. '    ' .. XUtils.priceToMoneyString(nextBidPrice / stackCount))
-            PlaceAuctionBid('list', tindex, nextBidPrice)
-        end
-        tindex = tindex + 1
-    end
-
-    queryPage = queryPage - 1
-    if queryPage < 0 then
-        queryPage = 0
-    end
-
-    queryResultProcessed = true
-    XUIConfirmDialog.close('XAutoBuy_Buy')
-end
-
 -- Event callback
 local function onAuctionItemListUpdate()
     if not XAutoBuyList[queryIndex] then
@@ -434,12 +399,15 @@ local function onAuctionItemListUpdate()
     isQuerying = false
 end
 
+local lastUpdateTime = 0
+local dft_interval = 2
 local function onUpdate()
+    if lastUpdateTime + dft_interval > time() then return end
+    lastUpdateTime = time()
     if not isStarted then return end
 
     if isQuerying then
         if time() - queryStartTime > dft_taskTimeout then
-            print('XAutoBuy query timeout')
             finishCurTask()
             refreshUI()
         end
@@ -450,9 +418,7 @@ local function onUpdate()
         if not queryResultProcessed then
             local item = XAutoBuyList[queryIndex]
             local index = 1
-            local totalPrice = 0
-            local queryBuyoutCount = 0
-            local queryBidCount = 0
+            local bought = false
             while true do
                 local itemName, _, stackCount, _, _, _, _, bidStart, bidIncrease, buyoutPrice, bidPrice, isMine, _, seller, _, _, itemId =
                     GetAuctionItemInfo('list', index)
@@ -470,38 +436,27 @@ local function onUpdate()
                 end
 
                 if (not XInfo.isMe(seller)) and buyoutPrice / stackCount <= item['price'] and itemName == item['itemname'] and buyoutPrice > 0 then
-                    queryBuyoutCount = queryBuyoutCount + stackCount
-                    totalPrice = totalPrice + buyoutPrice
+                    XUtils.info('Buyout: ' .. itemName .. ' (' .. stackCount .. ')'
+                        .. '    ' .. XUtils.priceToMoneyString(buyoutPrice / stackCount))
+                    PlaceAuctionBid('list', index, buyoutPrice)
+                    bought = true
+                    break
                 elseif (not XInfo.isMe(seller)) and (not isMine) and nextBidPrice / stackCount <= XAutoBuyList[queryIndex]['price'] and itemName == item['itemname'] then
-                    queryBidCount = queryBidCount + stackCount
-                    totalPrice = totalPrice + nextBidPrice
+                    XUtils.info('Bid: ' .. itemName .. ' (' .. stackCount .. ')'
+                        .. '    ' .. XUtils.priceToMoneyString(nextBidPrice / stackCount))
+                    PlaceAuctionBid('list', index, nextBidPrice)
+                    bought = true
+                    break
                 end
                 index = index + 1
             end
 
-            if queryBuyoutCount > 0 or queryBidCount > 0 then
-                if not XUIConfirmDialog.isVisible('XAutoBuy_Buy') then
-                    local queryAvgPrice = totalPrice / (queryBuyoutCount + queryBidCount)
-                    local queryBuyoutCountStr = queryBuyoutCount .. ''
-                    local queryBidCountStr = queryBidCount .. ''
-                    if queryBuyoutCount > 0 then
-                        queryBuyoutCountStr = XUI.Green .. queryBuyoutCountStr
-                    end
-                    if queryBidCount > 0 then
-                        queryBidCountStr = XUI.Green .. queryBidCountStr
-                    end
-
-                    XUIConfirmDialog.show('XAutoBuy_Buy', XAutoBuyList[queryIndex]['itemname'],
-                        { XUI.White .. 'Buyout:  ' .. queryBuyoutCountStr
-                        .. XUI.White .. '       Bid:  ' .. queryBidCountStr,
-                            'AvgPrice: ' .. XUtils.priceToMoneyString(queryAvgPrice) },
-                        confirmBuy, finishCurTask)
-                end
-                refreshUI()
-                return
+            if bought then
+                queryPage = queryPage - 1
             end
 
             queryResultProcessed = true
+            return
         end
 
         if time() - lastTaskFinishTime < dft_taskInterval then return end
@@ -536,6 +491,7 @@ local function onUpdate()
     end
 
     if item then
+        item.minprice = 999999
         queryStartTime = time()
         queryPage = 0
         queryFound = nil
@@ -588,9 +544,6 @@ SlashCmdList['XAUTOBUYHIDE'] = function()
     if mainFrame then mainFrame:Hide() end
 end
 SLASH_XAUTOBUYHIDE1 = '/xautobuy_close'
-
-SlashCmdList['XAUTOBUYCONFIRM'] = confirmBuy
-SLASH_XAUTOBUYCONFIRM1 = '/xautobuy_confirm'
 
 -- Interface
 XAutoBuy.getBuyItem = getBuyItem
