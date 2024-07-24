@@ -12,6 +12,7 @@ local dft_taskInterval = 1
 local dft_taskTimeout = 30
 local dft_filterList = { '全部', '可售', '优质', '价低', '有效' }
 local dft_deltaPrice = 10
+local dft_postdelay = 2
 
 local dft_buttonWidth = 45
 local dft_buttonGap = 1
@@ -816,6 +817,15 @@ stop = function()
 end
 
 finishTask = function()
+    if curTask then
+        if curTask['action'] == 'auction' then
+            if curTask['location'] then
+                if C_Item.DoesItemExist(curTask['location']) then
+                    C_Item.UnlockItem(curTask['location'])
+                end
+            end
+        end
+    end
     curTask = nil
     isTasking = false
     lastTaskFinishTime = time()
@@ -1129,7 +1139,7 @@ printList = function()
 end
 
 -- Event callback
-local function onQueryItemListUpdate()
+local function onQueryItemListUpdate(...)
     local debug = false
     if debug then print('onQueryItemListUpdate') end
     if not isTasking then return end
@@ -1179,6 +1189,7 @@ local function onAuctionSuccess()
     if not curTask then return end
     if curTask['action'] ~= 'auction' then return end
 
+    curTask['finished'] = true
     isTasking = false
     if debug then print('onAuctionSuccess Finished') end
 end
@@ -1214,23 +1225,33 @@ local function onUpdate()
                 return
             end
 
+            local price = curTask['price']
+            local count = curTask['count']
+            if curTask['finished'] then
+                for _ = 1, count do
+                    table.insert(item['myvalidlist'], price)
+                end
+
+                finishTask()
+                refreshUI()
+                return
+            end
+
             if GetAuctionSellItemInfo() ~= item['itemname'] then
                 finishTask()
                 refreshUI()
                 return
             end
 
+            if curTask['starttime'] + dft_postdelay > time() then
+                return
+            end
+
             -- PostAuction(startPrice, buyoutPrice, duration, stackSize, stacks)
-            local price = curTask['price']
-            local count = curTask['count']
 
             PostAuction(price, price, 1, 1, count)
 
-            for _ = 1, count do
-                table.insert(item['myvalidlist'], price)
-            end
-
-            finishTask()
+            isTasking = true
             refreshUI()
             return
         end
@@ -1405,6 +1426,9 @@ local function onUpdate()
             C_Container.PickupContainerItem(position[1], position[2])
             ClickAuctionSellItemButton()
 
+            curTask['location'] = ItemLocation:CreateFromBagAndSlot(position[1], position[2])
+            C_Item.LockItem(curTask['location'])
+
             refreshUI()
             return
         end
@@ -1454,7 +1478,7 @@ local function onUpdate()
         for i = starQueryIndex, #XAutoAuctionList do
             local item = XAutoAuctionList[i]
             if item and item['enabled'] and item['star'] and item['lastround'] < 1 then
-                starQueryIndex = i
+                starQueryIndex = i + 1
                 nextTaskIndex = i
                 break
             end
@@ -1469,7 +1493,7 @@ local function onUpdate()
                     local round = math.floor(item['lowercount'] / 20)
                     if round > 3 then round = 3 end
                     if item['lastround'] + round <= queryRound then
-                        queryIndex = i
+                        queryIndex = i + 1
                         nextTaskIndex = i
                         break
                     end
@@ -1499,7 +1523,7 @@ local function onUpdate()
         for idx = starQueryIndex, #XAutoAuctionList do
             local item = XAutoAuctionList[idx]
             if item and item['enabled'] and item['star'] then
-                starQueryIndex = idx
+                starQueryIndex = idx + 1
                 nextTaskIndex = idx
                 break
             end
@@ -1514,7 +1538,7 @@ local function onUpdate()
                 local round = math.floor(item['lowercount'] / 20)
                 if round > 3 then round = 3 end
                 if item['lastround'] + round <= queryRound then
-                    queryIndex = idx
+                    queryIndex = idx + 1
                     nextTaskIndex = idx
                     break
                 end
@@ -1552,9 +1576,8 @@ XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_CLOSED', function(
 end)
 
 XAutoAuction.registerEventCallback(moduleName, 'CHAT_MSG_SYSTEM', function(...)
-    -- TODO 确定文字内容，以及拍卖的回调
     local text = select(3, ...)
-    if text == '已开始拍卖。' then
+    if text == ERR_AUCTION_STARTED then
         onAuctionSuccess()
     elseif XUtils.stringStartsWith(text, '你拍卖的') and XUtils.stringEndsWith(text, '已经售出。') then
         local itemname = string.sub(text, string.len('你拍卖的') + 1, string.len(text) - string.len('已经售出。'))
