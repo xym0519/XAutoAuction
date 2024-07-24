@@ -110,12 +110,13 @@ XInfo.reloadAuction = function()
 end
 
 -- Trade skills
-XInfo.tradeSkillList = {}
+XInfoTradeSkillList = {}
 
 -- index, skillname
-XInfo.getTradeSkillItem = function(itemName)
-    if XInfo.tradeSkillList and XInfo.tradeSkillList[itemName] then
-        return XInfo.tradeSkillList[itemName]
+XInfo.getTradeSkillItem = function(itemName, type)
+    if not type then type = '珠宝加工' end
+    if XInfoTradeSkillList and XInfoTradeSkillList[type] and XInfoTradeSkillList[type][itemName] then
+        return XInfoTradeSkillList[type][itemName]
     end
     return nil
 end
@@ -123,6 +124,13 @@ end
 local lastTradeSkillUpdateTime = 0
 XInfo.reloadTradeSkill = function(type)
     if time() - lastTradeSkillUpdateTime < 1 then return end
+
+    if not type then type = '珠宝加工' end
+    local skillName = GetTradeSkillLine()
+    if skillName ~= type then
+        CastSpellByName(type)
+        return false
+    end
 
     local list = {}
     for i = 1, GetNumTradeSkills() do
@@ -134,7 +142,7 @@ XInfo.reloadTradeSkill = function(type)
         end
     end
 
-    XInfo.tradeSkillList = list
+    XInfoTradeSkillList[type] = list
 
     lastTradeSkillUpdateTime = time()
     return true
