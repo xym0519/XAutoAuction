@@ -4,7 +4,7 @@ local moduleName = 'XAutoBuy'
 -- Variable definition
 local mainFrame = nil
 
-local dft_interval = 2
+local dft_interval = 3
 local dft_taskTimeout = 30
 
 local dft_buttonWidth = 40
@@ -368,20 +368,22 @@ local function onAuctionItemListUpdate()
         nextBidPrice = bidPrice + bidIncrease
     end
 
-    local minPrice = buyoutPrice / stackCount
-    if minPrice > 0 then
-        if nextBidPrice / stackCount < minPrice then
+    if (not XInfo.isMe(seller)) and (not isMine) then
+        local minPrice = buyoutPrice / stackCount
+        if minPrice > 0 then
+            if nextBidPrice / stackCount < minPrice then
+                minPrice = nextBidPrice / stackCount
+            end
+        else
             minPrice = nextBidPrice / stackCount
         end
-    else
-        minPrice = nextBidPrice / stackCount
-    end
-    if item.minprice then
-        if minPrice < item.minprice then
+        if item.minprice then
+            if minPrice < item.minprice then
+                item.minprice = minPrice
+            end
+        else
             item.minprice = minPrice
         end
-    else
-        item.minprice = minPrice
     end
 
     if queryMode == 0 then -- 快速模式
