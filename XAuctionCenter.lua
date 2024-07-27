@@ -10,7 +10,7 @@ local dft_lowestPriceRate = 1.5
 local dft_roundInterval = 3
 local dft_taskInterval = 1
 local dft_taskTimeout = 30
-local dft_filterList = { '全部', '可售', '优质', '价低', '有效' }
+local dft_filterList = { '全部', '可售', '优质', '价低', '有效', '无效' }
 local dft_deltaPrice = 10
 local dft_postdelay = 2
 
@@ -30,7 +30,6 @@ local displaySettingItem = nil
 local isStarted = false
 local taskList = {}
 local curTask = nil
-local isTasking = false
 local lastTaskFinishTime = 0
 
 local queryIndex = 1
@@ -56,6 +55,8 @@ local getAuctionItem
 local addQueryTaskByIndex
 local addQueryTaskByItemName
 local insertAuctionTaskByIndex
+local insertClearLowerTask
+local insertShortPeriodTask
 
 local getMaterialCount
 local getMaterialPrice
@@ -87,7 +88,6 @@ resetData = function()
     isStarted = false
     taskList = {}
     curTask = nil
-    isTasking = false
     lastTaskFinishTime = 0
 
     queryIndex = 1
@@ -99,7 +99,7 @@ resetData = function()
 end
 
 initUI = function()
-    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 935, 430)
+    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 905, 430)
     mainFrame:SetFrameStrata('HIGH')
     mainFrame.title:SetText('自动拍卖')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
@@ -287,14 +287,14 @@ initUI = function()
                     all = true
                     itemName = string.gsub(itemName, '^%*', '')
                 end
-                print('----------')
+                xdebug.info('----------')
                 for _, item in ipairs(XAutoAuctionList) do
                     if XUtils.stringContains(item['itemname'], itemName) then
                         if item['enabled'] ~= nil and item['enabled'] then
                             if all or (not item['star']) then
                                 item['lowestprice'] = lowestPrice
                                 item['defaultprice'] = defaultPrice
-                                print(item['itemname'] .. ':  '
+                                xdebug.info(item['itemname'] .. ':  '
                                     .. XUtils.priceToMoneyString(item['lowestprice']) .. ' / '
                                     .. XUtils.priceToMoneyString(item['defaultprice']))
                             end
@@ -310,12 +310,12 @@ initUI = function()
                     all = true
                     tname = string.gsub(tname, '^%*', '')
                 end
-                print('----------')
+                xdebug.info('----------')
                 for _, item in ipairs(XAutoAuctionList) do
                     if XUtils.stringContains(item['itemname'], tname) then
                         if item['enabled'] ~= nil and item['enabled'] then
                             if all or (not item['star']) then
-                                print(item['itemname'] .. ':  '
+                                xdebug.info(item['itemname'] .. ':  '
                                     .. XUtils.priceToMoneyString(item['lowestprice']) .. ' / '
                                     .. XUtils.priceToMoneyString(item['defaultprice']))
                             end
@@ -408,28 +408,8 @@ initUI = function()
         end)
         deleteButton.frame = frame
 
-        local cleanButton = XUI.createButton(frame, 30, '清')
-        cleanButton:SetPoint('LEFT', deleteButton, 'RIGHT', 0, 0)
-        cleanButton:SetScript('OnClick', function(self)
-            local idx = self.frame.index
-            local item = XAutoAuctionList[idx];
-            if not item then return end
-            XInfo.reloadBag()
-            XInfo.reloadAuction()
-            local auctionItem = XInfo.getAuctionItem(item['itemname'])
-            if not auctionItem then return end
-            for _, titem in ipairs(auctionItem['items']) do
-                if titem['price'] > item['otherminprice'] then
-                    CancelAuction(titem['index'])
-                end
-            end
-            XInfo.reloadBag()
-            XInfo.reloadAuction()
-        end)
-        cleanButton.frame = frame
-
         local lowestButton = XUI.createButton(frame, 30, '底')
-        lowestButton:SetPoint('LEFT', cleanButton, 'RIGHT', 0, 0)
+        lowestButton:SetPoint('LEFT', deleteButton, 'RIGHT', 0, 0)
         lowestButton:SetScript('OnClick', function(self)
             local idx = self.frame.index
             XUIConfirmDialog.show(moduleName, '确认', '是否确认重设低价', function()
@@ -532,8 +512,8 @@ initUI = function()
             local auctionInfo = XInfo.getAuctionInfo(item['itemname'])
             if not auctionInfo then return end
             local itemLink = select(2, GetItemInfo(auctionInfo['itemid']))
-            print('----------AuctionInfo----------')
-            print(itemLink)
+            xdebug.info('----------AuctionInfo----------')
+            xdebug.info(itemLink)
         end)
         viewButton.frame = frame
 
@@ -545,8 +525,6 @@ initUI = function()
 end
 
 refreshUI = function()
-    local debug = false
-    if debug then print('refreshUI') end
     if not mainFrame then return end
 
     XInfo.reloadBag()
@@ -647,6 +625,10 @@ refreshUI = function()
             if enabled then
                 disFlag = true
             end
+        elseif displayFilter == '无效' then
+            if not enabled then
+                disFlag = true
+            end
         end
 
         if filterWord ~= '' and (not XUtils.stringContains(itemName, filterWord)) then
@@ -716,7 +698,7 @@ refreshUI = function()
             end
 
             if not recipe then
-                itemNameStr = itemNameStr .. XUI.Green .. '-'
+                itemNameStr = itemNameStr .. XUI.Red .. '■'
             end
 
             local updateTimeStr = XUtils.formatTime(item['updatetime'])
@@ -803,14 +785,12 @@ refreshUI = function()
             frame:Hide()
         end
     end
-    if debug then print('refreshUI Finished') end
 end
 
 start = function()
     isStarted = true
     taskList = {}
     curTask = nil
-    isTasking = false
     lastTaskFinishTime = 0
     refreshUI()
 end
@@ -827,7 +807,6 @@ stop = function()
     isStarted = false
     taskList = {}
     curTask = nil
-    isTasking = false
     lastTaskFinishTime = 0
     refreshUI()
 end
@@ -843,7 +822,6 @@ finishTask = function()
         end
     end
     curTask = nil
-    isTasking = false
     lastTaskFinishTime = time()
 end
 
@@ -877,8 +855,6 @@ getAuctionItem = function(itemName)
 end
 
 addQueryTaskByIndex = function(index)
-    local debug = false
-    if debug then print('addQueryTaskByIndex') end
     for _, task in ipairs(taskList) do
         if task['action'] == 'query' and task['index'] == index then
             return
@@ -895,26 +871,20 @@ addQueryTaskByIndex = function(index)
     item['minpriceother'] = dft_minPrice
     item['updatetime'] = 0
     item['lastround'] = -99
-    local task = { action = 'query', index = index, page = 1 }
+    local task = { action = 'query', index = index, page = 1, timeout = dft_taskTimeout }
     table.insert(taskList, task)
-    if debug then print('addQueryTaskByIndex Finished') end
 end
 
 addQueryTaskByItemName = function(itemName)
-    local debug = false
-    if debug then print('addQueryTaskByItemName') end
     for i, item in ipairs(XAutoAuctionList) do
         if item['itemname'] == itemName then
             addQueryTaskByIndex(i)
             return
         end
     end
-    if debug then print('addQueryTaskByItemName Finished') end
 end
 
 insertAuctionTaskByIndex = function(index, price, count)
-    local debug = false
-    if debug then print('insertAuctionTaskByIndex') end
     for _, task in ipairs(taskList) do
         if task['action'] == 'auction' and task['index'] == index then
             task['price'] = price
@@ -925,13 +895,29 @@ insertAuctionTaskByIndex = function(index, price, count)
     local item = XAutoAuctionList[index]
     local task = {
         action = 'auction',
+        timeout = dft_taskTimeout,
         itemname = item['itemname'],
         index = index,
         price = price,
         count = count
     }
     table.insert(taskList, 1, task)
-    if debug then print('insertAuctionTaskByIndex Finished') end
+end
+
+insertClearLowerTask = function()
+    local task = {
+        action = 'clearlower',
+        timeout = 120
+    }
+    table.insert(taskList, 1, task)
+end
+
+insertShortPeriodTask = function(index, price, count)
+    local task = {
+        action = 'clearshort',
+        timeout = 120
+    }
+    table.insert(taskList, 1, task)
 end
 
 getMaterialCount = function(itemName, type)
@@ -952,8 +938,6 @@ getMaterialPrice = function(itemName)
 end
 
 addCraftQueue = function(printCount, manualAdd)
-    local debug = false
-    if debug then print('addCraftQueue') end
     XInfo.reloadBag()
     XInfo.reloadAuction()
     local count = 0
@@ -1015,15 +999,12 @@ addCraftQueue = function(printCount, manualAdd)
         XCraftQueue.addItem(item['itemname'], item['count'], 'fulfil')
     end
     if printCount then
-        print('Craft: ' .. count)
+        xdebug.info('Craft: ' .. count)
     end
     refreshUI()
-    if debug then print('addCraftQueue Finished') end
 end
 
 puton = function(printCount)
-    local debug = false
-    if debug then print('puton') end
     XInfo.reloadBag()
     XInfo.reloadAuction()
     local count = 0
@@ -1067,41 +1048,40 @@ puton = function(printCount)
         addQueryTaskByIndex(idx)
     end
     if printCount then
-        print('Up: ' .. count)
+        xdebug.info('Up: ' .. count)
     end
     refreshUI()
-    if debug then print('puton Finished') end
 end
 
 clearAll = function(printCount)
-    local debug = false
-    if debug then print('clearAll') end
-    XInfo.reloadBag()
-    XInfo.reloadAuction()
+    if not AuctionFrame or not AuctionFrame:IsVisible() then return end
+    local numItems = GetNumAuctionItems('owner')
+    if numItems <= 0 then return end
+
     local count = 0
-    for _, item in ipairs(XAutoAuctionList) do
-        local auctionItem = XInfo.getAuctionItem(item['itemname'])
-        if auctionItem ~= nil then
-            for _, record in ipairs(auctionItem['items']) do
-                if record['price'] > item['minpriceother'] then
-                    count = count + 1
-                    CancelAuction(record['index'])
-                end
-            end
-        end
-    end
+
+    CancelAuction(2)
+    -- for i = numItems, numItems-1, -1 do
+    --     local itemName, _, stackCount, _, _, _, _, _, _, buyoutPrice = GetAuctionItemInfo('owner', i)
+
+    --     for _, item in ipairs(XAutoAuctionList) do
+    --         if item['itemname'] == itemName then
+    --             -- if buyoutPrice / stackCount > item['minpriceother'] then
+    --                 count = count + 1
+    --                 CancelAuction(i)
+    --             -- end
+    --             break
+    --         end
+    --     end
+    -- end
     if printCount == nil or printCount then
-        print('Clear: ' .. count)
+        xdebug.info('Clear: ' .. count)
     end
-    XInfo.reloadBag()
     XInfo.reloadAuction()
     refreshUI()
-    if debug then print('clearAll Finished') end
 end
 
 shortPeriod = function(printCount)
-    local debug = false
-    if debug then print('shortPeriod') end
     local numItems = GetNumAuctionItems('owner')
     if numItems <= 0 then
         return
@@ -1129,36 +1109,32 @@ shortPeriod = function(printCount)
         end
     end
     if printCount == nil or printCount then
-        print('Short: ' .. count)
+        xdebug.info('Short: ' .. count)
     end
     XInfo.reloadAuction()
     refreshUI()
-    if debug then print('shortPeriod Finished') end
 end
 
 printList = function()
     XAutoAuction.refreshUI()
-    print('----------')
+    xdebug.info('----------')
     if #taskList <= 0 then
-        print('暂无任务')
+        xdebug.info('暂无任务')
         return
     end
     for i = #taskList, 1, -1 do
         local task = taskList[i]
         if task['action'] == 'query' then
-            print('[' .. i .. ']查询: ' .. XAutoAuctionList[task['index']]['itemname'])
+            xdebug.info('[' .. i .. ']查询: ' .. XAutoAuctionList[task['index']]['itemname'])
         elseif task['action'] == 'auction' then
-            print('[' .. i .. ']拍卖: ' .. task['itemname'])
+            xdebug.info('[' .. i .. ']拍卖: ' .. task['itemname'])
         end
     end
-    print('total: ' .. #taskList)
+    xdebug.info('total: ' .. #taskList)
 end
 
 -- Event callback
 local function onQueryItemListUpdate(...)
-    local debug = false
-    if debug then print('onQueryItemListUpdate') end
-    if not isTasking then return end
     if not curTask then return end
     if curTask['action'] ~= 'query' then return end
     if not XAutoAuctionList[curTask['index']] then return end
@@ -1168,8 +1144,6 @@ local function onQueryItemListUpdate(...)
     local itemName, _, stackCount, _, _, _, _, _, _, buyoutPrice, _, _, _, seller = GetAuctionItemInfo('list', 1);
     if not itemName then
         curTask['queryfound'] = false
-
-        isTasking = false
         curTask['queryresultprocessed'] = false
         return
     end
@@ -1193,88 +1167,42 @@ local function onQueryItemListUpdate(...)
         curTask['queryfound'] = true
     end
 
-    isTasking = false
     curTask['queryresultprocessed'] = false
-    if debug then print('onQueryItemListUpdate Finished') end
 end
 
 local function onAuctionSuccess()
-    local debug = false
-    if debug then print('onAuctionSuccess') end
-    if not isTasking then return end
     if not curTask then return end
     if curTask['action'] ~= 'auction' then return end
 
-    curTask['finished'] = true
-    isTasking = false
-    if debug then print('onAuctionSuccess Finished') end
+    curTask['status'] = 'finished'
 end
 
-local function onUpdate()
-    local debug = false
-    if debug then XUtils.info('onUpdate') end
-    refreshUI()
-
-    if not isStarted then return end
-
-    if isTasking then
-        if not curTask then
-            finishTask()
-            refreshUI()
-            return
-        end
-
-        if time() - curTask['starttime'] > dft_taskTimeout then
-            finishTask()
-            refreshUI()
-            return
-        end
+local function processQueryTask(task)
+    local index = task['index']
+    local item = XAutoAuctionList[index]
+    if not item then
+        finishTask()
+        return
     end
+    if not task['status'] then
+        if not CanSendAuctionQuery() then return end
 
-    if curTask then
-        if curTask['action'] == 'auction' then
-            local index = curTask['index']
-            local item = XAutoAuctionList[index]
-            if not item then
-                finishTask()
-                refreshUI()
-                return
-            end
+        item['minprice'] = dft_minPrice
+        item['myvalidlist'] = {}
+        item['lowercount'] = 0
+        item['allcount'] = 0
+        item['minpriceother'] = dft_minPrice
 
-            local price = curTask['price']
-            local count = curTask['count']
-            if curTask['finished'] then
-                for _ = 1, count do
-                    table.insert(item['myvalidlist'], price)
-                end
+        task['status'] = 'querying'
+        task['page'] = 0
+        task['queryfound'] = nil
+        task['queryresultprocessed'] = false
+        QueryAuctionItems(item['itemname'], nil, nil, task['page'], nil, nil, false, true)
 
-                finishTask()
-                refreshUI()
-                return
-            end
-
-            if GetAuctionSellItemInfo() ~= item['itemname'] then
-                finishTask()
-                refreshUI()
-                return
-            end
-
-            if curTask['starttime'] + dft_postdelay > time() then
-                return
-            end
-
-            -- PostAuction(startPrice, buyoutPrice, duration, stackSize, stacks)
-
-            PostAuction(price, price, 1, 1, count)
-
-            isTasking = true
-            refreshUI()
-            return
-        end
-
-        if curTask['queryfound'] == true then
-            local item = XAutoAuctionList[curTask['index']]
-            if not curTask['queryresultprocessed'] then
+        return
+    elseif task['status'] == 'querying' then
+        if task['queryfound'] == true then
+            if not task['queryresultprocessed'] then
                 item['updatetime'] = time()
 
                 local index = 1
@@ -1318,26 +1246,19 @@ local function onUpdate()
                     index = index + 1
                 end
 
-                curTask['queryresultprocessed'] = true
+                task['queryresultprocessed'] = true
             end
 
-            if time() - lastTaskFinishTime < dft_taskInterval then return end
             if not CanSendAuctionQuery() then return end
 
-            curTask['page'] = curTask['page'] + 1
-            curTask['starttime'] = time()
-            curTask['queryfound'] = nil
-            curTask['queryresultprocessed'] = false
-            isTasking = true
-            QueryAuctionItems(item['itemname'], nil, nil, curTask['page'], nil, nil, false, true)
+            task['page'] = task['page'] + 1
+            task['starttime'] = time()
+            task['queryfound'] = nil
+            task['queryresultprocessed'] = false
+            QueryAuctionItems(item['itemname'], nil, nil, task['page'], nil, nil, false, true)
 
-            refreshUI()
             return
-        end
-
-        if curTask['queryfound'] == false then
-            local item = XAutoAuctionList[curTask['index']]
-
+        elseif task['queryfound'] == false then
             item['updatetime'] = time()
             item['lastround'] = queryRound
 
@@ -1347,7 +1268,6 @@ local function onUpdate()
             local itemBag = XInfo.getBagItem(item['itemname'])
             if not itemBag then
                 finishTask()
-                refreshUI()
                 return
             end
 
@@ -1363,7 +1283,6 @@ local function onUpdate()
             end
             if price < item['lowestprice'] then
                 finishTask()
-                refreshUI()
                 return
             end
 
@@ -1393,90 +1312,131 @@ local function onUpdate()
             end
             if subcount <= 0 then
                 finishTask()
-                refreshUI()
                 return
             end
 
-            insertAuctionTaskByIndex(curTask['index'], price, subcount)
+            insertAuctionTaskByIndex(task['index'], price, subcount)
 
+            finishTask()
+            return
+        end
+
+        return
+    end
+end
+
+local function processAuctionTask(task)
+    local index = task['index']
+    local item = XAutoAuctionList[index]
+    if not item then
+        finishTask()
+        return
+    end
+
+    if not task['status'] then
+        XInfo.reloadBag()
+        local bagItem = XInfo.getBagItem(item['itemname'])
+        if not bagItem then
+            finishTask()
+            return
+        end
+
+        local position = bagItem['positions'][1]
+        ClearCursor()
+        ClickAuctionSellItemButton()
+        ClearCursor()
+        C_Container.PickupContainerItem(position[1], position[2])
+        ClickAuctionSellItemButton()
+
+        task['location'] = ItemLocation:CreateFromBagAndSlot(position[1], position[2])
+        C_Item.LockItem(task['location'])
+
+        task['status'] = 'inited'
+        return
+    elseif task['status'] == 'inited' then
+        local price = task['price']
+        local count = task['count']
+
+        if GetAuctionSellItemInfo() ~= item['itemname'] then
+            finishTask()
+            return
+        end
+
+        if task['starttime'] + dft_postdelay > time() then
+            return
+        end
+
+        -- PostAuction(startPrice, buyoutPrice, duration, stackSize, stacks)
+
+        PostAuction(price, price, 1, 1, count)
+
+        task['status'] = 'posted'
+        return
+    elseif task['posted'] then
+        return
+    elseif task['finished'] then
+        local price = task['price']
+        local count = task['count']
+        for _ = 1, count do
+            table.insert(item['myvalidlist'], price)
+        end
+
+        finishTask()
+        return
+    else
+        finishTask()
+        return
+    end
+end
+
+local function processClearLowerTask(task)
+end
+
+local function processClearShortTask(task)
+end
+
+local function onUpdate()
+    local debug = false
+    refreshUI()
+
+    if not isStarted then return end
+
+    if curTask then
+        if time() - curTask['starttime'] > curTask['timeout'] then
+            xdebug.error('XAuctionCenter Task Timeout')
             finishTask()
             refreshUI()
             return
         end
 
-        finishTask()
+        if curTask['action'] == 'auction' then
+            if processAuctionTask(curTask) then return end
+        elseif curTask['action'] == 'query' then
+            if processQueryTask(curTask) then return end
+        elseif curTask['action'] == 'clearlower' then
+            if processClearLowerTask(curTask) then return end
+        elseif curTask['action'] == 'clearshort' then
+            if processClearShortTask(curTask) then return end
+        end
         refreshUI()
         return
     end
 
     if #taskList > 0 then
         if time() - lastTaskFinishTime < dft_taskInterval then return end
+        curTask = taskList[1]
+        table.remove(taskList, 1)
+        curTask['starttime'] = time()
 
-        if taskList[1]['action'] == 'auction' then
-            curTask = taskList[1]
-            table.remove(taskList, 1)
-            isTasking = true
-            curTask['starttime'] = time()
-
-            local index = curTask['index']
-
-            local item = XAutoAuctionList[index]
-            if not item then
-                finishTask()
-                refreshUI()
-                return
-            end
-
-            XInfo.reloadBag()
-            local bagItem = XInfo.getBagItem(item['itemname'])
-            if not bagItem then
-                finishTask()
-                refreshUI()
-                return
-            end
-
-            local position = bagItem['positions'][1]
-            ClearCursor()
-            ClickAuctionSellItemButton()
-            ClearCursor()
-            C_Container.PickupContainerItem(position[1], position[2])
-            ClickAuctionSellItemButton()
-
-            curTask['location'] = ItemLocation:CreateFromBagAndSlot(position[1], position[2])
-            C_Item.LockItem(curTask['location'])
-
-            refreshUI()
-            return
+        if curTask['action'] == 'auction' then
+            if processAuctionTask(curTask) then return end
+        elseif curTask['action'] == 'query' then
+            if processQueryTask(curTask) then return end
+        elseif curTask['action'] == 'clearlower' then
+            if processClearLowerTask(curTask) then return end
+        elseif curTask['action'] == 'clearshort' then
+            if processClearShortTask(curTask) then return end
         end
-
-        if taskList[1]['action'] == 'query' then
-            if not CanSendAuctionQuery() then return end
-
-            curTask = taskList[1]
-            table.remove(taskList, 1)
-            isTasking = true
-            curTask['starttime'] = time()
-
-            local index = curTask['index']
-            local item = XAutoAuctionList[index]
-
-            item['minprice'] = dft_minPrice
-            item['myvalidlist'] = {}
-            item['lowercount'] = 0
-            item['allcount'] = 0
-            item['minpriceother'] = dft_minPrice
-
-            curTask['page'] = 0
-            curTask['starttime'] = time()
-            curTask['queryfound'] = nil
-            curTask['queryresultprocessed'] = false
-            QueryAuctionItems(item['itemname'], nil, nil, curTask['page'], nil, nil, false, true)
-
-            refreshUI()
-            return
-        end
-
-        finishTask()
         refreshUI()
         return
     end
@@ -1569,7 +1529,6 @@ local function onUpdate()
     end
 
     addQueryTaskByIndex(nextTaskIndex)
-    if debug then XUtils.info('onUpdate Finished') end
 end
 
 -- Events

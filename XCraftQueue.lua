@@ -300,7 +300,6 @@ local function onStart(...)
 
     curTask['castid'] = castId
     refreshUI()
-    XUtils.info('start')
 end
 
 local function onSuccess(...)
@@ -316,7 +315,6 @@ local function onSuccess(...)
     end
 
     refreshUI()
-    XUtils.info('success')
 end
 
 local function onFailed(...)
@@ -329,7 +327,7 @@ local function onFailed(...)
     lastFailTime = time()
     -- finishCurTask()
     refreshUI()
-    XUtils.error('failed')
+    xdebug.error('failed')
 end
 
 -- Events

@@ -433,13 +433,13 @@ local function onUpdate()
                 end
 
                 if (not XInfo.isMe(seller)) and buyoutPrice / stackCount <= item['price'] and itemName == item['itemname'] and buyoutPrice > 0 then
-                    XUtils.info('Buyout: ' .. itemName .. ' (' .. stackCount .. ')'
+                    xdebug.info('Buyout: ' .. itemName .. ' (' .. stackCount .. ')'
                         .. '    ' .. XUtils.priceToMoneyString(buyoutPrice / stackCount))
                     PlaceAuctionBid('list', index, buyoutPrice)
                     bought = true
                     break
                 elseif (not XInfo.isMe(seller)) and (not isMine) and nextBidPrice / stackCount <= XAutoBuyList[queryIndex]['price'] and itemName == item['itemname'] then
-                    XUtils.info('Bid: ' .. itemName .. ' (' .. stackCount .. ')'
+                    xdebug.info('Bid: ' .. itemName .. ' (' .. stackCount .. ')'
                         .. '    ' .. XUtils.priceToMoneyString(nextBidPrice / stackCount))
                     PlaceAuctionBid('list', index, nextBidPrice)
                     bought = true
