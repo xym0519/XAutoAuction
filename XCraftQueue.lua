@@ -258,6 +258,8 @@ end
 
 -- Event callback
 local function onUpdate()
+    if not isRunning then return end
+
     if curTask then
         if time() > taskExpires then
             finishCurTask()
@@ -277,7 +279,7 @@ local function onUpdate()
 
     local materialName = XInfo.getMaterialName(curTask['itemname'])
     taskExpires = dft_smalltime * curTask['count'] + 2
-    if XUtils.inArray(materialName, { '赤玉石', '紫黄晶', '王者琥珀', '森林翡翠', '巨锆石', '恐惧石' }) then
+    if XUtils.inArray(materialName, { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼', '巨锆石', '恐惧石' }) then
         taskExpires = dft_largetime * curTask['count'] + 2
     end
 
@@ -288,9 +290,6 @@ local function onUpdate()
         return
     end
 
-    XUtils.debug('------111')
-    XUtils.debug(tradeSkillItem['index'])
-    XUtils.debug(curTask['count'])
     DoTradeSkill(tradeSkillItem['index'], curTask['count'])
 end
 

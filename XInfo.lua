@@ -89,19 +89,19 @@ XInfo.reloadAuction = function()
     local numItems = GetNumAuctionItems('owner')
     if numItems <= 0 then
         XInfo.auctionList = {}
-        return true
+        return
     end
     for i = 1, numItems do
-        local itemName, _, itemCount, _, _, _, _, _, _, buyoutPrice = GetAuctionItemInfo('owner', i)
+        local itemName, _, stackCount, _, _, _, _, _, _, buyoutPrice = GetAuctionItemInfo('owner', i)
         if list[itemName] then
             local item = list[itemName]
-            item['count'] = item['count'] + itemCount
-            table.insert(list[itemName]['items'], { index = i, count = itemCount, price = buyoutPrice })
-            if item['minprice'] > buyoutPrice then
-                item['minprice'] = buyoutPrice
+            item['count'] = item['count'] + stackCount
+            table.insert(list[itemName]['items'], { index = i, count = stackCount, price = buyoutPrice / stackCount })
+            if item['minprice'] > buyoutPrice / stackCount then
+                item['minprice'] = buyoutPrice / stackCount
             end
         else
-            list[itemName] = { count = itemCount, minprice = buyoutPrice, items = { { index = i, count = itemCount, price = buyoutPrice } } }
+            list[itemName] = { count = stackCount, minprice = buyoutPrice / stackCount, items = { { index = i, count = stackCount, price = buyoutPrice / stackCount } } }
         end
     end
     XInfo.auctionList = list
