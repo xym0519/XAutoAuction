@@ -64,13 +64,13 @@ initUI = function()
     local printButton = XUI.createButton(mainFrame, 50, '查看')
     printButton:SetPoint('LEFT', settingButton, 'RIGHT', 5, 0)
     printButton:SetScript('OnClick', function()
-        print('----------自动喊话设置----------')
+        xdebug.info('----------自动喊话设置----------')
         for idx, cnt in pairs(XSpeakWordList) do
             local status = 'disabled'
             if cnt['enabled'] ~= nil and cnt['enabled'] then
                 status = 'enabled'
             end
-            print(idx .. '(' .. status .. '): ' .. cnt['text'])
+            xdebug.info(idx .. '(' .. status .. '): ' .. cnt['text'])
         end
     end)
 
@@ -107,7 +107,7 @@ initUI_Setting = function()
         XUIConfirmDialog.show(moduleName, '是否确认清除', '即将清除所有喊话数据', function()
             XSpeakWordList = {}
             refreshUI()
-            print('cleared')
+            xdebug.info('cleared')
         end)
     end)
 
@@ -135,13 +135,13 @@ initUI_Setting = function()
     local printButton = XUI.createButton(settingFrame, dft_buttonWidth, '查看')
     printButton:SetPoint('LEFT', addButton, 'RIGHT', dft_buttonGap, 0)
     printButton:SetScript('OnClick', function()
-        print('----------自动喊话设置----------')
+        xdebug.info('----------自动喊话设置----------')
         for idx, cnt in pairs(XSpeakWordList) do
             local status = 'disabled'
             if cnt['enabled'] ~= nil and cnt['enabled'] then
                 status = 'enabled'
             end
-            print(idx .. '(' .. status .. '): ' .. cnt['text'])
+            xdebug.info(idx .. '(' .. status .. '): ' .. cnt['text'])
         end
     end)
 
@@ -285,7 +285,7 @@ end
 
 send = function()
     if #XSpeakWordList <= 0 then
-        print('请先设置喊话内容')
+        xdebug.warn('请先设置喊话内容')
         return
     end
     if lastUpdatetime + dft_interval > time() then return end
@@ -318,7 +318,7 @@ end
 local function onUpdate()
     if isRunning then
         if #XSpeakWordList <= 0 then
-            print('请先设置喊话内容')
+            xdebug.warn('请先设置喊话内容')
             lastUpdatetime = 0
             curIndex = 1
             isRunning = false

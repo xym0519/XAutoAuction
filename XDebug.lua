@@ -56,16 +56,11 @@ xdebug.printProperty = function(obj, keyword)
 end
 
 xdebug.log = function(color, ...)
-    if color == nil then color = '' end
-
-    local params = { ... }
-    for _, item in ipairs(params) do
-        local valueType = type(item)
-        if valueType == 'string' or valueType == 'number' or valueType == 'boolean' then
-            item = color .. item
-        end
+    if color == nil then
+        print(...)
+    else
+        print(color, ...)
     end
-    print(unpack(params))
 end
 
 xdebug.error = function(...)
