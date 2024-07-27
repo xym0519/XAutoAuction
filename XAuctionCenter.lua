@@ -51,20 +51,19 @@ local start
 local stop
 local finishTask
 local addItem
+local resetItem
 local getAuctionItem
 local addQueryTaskByIndex
 local addQueryTaskByItemName
 local insertAuctionTaskByIndex
-local insertClearLowerTask
-local insertShortPeriodTask
+local insertCleanLowerTask
+local insertCleanShortTask
 
 local getMaterialCount
 local getMaterialPrice
 
 local addCraftQueue
 local puton
-local clearAll
-local shortPeriod
 local printList
 
 -- Function implemention
@@ -77,13 +76,7 @@ end
 
 resetData = function()
     for _, item in ipairs(XAutoAuctionList) do
-        item['minprice'] = dft_minPrice
-        item['myvalidlist'] = {}
-        item['lowercount'] = 0
-        item['minpriceother'] = dft_minPrice
-        item['allcount'] = 0
-        item['updatetime'] = 0
-        item['lastround'] = -99
+        resetItem(item)
     end
     isStarted = false
     taskList = {}
@@ -171,20 +164,20 @@ initUI = function()
         addCraftQueue(true, true)
     end)
 
-    local cleanButton = XUI.createButton(mainFrame, dft_buttonWidth, '清理')
-    cleanButton:SetPoint('LEFT', craftAllButton, 'RIGHT', dft_buttonGap, 0)
-    cleanButton:SetScript('OnClick', function()
-        clearAll()
+    local cleanLowerButton = XUI.createButton(mainFrame, dft_buttonWidth, '清理')
+    cleanLowerButton:SetPoint('LEFT', craftAllButton, 'RIGHT', dft_buttonGap, 0)
+    cleanLowerButton:SetScript('OnClick', function()
+        insertCleanLowerTask()
     end)
 
-    local shortPeriodButton = XUI.createButton(mainFrame, dft_buttonWidth, '短期')
-    shortPeriodButton:SetPoint('LEFT', cleanButton, 'RIGHT', dft_buttonGap, 0)
-    shortPeriodButton:SetScript('OnClick', function()
-        shortPeriod()
+    local cleanShortButton = XUI.createButton(mainFrame, dft_buttonWidth, '短期')
+    cleanShortButton:SetPoint('LEFT', cleanLowerButton, 'RIGHT', dft_buttonGap, 0)
+    cleanShortButton:SetScript('OnClick', function()
+        insertCleanShortTask()
     end)
 
     local refreshButton = XUI.createButton(mainFrame, dft_buttonWidth, '刷新')
-    refreshButton:SetPoint('LEFT', shortPeriodButton, 'RIGHT', dft_sectionGap, 0)
+    refreshButton:SetPoint('LEFT', cleanShortButton, 'RIGHT', dft_sectionGap, 0)
     refreshButton:SetScript('OnClick', function()
         XAutoAuction.refreshUI()
     end)
@@ -579,6 +572,10 @@ refreshUI = function()
             end
         elseif curTask['action'] == 'auction' then
             mainFrame.hintLabel:SetText('拍卖: ' .. curTask['itemname'])
+        elseif curTask['action'] == 'cleanlower' then
+            mainFrame.hintLabel:SetText('清理低价')
+        elseif curTask['action'] == 'cleanshort' then
+            mainFrame.hintLabel:SetText('清理短期')
         end
     end
 
@@ -798,11 +795,7 @@ end
 stop = function()
     if curTask and curTask['action'] == 'query' then
         local item = XAutoAuctionList[curTask.index];
-        item['minprice'] = dft_minPrice
-        item['minpriceother'] = dft_minPrice
-        item['myvalidlist'] = {}
-        item['lowercount'] = 0
-        item['allcount'] = 0
+        resetItem(item)
     end
     isStarted = false
     taskList = {}
@@ -833,16 +826,22 @@ addItem = function(itemName, lowestPrice, defaultPrice, stackCount)
         lowestprice = lowestPrice,
         defaultprice = defaultPrice,
         stackcount = stackCount,
-        minprice = dft_minPrice,
-        myvalidlist = {},
-        minpriceother = dft_minPrice,
-        lowercount = 0,
-        allcount = 0,
-        updatetime = 0,
-        lastround = -99
     }
+    resetItem(item)
     table.insert(XAutoAuctionList, item)
     refreshUI()
+end
+
+resetItem = function(item, keepUpdateTime)
+    item['minprice'] = dft_minPrice
+    item['myvalidlist'] = {}
+    item['lowercount'] = 0
+    item['allcount'] = 0
+    item['minpriceother'] = dft_minPrice
+    if not keepUpdateTime then
+        item['updatetime'] = 0
+        item['lastround'] = -99
+    end
 end
 
 getAuctionItem = function(itemName)
@@ -864,13 +863,7 @@ addQueryTaskByIndex = function(index)
     local item = XAutoAuctionList[index];
     if not item then return end
 
-    item['minprice'] = dft_minPrice
-    item['myvalidlist'] = {}
-    item['lowercount'] = 0
-    item['allcount'] = 0
-    item['minpriceother'] = dft_minPrice
-    item['updatetime'] = 0
-    item['lastround'] = -99
+    resetItem(item)
     local task = { action = 'query', index = index, page = 1, timeout = dft_taskTimeout }
     table.insert(taskList, task)
 end
@@ -904,17 +897,33 @@ insertAuctionTaskByIndex = function(index, price, count)
     table.insert(taskList, 1, task)
 end
 
-insertClearLowerTask = function()
+insertCleanLowerTask = function()
+    if curTask and curTask['action'] == 'cleanlower' then
+        return
+    end
+    for _, task in ipairs(taskList) do
+        if task['action'] == 'cleanlower' then
+            return
+        end
+    end
     local task = {
-        action = 'clearlower',
+        action = 'cleanlower',
         timeout = 120
     }
     table.insert(taskList, 1, task)
 end
 
-insertShortPeriodTask = function(index, price, count)
+insertCleanShortTask = function()
+    if curTask and curTask['action'] == 'cleanshort' then
+        return
+    end
+    for _, task in ipairs(taskList) do
+        if task['action'] == 'cleanshort' then
+            return
+        end
+    end
     local task = {
-        action = 'clearshort',
+        action = 'cleanshort',
         timeout = 120
     }
     table.insert(taskList, 1, task)
@@ -1053,72 +1062,10 @@ puton = function(printCount)
     refreshUI()
 end
 
-clearAll = function(printCount)
-    if not AuctionFrame or not AuctionFrame:IsVisible() then return end
-    local numItems = GetNumAuctionItems('owner')
-    if numItems <= 0 then return end
-
-    local count = 0
-
-    CancelAuction(2)
-    -- for i = numItems, numItems-1, -1 do
-    --     local itemName, _, stackCount, _, _, _, _, _, _, buyoutPrice = GetAuctionItemInfo('owner', i)
-
-    --     for _, item in ipairs(XAutoAuctionList) do
-    --         if item['itemname'] == itemName then
-    --             -- if buyoutPrice / stackCount > item['minpriceother'] then
-    --                 count = count + 1
-    --                 CancelAuction(i)
-    --             -- end
-    --             break
-    --         end
-    --     end
-    -- end
-    if printCount == nil or printCount then
-        xdebug.info('Clear: ' .. count)
-    end
-    XInfo.reloadAuction()
-    refreshUI()
-end
-
-shortPeriod = function(printCount)
-    local numItems = GetNumAuctionItems('owner')
-    if numItems <= 0 then
-        return
-    end
-    local count = 0;
-    for i = 1, numItems do
-        local timeLeft = GetAuctionItemTimeLeft('owner', i)
-        local itemName = GetAuctionItemInfo('owner', i);
-        if timeLeft < 3 then
-            count = count + 1
-            CancelAuction(i)
-
-            for _, item in ipairs(XAutoAuctionList) do
-                if item['itemname'] == itemName then
-                    item['minprice'] = dft_minPrice
-                    item['myvalidlist'] = {}
-                    item['lowercount'] = 0
-                    item['allcount'] = 0
-                    item['minpriceother'] = dft_minPrice
-                    item['updatetime'] = 0
-                    item['lastround'] = -99
-                    break
-                end
-            end
-        end
-    end
-    if printCount == nil or printCount then
-        xdebug.info('Short: ' .. count)
-    end
-    XInfo.reloadAuction()
-    refreshUI()
-end
-
 printList = function()
     XAutoAuction.refreshUI()
     xdebug.info('----------')
-    if #taskList <= 0 then
+    if (not curTask) and #taskList <= 0 then
         xdebug.info('暂无任务')
         return
     end
@@ -1128,7 +1075,28 @@ printList = function()
             xdebug.info('[' .. i .. ']查询: ' .. XAutoAuctionList[task['index']]['itemname'])
         elseif task['action'] == 'auction' then
             xdebug.info('[' .. i .. ']拍卖: ' .. task['itemname'])
+        elseif task['action'] == 'cleanlower' then
+            xdebug.info('[' .. i .. ']清理低价')
+        elseif task['action'] == 'cleanshort' then
+            xdebug.info('[' .. i .. ']清理短期')
+        else
+            xdebug.info('[' .. i .. ']不支持的任务类型')
         end
+    end
+    if curTask then
+        if curTask['action'] == 'query' then
+            xdebug.info('当前任务：查询: ' .. XAutoAuctionList[curTask['index']]['itemname'])
+        elseif curTask['action'] == 'auction' then
+            xdebug.info('当前任务：拍卖: ' .. curTask['itemname'])
+        elseif curTask['action'] == 'cleanlower' then
+            xdebug.info('当前任务：清理低价')
+        elseif curTask['action'] == 'cleanshort' then
+            xdebug.info('当前任务：清理短期')
+        else
+            xdebug.info('当前任务：不支持的任务类型')
+        end
+    else
+        xdebug.info('当前任务：无')
     end
     xdebug.info('total: ' .. #taskList)
 end
@@ -1141,7 +1109,10 @@ local function onQueryItemListUpdate(...)
 
     local item = XAutoAuctionList[curTask['index']]
 
-    local itemName, _, stackCount, _, _, _, _, _, _, buyoutPrice, _, _, _, seller = GetAuctionItemInfo('list', 1);
+    local res = { GetAuctionItemInfo('list', 1) }
+    local itemName = res[1]
+    local stackCount = res[3]
+    local buyoutPrice = res[10]
     if not itemName then
         curTask['queryfound'] = false
         curTask['queryresultprocessed'] = false
@@ -1187,11 +1158,7 @@ local function processQueryTask(task)
     if not task['status'] then
         if not CanSendAuctionQuery() then return end
 
-        item['minprice'] = dft_minPrice
-        item['myvalidlist'] = {}
-        item['lowercount'] = 0
-        item['allcount'] = 0
-        item['minpriceother'] = dft_minPrice
+        resetItem(item, true)
 
         task['status'] = 'querying'
         task['page'] = 0
@@ -1207,8 +1174,12 @@ local function processQueryTask(task)
 
                 local index = 1
                 while true do
-                    local itemName, _, stackCount, _, _, _, _, _, _, buyoutPrice, _, _, _, seller, _, _, itemId =
-                        GetAuctionItemInfo('list', index);
+                    local res = { GetAuctionItemInfo('list', index) }
+                    local itemName = res[1]
+                    local stackCount = res[3]
+                    local buyoutPrice = res[10]
+                    local seller = res[14]
+                    local itemId = res[17]
 
                     if not itemName then break end
 
@@ -1389,16 +1360,78 @@ local function processAuctionTask(task)
     end
 end
 
-local function processClearLowerTask(task)
+local function processCleanLowerTask(task)
+    if not AuctionFrame or not AuctionFrame:IsVisible() then
+        finishTask()
+        return
+    end
+    local numItems = GetNumAuctionItems('owner')
+    if numItems <= 0 then
+        finishTask()
+        return
+    end
+
+    for i = numItems, 1, -1 do
+        local res = { GetAuctionItemInfo('owner', i) }
+        local itemName = res[1]
+        local stackCount = res[3]
+        local buyoutPrice = res[10]
+        local saleStatus = res[16]
+
+        if saleStatus ~= 1 then
+            for _, item in ipairs(XAutoAuctionList) do
+                if item['itemname'] == itemName then
+                    if buyoutPrice / stackCount > item['minpriceother'] then
+                        CancelAuction(i)
+                        resetItem(item)
+                        return
+                    end
+                    break
+                end
+            end
+        end
+    end
+    XInfo.reloadAuction()
+    finishTask()
 end
 
-local function processClearShortTask(task)
+local function processCleanShortTask(task)
+    if not AuctionFrame or not AuctionFrame:IsVisible() then
+        finishTask()
+        return
+    end
+    local numItems = GetNumAuctionItems('owner')
+    if numItems <= 0 then
+        finishTask()
+        return
+    end
+
+    for i = numItems, 1, -1 do
+        local res = { GetAuctionItemInfo('owner', i) }
+        local saleStatus = res[16]
+        if saleStatus ~= 1 then
+            local timeLeft = GetAuctionItemTimeLeft('owner', i)
+            local itemName = GetAuctionItemInfo('owner', i);
+            if timeLeft < 3 then
+                CancelAuction(i)
+
+                for _, item in ipairs(XAutoAuctionList) do
+                    if item['itemname'] == itemName then
+                        resetItem(item)
+                        break
+                    end
+                end
+                return
+            end
+        end
+    end
+
+    XInfo.reloadAuction()
+    finishTask()
 end
 
 local function onUpdate()
-    local debug = false
     refreshUI()
-
     if not isStarted then return end
 
     if curTask then
@@ -1413,10 +1446,10 @@ local function onUpdate()
             if processAuctionTask(curTask) then return end
         elseif curTask['action'] == 'query' then
             if processQueryTask(curTask) then return end
-        elseif curTask['action'] == 'clearlower' then
-            if processClearLowerTask(curTask) then return end
-        elseif curTask['action'] == 'clearshort' then
-            if processClearShortTask(curTask) then return end
+        elseif curTask['action'] == 'cleanlower' then
+            if processCleanLowerTask(curTask) then return end
+        elseif curTask['action'] == 'cleanshort' then
+            if processCleanShortTask(curTask) then return end
         end
         refreshUI()
         return
@@ -1432,10 +1465,10 @@ local function onUpdate()
             if processAuctionTask(curTask) then return end
         elseif curTask['action'] == 'query' then
             if processQueryTask(curTask) then return end
-        elseif curTask['action'] == 'clearlower' then
-            if processClearLowerTask(curTask) then return end
-        elseif curTask['action'] == 'clearshort' then
-            if processClearShortTask(curTask) then return end
+        elseif curTask['action'] == 'cleanlower' then
+            if processCleanLowerTask(curTask) then return end
+        elseif curTask['action'] == 'cleanshort' then
+            if processCleanShortTask(curTask) then return end
         end
         refreshUI()
         return
@@ -1605,11 +1638,11 @@ SlashCmdList['XAUCTIONCENTERPRINT'] = function()
 end
 SLASH_XAUCTIONCENTERPRINT1 = '/xauctioncenter_print'
 
-SlashCmdList['XAUCTIONCENTERCLEARALL'] = function()
-    clearAll()
-    shortPeriod()
+SlashCmdList['XAUCTIONCENTERCLEANALL'] = function()
+    insertCleanShortTask()
+    insertCleanLowerTask()
 end
-SLASH_XAUCTIONCENTERCLEARALL1 = '/xauctioncenter_clearall'
+SLASH_XAUCTIONCENTERCLEANALL1 = '/xauctioncenter_cleanall'
 
 -- Interfaces
 XAuctionCenter.addQueryTaskByItemName = addQueryTaskByItemName

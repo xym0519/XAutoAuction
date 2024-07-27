@@ -349,8 +349,15 @@ local function onAuctionItemListUpdate()
 
     local item = XAutoBuyList[queryIndex]
 
-    local itemName, _, stackCount, _, _, _, _, bidStart, bidIncrease, buyoutPrice, bidPrice, isMine, _, seller =
-        GetAuctionItemInfo('list', 1)
+    local res = { GetAuctionItemInfo('list', 1) }
+    local itemName = res[1]
+    local stackCount = res[3]
+    local bidStart = res[8]
+    local bidIncrease = res[9]
+    local buyoutPrice = res[10]
+    local bidPrice = res[11]
+    local isMine = res[12]
+    local seller = res[14]
 
     if not itemName then
         queryFound = false
@@ -417,8 +424,16 @@ local function onUpdate()
             local index = 1
             local bought = false
             while true do
-                local itemName, _, stackCount, _, _, _, _, bidStart, bidIncrease, buyoutPrice, bidPrice, isMine, _, seller, _, _, itemId =
-                    GetAuctionItemInfo('list', index)
+                local res = { GetAuctionItemInfo('list', index) }
+                local itemName = res[1]
+                local stackCount = res[3]
+                local bidStart = res[8]
+                local bidIncrease = res[9]
+                local buyoutPrice = res[10]
+                local bidPrice = res[11]
+                local isMine = res[12]
+                local seller = res[14]
+                local itemId = res[17]
 
                 if not itemName then break end
 
