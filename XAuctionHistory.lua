@@ -105,7 +105,7 @@ initUI = function()
             if not item then return end
             local autoAuctionItem = XAuctionCenter.getAuctionItem(item['itemname'])
             if autoAuctionItem then
-                print(item['itemname'] .. ': ' .. XUtils.priceToMoneyString(autoAuctionItem['minprice']))
+                xdebug.info(item['itemname'] .. ': ' .. XUtils.priceToMoneyString(autoAuctionItem['minprice']))
             end
         end)
 

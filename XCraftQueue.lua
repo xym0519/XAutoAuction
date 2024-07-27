@@ -143,7 +143,7 @@ initUI = function()
                 local autoAuctionItem = XAuctionCenter.getAuctionItem(item['itemname'])
 
                 if autoAuctionItem then
-                    print(item['itemname'] .. ': ' .. XUtils.priceToMoneyString(autoAuctionItem['minprice']))
+                    xdebug.info(item['itemname'] .. ': ' .. XUtils.priceToMoneyString(autoAuctionItem['minprice']))
                 end
             end
         end)
@@ -262,6 +262,7 @@ local function onUpdate()
 
     if curTask then
         if time() > taskExpires then
+            xdebug.error('XCraftQueue Task Timeout')
             finishCurTask()
             refreshUI()
             return

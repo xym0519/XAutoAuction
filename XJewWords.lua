@@ -56,7 +56,7 @@ initUI = function()
                 if itemName and price1 then
                     addItem(itemName, price1, unit)
                 else
-                    print('珠宝文案，信息不能为空')
+                    xdebug.warn('珠宝文案，信息不能为空')
                 end
                 refreshUI()
             end,
@@ -126,7 +126,7 @@ initUI = function()
                         displaySettingItem['price1'] = price1
                         displaySettingItem['unit'] = unit
                     else
-                        print('珠宝文案，信息不能为空')
+                        xdebug.warn('珠宝文案，信息不能为空')
                     end
                     refreshUI()
                 end,
@@ -229,7 +229,7 @@ initUI = function()
                     count = count + 1
                 end
             end
-            print('记账成功，新增' .. count .. '条购买记录')
+            xdebug.info('记账成功，新增' .. count .. '条购买记录')
         end)
     end)
 
@@ -244,7 +244,7 @@ initUI = function()
             else
                 XAutoSpeak.addItem(text, true)
             end
-            print('setted: ' .. text)
+            xdebug.info('自动喊话设置成功: ' .. text)
         end)
     end)
 
