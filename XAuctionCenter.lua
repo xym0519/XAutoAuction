@@ -276,15 +276,31 @@ initUI = function()
             local itemName = nil
             local lowestPrice = nil
             local defaultPrice = nil
-            local stackCount = nil
             for _, item in ipairs(data) do
                 if item.Name == '宝石名称' then itemName = item.Value end
                 if item.Name == '最低售价' then lowestPrice = tonumber(item.Value) end
                 if item.Name == '默认价格' then defaultPrice = tonumber(item.Value) end
-                if item.Name == '拍卖数量' then stackCount = tonumber(item.Value) end
             end
-            if itemName and lowestPrice and defaultPrice and stackCount then
-                addItem(itemName, lowestPrice, defaultPrice, stackCount)
+            if itemName and lowestPrice and defaultPrice then
+                local all = false
+                if XUtils.stringStartsWith(itemName, '*') then
+                    all = true
+                    itemName = string.gsub(itemName, '^%*', '')
+                end
+                print('----------')
+                for _, item in ipairs(XAutoAuctionList) do
+                    if XUtils.stringContains(item['itemname'], itemName) then
+                        if item['enabled'] ~= nil and item['enabled'] then
+                            if all or (not item['star']) then
+                                item['lowestprice'] = lowestPrice
+                                item['defaultprice'] = defaultPrice
+                                print(item['itemname'] .. ':  '
+                                    .. XUtils.priceToMoneyString(item['lowestprice']) .. ' / '
+                                    .. XUtils.priceToMoneyString(item['defaultprice']))
+                            end
+                        end
+                    end
+                end
             end
         end, { {
             Name = '宝石名称',
@@ -298,7 +314,7 @@ initUI = function()
                 for _, item in ipairs(XAutoAuctionList) do
                     if XUtils.stringContains(item['itemname'], tname) then
                         if item['enabled'] ~= nil and item['enabled'] then
-                            if all or (not item['star']) or (not item['star']) then
+                            if all or (not item['star']) then
                                 print(item['itemname'] .. ':  '
                                     .. XUtils.priceToMoneyString(item['lowestprice']) .. ' / '
                                     .. XUtils.priceToMoneyString(item['defaultprice']))
@@ -633,7 +649,7 @@ refreshUI = function()
             end
         end
 
-        if filterWord ~= '' and not XUtils.stringContains(itemName, filterWord) then
+        if filterWord ~= '' and (not XUtils.stringContains(itemName, filterWord)) then
             disFlag = false
         end
 
