@@ -279,9 +279,9 @@ local function onUpdate()
     table.remove(craftQueue, 1)
 
     local materialName = XInfo.getMaterialName(curTask['itemname'])
-    taskExpires = dft_smalltime * curTask['count'] + 2
+    taskExpires = time() + dft_smalltime * curTask['count'] + 2
     if XUtils.inArray(materialName, { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼', '巨锆石', '恐惧石' }) then
-        taskExpires = dft_largetime * curTask['count'] + 2
+        taskExpires = time() + dft_largetime * curTask['count'] + 2
     end
 
     local tradeSkillItem = XInfo.getTradeSkillItem(curTask['itemname'])
