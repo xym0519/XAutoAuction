@@ -95,8 +95,14 @@ XInfo.reloadAuction = function()
         local res = { GetAuctionItemInfo('owner', i) }
         local itemName = res[1]
         local stackCount = res[3]
+        local bidStart = res[8]
+        local bidIncrease = res[9]
         local buyoutPrice = res[10]
+        local bidPrice = res[11]
+        local isMine = res[12]
+        local seller = res[14]
         local saleStatus = res[16]
+        local itemId = res[17]
         if saleStatus ~= 1 then
             if list[itemName] then
                 local item = list[itemName]
