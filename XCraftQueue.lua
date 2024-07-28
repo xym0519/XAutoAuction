@@ -310,6 +310,7 @@ local function onSuccess(...)
     if curTask['castid'] ~= castId then return end
 
     if curTask['count'] <= 1 then
+        XAuctionCenter.addQueryTaskByItemName(curTask['itemname'])
         finishCurTask()
     else
         curTask['count'] = curTask['count'] - 1

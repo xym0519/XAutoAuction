@@ -1351,6 +1351,9 @@ local function processAuctionTask(task)
         for _ = 1, count do
             table.insert(item['myvalidlist'], price)
         end
+        if item['minprice'] == dft_minPrice then
+            item['minprice'] = price
+        end
 
         finishTask()
         return
@@ -1384,6 +1387,7 @@ local function processCleanLowerTask(task)
                     if buyoutPrice / stackCount > item['minpriceother'] then
                         CancelAuction(i)
                         resetItem(item)
+                        xdebug.info('清理：' .. item['itemname'])
                         return
                     end
                     break
@@ -1418,6 +1422,7 @@ local function processCleanShortTask(task)
                 for _, item in ipairs(XAutoAuctionList) do
                     if item['itemname'] == itemName then
                         resetItem(item)
+                        xdebug.info('清理：' .. item['itemname'])
                         break
                     end
                 end
