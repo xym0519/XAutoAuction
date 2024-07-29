@@ -655,7 +655,6 @@ refreshUI = function()
             if item['myvalidlist'] then minPriceCount = #item['myvalidlist'] end
             local stackCount = item['stackcount']
             local lowerCount = item['lowercount']
-            local allCount = item['allcount']
             local materialCount = getMaterialCount(itemName)
 
             local itemBag = XInfo.getBagItem(itemName)
@@ -721,15 +720,6 @@ refreshUI = function()
                 lowerCountStr = XUI.White .. lowerCountStr
             end
 
-            local allCountStr = 'G' .. XUtils.formatCount(allCount)
-            if allCount > 20 then
-                allCountStr = XUI.Red .. allCountStr
-            elseif allCount > 10 then
-                allCountStr = XUI.Yellow .. allCountStr
-            else
-                allCountStr = XUI.Green .. allCountStr
-            end
-
             local stackCountStr = 'S' .. XUtils.formatCount(stackCount, 1)
             if stackCount > 2 then
                 stackCountStr = XUI.Cyan .. stackCountStr
@@ -760,7 +750,7 @@ refreshUI = function()
             frame.labelBag:SetText(bagCountStr .. XUI.White .. '/' .. bagAuctionCountStr
                 .. XUI.White .. '/' .. materialCountStr .. XUI.White .. '/' .. stackCountStr)
             frame.labelAuction:SetText(auctionCountStr .. XUI.White .. '/' .. minPriceCountStr
-                .. XUI.White .. '/' .. lowerCountStr .. XUI.White .. '/' .. allCountStr)
+                .. XUI.White .. '/' .. lowerCountStr .. XUI.White)
             frame.labelDeal:SetText(dealRateStr .. XUI.White .. '/' .. dealCountStr)
             frame.labelPrice:SetText(minPriceStr .. XUI.White .. '/' .. lowestPriceStr)
 
@@ -834,7 +824,6 @@ resetItem = function(item, keepUpdateTime)
     item['minprice'] = dft_minPrice
     item['myvalidlist'] = {}
     item['lowercount'] = 0
-    item['allcount'] = 0
     item['minpriceother'] = dft_minPrice
     if not keepUpdateTime then
         item['updatetime'] = 0
@@ -1117,7 +1106,6 @@ local function onQueryItemListUpdate(...)
 
     local res = { XAPI.GetAuctionItemInfo('list', 1) }
     local itemName = res[1]
-    local stackCount = res[3]
     local buyoutPrice = res[10]
     if not itemName then
         curTask['queryfound'] = false
@@ -1127,18 +1115,7 @@ local function onQueryItemListUpdate(...)
 
     if itemName ~= item['itemname'] then return end
 
-    buyoutPrice = buyoutPrice / stackCount
-
-    if fastAuction then -- 快速模式
-        if buyoutPrice <= item['lowestprice'] then
-            curTask['queryfound'] = true
-        else
-            curTask['queryfound'] = false
-        end
-    else
-        curTask['queryfound'] = true
-    end
-
+    curTask['queryfound'] = true
     curTask['queryresultprocessed'] = false
 end
 
@@ -1147,6 +1124,66 @@ local function onAuctionSuccess()
     if curTask['action'] ~= 'auction' then return end
 
     curTask['status'] = 'finished'
+end
+
+local function processQueryTask_Auction(task)
+    local index = task['index']
+    local item = XAutoAuctionList[index]
+    XInfo.reloadBag()
+    XInfo.reloadAuction()
+
+    local itemBag = XInfo.getBagItem(item['itemname'])
+    if not itemBag then
+        finishTask()
+        return
+    end
+
+    local price = item['defaultprice']
+    if item['minpriceother'] ~= dft_minPrice then
+        price = item['minpriceother'] - dft_deltaPrice
+    end
+    if item['minpriceother'] >= item['lowestprice'] and price < item['lowestprice'] then
+        price = item['lowestprice']
+    end
+    if price > dft_maxPrice then
+        price = dft_maxPrice
+    end
+    if price < item['lowestprice'] then
+        finishTask()
+        return
+    end
+
+    local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0)
+    local multiRate = 3
+    if XInfo.allHistory == 1 then multiRate = 1 end
+    local myValidCount = 0
+    local auctionItem = XInfo.getAuctionItem(item['itemname'])
+    if auctionItem then myValidCount = auctionItem['count'] end
+    local minPriceCount = #item['myvalidlist']
+    if minPriceCount < myValidCount then myValidCount = minPriceCount end
+
+    local targetCount = item['stackcount']
+    if multiAuction == 2 then
+        targetCount = 999
+    elseif multiAuction == 1 then
+        if item['star'] or dealCount >= 20 * multiRate then
+            targetCount = targetCount * 2
+        end
+    end
+    local subcount = targetCount - myValidCount
+    if myValidCount <= 0 then
+        subcount = targetCount
+    end
+    if itemBag['count'] < subcount then
+        subcount = itemBag['count']
+    end
+    if subcount <= 0 then
+        finishTask()
+        return
+    end
+
+    insertAuctionTaskByIndex(task['index'], price, subcount)
+    finishTask()
 end
 
 local function processQueryTask(task)
@@ -1171,6 +1208,7 @@ local function processQueryTask(task)
                 item['updatetime'] = time()
 
                 local index = 1
+                task['recentmaxpriceother'] = 0
                 while true do
                     local res = { XAPI.GetAuctionItemInfo('list', index) }
                     local itemName = res[1]
@@ -1195,8 +1233,6 @@ local function processQueryTask(task)
                             item['lowercount'] = item['lowercount'] + 1
                         end
 
-                        item['allcount'] = item['allcount'] + 1
-
                         if buyoutPrice <= item['minpriceother'] then
                             if XInfo.isMe(seller) then
                                 table.insert(item['myvalidlist'], buyoutPrice)
@@ -1211,11 +1247,31 @@ local function processQueryTask(task)
                                 item['minpriceother'] = buyoutPrice
                             end
                         end
+                        if buyoutPrice > task['recentmaxpriceother'] then
+                            if not XInfo.isMe(seller) then
+                                task['recentmaxpriceother'] = buyoutPrice
+                            end
+                        end
                     end
                     index = index + 1
                 end
 
                 task['queryresultprocessed'] = true
+            end
+
+            if fastAuction then -- 快速模式
+                if item['minpriceother'] < item['lowestprice'] then
+                    finishTask()
+                    return
+                else
+                    processQueryTask_Auction(task)
+                    return
+                end
+            else
+                if task['recentmaxpriceother'] > item['lowestprice'] then
+                    processQueryTask_Auction(task)
+                    return
+                end
             end
 
             if not XAPI.CanSendAuctionQuery() then return end
@@ -1244,62 +1300,7 @@ local function processQueryTask(task)
             item['updatetime'] = time()
             item['lastround'] = queryRound
 
-            XInfo.reloadBag()
-            XInfo.reloadAuction()
-
-            local itemBag = XInfo.getBagItem(item['itemname'])
-            if not itemBag then
-                finishTask()
-                return
-            end
-
-            local price = item['defaultprice']
-            if item['minpriceother'] ~= dft_minPrice then
-                price = item['minpriceother'] - dft_deltaPrice
-            end
-            if item['minpriceother'] >= item['lowestprice'] and price < item['lowestprice'] then
-                price = item['lowestprice']
-            end
-            if price > dft_maxPrice then
-                price = dft_maxPrice
-            end
-            if price < item['lowestprice'] then
-                finishTask()
-                return
-            end
-
-            local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0)
-            local multiRate = 3
-            if XInfo.allHistory == 1 then multiRate = 1 end
-            local myValidCount = 0
-            local auctionItem = XInfo.getAuctionItem(item['itemname'])
-            if auctionItem then myValidCount = auctionItem['count'] end
-            local minPriceCount = #item['myvalidlist']
-            if minPriceCount < myValidCount then myValidCount = minPriceCount end
-
-            local targetCount = item['stackcount']
-            if multiAuction == 2 then
-                targetCount = 999
-            elseif multiAuction == 1 then
-                if item['star'] or dealCount >= 20 * multiRate then
-                    targetCount = targetCount * 2
-                end
-            end
-            local subcount = targetCount - myValidCount
-            if myValidCount <= 0 then
-                subcount = targetCount
-            end
-            if itemBag['count'] < subcount then
-                subcount = itemBag['count']
-            end
-            if subcount <= 0 then
-                finishTask()
-                return
-            end
-
-            insertAuctionTaskByIndex(task['index'], price, subcount)
-
-            finishTask()
+            processQueryTask_Auction(task)
             return
         end
 
@@ -1353,9 +1354,9 @@ local function processAuctionTask(task)
 
         task['status'] = 'posted'
         return
-    elseif task['posted'] then
+    elseif task['status'] == 'posted' then
         return
-    elseif task['finished'] then
+    elseif task['status'] == 'finished' then
         local price = task['price']
         local count = task['count']
         for _ = 1, count do
@@ -1537,6 +1538,7 @@ local function onUpdate()
             queryRound = queryRound + 1
             queryRoundFinishTime = time()
             autoAuction = true
+            fastAuction = false
 
             refreshUI()
             return

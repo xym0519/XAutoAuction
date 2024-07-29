@@ -300,7 +300,7 @@ local function onStart(...)
     if unit ~= 'player' then return end
 
     curTask['castid'] = castId
-    refreshUI()
+    XAutoAuction.refreshUI()
 end
 
 local function onSuccess(...)
@@ -316,7 +316,7 @@ local function onSuccess(...)
         curTask['count'] = curTask['count'] - 1
     end
 
-    refreshUI()
+    XAutoAuction.refreshUI()
 end
 
 local function onFailed(...)
@@ -327,9 +327,8 @@ local function onFailed(...)
     if curTask['castid'] ~= castId then return end
 
     lastFailTime = time()
-    -- finishCurTask()
-    refreshUI()
-    xdebug.error('failed')
+    finishCurTask()
+    XAutoAuction.refreshUI()
 end
 
 -- Events
