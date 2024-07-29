@@ -147,7 +147,7 @@ initUI_Setting = function()
 
     local lastWidget = preButton
     for i = 1, displayPageSize do
-        local frame = CreateFrame('Frame', nil, settingFrame)
+        local frame = XAPI.CreateFrame('Frame', nil, settingFrame)
         frame:SetSize(settingFrame:GetWidth(), 30)
 
         if i == 1 then
@@ -293,7 +293,7 @@ send = function()
     for i = curIndex, #XSpeakWordList do
         local item = XSpeakWordList[i]
         if item['enabled'] then
-            SendChatMessage(item['text'], 'channel', nil, 2)
+            XAPI.SendChatMessage(item['text'], 'channel', nil, 2)
             curIndex = curIndex + 1
             if curIndex > #XSpeakWordList then curIndex = 1 end
             lastUpdatetime = time()

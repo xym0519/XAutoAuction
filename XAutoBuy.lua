@@ -119,7 +119,7 @@ initUI = function()
 
     local lastWidget = preButton
     for i = 1, displayPageSize do
-        local frame = CreateFrame('Frame', nil, mainFrame)
+        local frame = XAPI.CreateFrame('Frame', nil, mainFrame)
         frame:SetSize(mainFrame:GetWidth(), 30)
 
         if i == 1 then
@@ -306,7 +306,6 @@ end
 
 startBuy = function()
     isStarted = true
-    lastTaskFinishTime = 0
     isQuerying = false
     queryStartTime = 0
     queryPage = 0
@@ -317,7 +316,6 @@ end
 
 stopBuy = function()
     isStarted = false
-    lastTaskFinishTime = 0
     isQuerying = false
     queryStartTime = 0
     queryPage = 0
@@ -328,7 +326,6 @@ stopBuy = function()
 end
 
 finishCurTask = function()
-    lastTaskFinishTime = time()
     isQuerying = false
     queryStartTime = 0
     queryIndex = queryIndex + 1
@@ -349,7 +346,7 @@ local function onAuctionItemListUpdate()
 
     local item = XAutoBuyList[queryIndex]
 
-    local res = { GetAuctionItemInfo('list', 1) }
+    local res = { XAPI.GetAuctionItemInfo('list', 1) }
     local itemName = res[1]
     local stackCount = res[3]
     local bidStart = res[8]
@@ -424,7 +421,7 @@ local function onUpdate()
             local index = 1
             local bought = false
             while true do
-                local res = { GetAuctionItemInfo('list', index) }
+                local res = { XAPI.GetAuctionItemInfo('list', index) }
                 local itemName = res[1]
                 local stackCount = res[3]
                 local bidStart = res[8]
@@ -450,13 +447,13 @@ local function onUpdate()
                 if (not XInfo.isMe(seller)) and buyoutPrice / stackCount <= item['price'] and itemName == item['itemname'] and buyoutPrice > 0 then
                     xdebug.info('Buyout: ' .. itemName .. ' (' .. stackCount .. ')'
                         .. '    ' .. XUtils.priceToMoneyString(buyoutPrice / stackCount))
-                    PlaceAuctionBid('list', index, buyoutPrice)
+                    XAPI.PlaceAuctionBid('list', index, buyoutPrice)
                     bought = true
                     break
                 elseif (not XInfo.isMe(seller)) and (not isMine) and nextBidPrice / stackCount <= XAutoBuyList[queryIndex]['price'] and itemName == item['itemname'] then
                     xdebug.info('Bid: ' .. itemName .. ' (' .. stackCount .. ')'
                         .. '    ' .. XUtils.priceToMoneyString(nextBidPrice / stackCount))
-                    PlaceAuctionBid('list', index, nextBidPrice)
+                    XAPI.PlaceAuctionBid('list', index, nextBidPrice)
                     bought = true
                     break
                 end
@@ -471,13 +468,13 @@ local function onUpdate()
             return
         end
 
-        if not CanSendAuctionQuery() then return end
+        if not XAPI.CanSendAuctionQuery() then return end
 
         queryStartTime = time()
         queryPage = queryPage + 1
         queryFound = nil
         isQuerying = true
-        QueryAuctionItems(XAutoBuyList[queryIndex]['itemname'], nil, nil, queryPage, nil, nil, nil, true)
+        XAPI.QueryAuctionItems(XAutoBuyList[queryIndex]['itemname'], nil, nil, queryPage, nil, nil, nil, true)
         refreshUI()
         return
     end
@@ -488,7 +485,7 @@ local function onUpdate()
         return
     end
 
-    if not CanSendAuctionQuery() then return end
+    if not XAPI.CanSendAuctionQuery() then return end
 
     local item = nil
     for i = queryIndex, #XAutoBuyList do
@@ -506,7 +503,7 @@ local function onUpdate()
         queryPage = 0
         queryFound = nil
         isQuerying = true
-        QueryAuctionItems(item['itemname'], nil, nil, queryPage, nil, nil, nil, true)
+        XAPI.QueryAuctionItems(item['itemname'], nil, nil, queryPage, nil, nil, nil, true)
         refreshUI()
         return
     end

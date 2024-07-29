@@ -79,7 +79,7 @@ initUI = function()
 
     local lastWidget = startButton
     for i = 1, displayPageSize do
-        local frame = CreateFrame('Frame', nil, mainFrame)
+        local frame = XAPI.CreateFrame('Frame', nil, mainFrame)
         frame:SetSize(mainFrame:GetWidth(), 30)
 
         if i == 1 then
@@ -291,7 +291,7 @@ local function onUpdate()
         return
     end
 
-    DoTradeSkill(tradeSkillItem['index'], curTask['count'])
+    XAPI.DoTradeSkill(tradeSkillItem['index'], curTask['count'])
 end
 
 local function onStart(...)

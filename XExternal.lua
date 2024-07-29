@@ -23,29 +23,29 @@ XExternal.processMail = function(mailIndex, mailType, msgSubject)
         return
     elseif mailType == 'AHWon' then
         local invoiceType, itemName, playerName, bid, buyout, deposit, consignment,
-        moneyDelay, etaHour, etaMin, count, commerceAuction = GetInboxInvoiceInfo(mailIndex);
+        moneyDelay, etaHour, etaMin, count, commerceAuction = XAPI.GetInboxInvoiceInfo(mailIndex);
         if not invoiceType then return end
 
         if invoiceType == 'buyer' then XExternal.addBuyHistory(itemName, time(), bid / count, count) end
     elseif mailType == 'AHCancelled' then
         if msgSubject == nil then
-            msgSubject = select(4, GetInboxHeaderInfo(mailIndex))
+            msgSubject = select(4, XAPI.GetInboxHeaderInfo(mailIndex))
         end
-        local itemStr = string.match(msgSubject, gsub(AUCTION_REMOVED_MAIL_SUBJECT, '%%s', '(.*)'))
+        local itemStr = string.match(msgSubject, gsub(XAPI.AUCTION_REMOVED_MAIL_SUBJECT, '%%s', '(.*)'))
         local itemName, count = getNameCount(itemStr)
 
         XExternal.addSellHistory(itemName, time(), false, 0, count)
     elseif mailType == 'AHExpired' then
         if msgSubject == nil then
-            msgSubject = select(4, GetInboxHeaderInfo(mailIndex))
+            msgSubject = select(4, XAPI.GetInboxHeaderInfo(mailIndex))
         end
-        local itemStr = string.match(msgSubject, gsub(AUCTION_EXPIRED_MAIL_SUBJECT, '%%s', '(.*)'))
+        local itemStr = string.match(msgSubject, gsub(XAPI.AUCTION_EXPIRED_MAIL_SUBJECT, '%%s', '(.*)'))
         local itemName, count = getNameCount(itemStr)
 
         XExternal.addSellHistory(itemName, time(), false, 0, count)
     elseif mailType == 'AHSuccess' then
         local invoiceType, itemName, playerName, bid, buyout, deposit, consignment,
-        moneyDelay, etaHour, etaMin, count, commerceAuction = GetInboxInvoiceInfo(mailIndex);
+        moneyDelay, etaHour, etaMin, count, commerceAuction = XAPI.GetInboxInvoiceInfo(mailIndex);
         if not invoiceType then return end
 
         if invoiceType == 'seller' then

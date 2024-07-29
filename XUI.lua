@@ -28,7 +28,7 @@ end
 
 XUI.createFrame = function(name, width, height, strata)
     if strata == nil then strata = 'HIGH' end
-    local frame = CreateFrame('Frame', name, UIParent, 'BasicFrameTemplateWithInset')
+    local frame = XAPI.CreateFrame('Frame', name, UIParent, 'BasicFrameTemplateWithInset')
 
     frame:SetMovable(true)
     frame:EnableMouse(true)
@@ -52,7 +52,7 @@ XUI.createFrame = function(name, width, height, strata)
 end
 
 XUI.createButton = function(parent, width, text)
-    local button = CreateFrame('Button', nil, parent, 'UIPanelButtonTemplate')
+    local button = XAPI.CreateFrame('Button', nil, parent, 'UIPanelButtonTemplate')
     button:SetSize(width, 30)
     button:SetText(text)
     return button
@@ -65,7 +65,7 @@ XUI.createLabel = function(parent, width, text, align)
     if text == nil then text = '' end
 
     if debug then
-        label = CreateFrame('EditBox', nil, parent)
+        label = XAPI.CreateFrame('EditBox', nil, parent)
         label:SetCursorPosition(0) -- 设置光标位置为开头
         label:EnableMouse(false)   -- 禁用鼠标交互
         label:ClearFocus()         -- 清除焦点
@@ -86,7 +86,7 @@ end
 
 XUI.createEditbox = function(parent, width)
     local debug = false
-    local editBox = CreateFrame('EditBox', nil, parent, 'InputBoxTemplate')
+    local editBox = XAPI.CreateFrame('EditBox', nil, parent, 'InputBoxTemplate')
     editBox:SetFontObject(ChatFontNormal)
     editBox:SetSize(width, 25)
     editBox:SetAutoFocus(false)
@@ -108,7 +108,7 @@ XUI.createEditboxMultiline = function(parent, width, height)
     local borderWidth = 1
     local margin = 3
 
-    local frame = CreateFrame('Frame', nil, parent)
+    local frame = XAPI.CreateFrame('Frame', nil, parent)
     frame:SetSize(width, height)
 
     local frameBorderTop = frame:CreateTexture(nil, 'OVERLAY')
@@ -131,7 +131,7 @@ XUI.createEditboxMultiline = function(parent, width, height)
     frameBorderRight:SetPoint('TOPLEFT', frame, 'TOPRIGHT', -borderWidth, 0)
     frameBorderRight:SetPoint('BOTTOMRIGHT', frame, 'BOTTOMRIGHT', 0, 0)
 
-    local scroll = CreateFrame('ScrollFrame', nil, frame, 'UIPanelScrollFrameTemplate')
+    local scroll = XAPI.CreateFrame('ScrollFrame', nil, frame, 'UIPanelScrollFrameTemplate')
     scroll:SetPoint('TOPLEFT', borderWidth + margin, -borderWidth - margin)
     scroll:SetPoint('BOTTOMRIGHT', -23 - borderWidth - margin, borderWidth + margin)
 
@@ -139,7 +139,7 @@ XUI.createEditboxMultiline = function(parent, width, height)
     scrollBG:SetAllPoints(scroll)
     scrollBG:SetColorTexture(0, 0, 0)
 
-    local editBox = CreateFrame('EditBox', nil, scroll)
+    local editBox = XAPI.CreateFrame('EditBox', nil, scroll)
     editBox:SetSize(width - 23, height)
     editBox:SetMultiLine(true)
     editBox:SetAutoFocus(false)
@@ -171,28 +171,28 @@ end
 XUI.createDropDown = function(parent, width, items, defaultValue, onSelected)
     local debug = false
 
-    local dropdown = CreateFrame('Frame', nil, parent, 'UIDropDownMenuTemplate')
-    UIDropDownMenu_SetWidth(dropdown, width)
-    UIDropDownMenu_JustifyText(dropdown, 'LEFT')
+    local dropdown = XAPI.CreateFrame('Frame', nil, parent, 'UIDropDownMenuTemplate')
+    XAPI.UIDropDownMenu_SetWidth(dropdown, width)
+    XAPI.UIDropDownMenu_JustifyText(dropdown, 'LEFT')
     -- dropdown:SetFrameStrata('DIALOG')
-    -- UIDropDownMenu_SetAnchor(dropdown, 0, 0, 'TOP', UIParent, 'CENTER')
-    -- UIDropDownMenu_Show(dropdown)
+    -- XAPI.UIDropDownMenu_SetAnchor(dropdown, 0, 0, 'TOP', UIParent, 'CENTER')
+    -- XAPI.UIDropDownMenu_Show(dropdown)
 
     -- Set initial text for the dropdown
-    UIDropDownMenu_SetText(dropdown, defaultValue)
+    XAPI.UIDropDownMenu_SetText(dropdown, defaultValue)
 
     -- Define the initialize function for the dropdown
-    UIDropDownMenu_Initialize(dropdown, function(self)
+    XAPI.UIDropDownMenu_Initialize(dropdown, function(self)
         for _, item in ipairs(items) do
-            local info = UIDropDownMenu_CreateInfo()
+            local info = XAPI.UIDropDownMenu_CreateInfo()
             info.text = item
             info.func = function(tinfo)
-                UIDropDownMenu_SetText(dropdown, tinfo.value)
+                XAPI.UIDropDownMenu_SetText(dropdown, tinfo.value)
                 if onSelected and type(onSelected) == 'function' then
                     onSelected(tinfo.value)
                 end
             end
-            UIDropDownMenu_AddButton(info)
+            XAPI.UIDropDownMenu_AddButton(info)
         end
     end)
 

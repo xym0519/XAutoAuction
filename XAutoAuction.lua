@@ -1,5 +1,5 @@
 XAutoAuction = {}
-XAutoAuctionFrame = CreateFrame('Frame')
+XAutoAuctionFrame = XAPI.CreateFrame('Frame')
 
 -- Global variables definition
 XAutoAuctionList = {}

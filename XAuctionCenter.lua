@@ -217,7 +217,7 @@ initUI = function()
     local filterResetButton = XUI.createButton(mainFrame, dft_buttonWidth, '全部')
     filterResetButton:SetPoint('LEFT', dealCountTypeButton, 'RIGHT', dft_buttonGap, 0)
     filterResetButton:SetScript('OnClick', function()
-        UIDropDownMenu_SetText(mainFrame.filterDropDown, '全部')
+        XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '全部')
         mainFrame.filterBox:SetText('')
         refreshUI()
     end)
@@ -329,7 +329,7 @@ initUI = function()
 
     local lastWidget = nil
     for i = 1, displayPageSize do
-        local frame = CreateFrame('Frame', nil, mainFrame)
+        local frame = XAPI.CreateFrame('Frame', nil, mainFrame)
         frame:SetSize(mainFrame:GetWidth(), 30)
 
         if i == 1 then
@@ -504,7 +504,7 @@ initUI = function()
 
             local auctionInfo = XInfo.getAuctionInfo(item['itemname'])
             if not auctionInfo then return end
-            local itemLink = select(2, GetItemInfo(auctionInfo['itemid']))
+            local itemLink = select(2, XAPI.GetItemInfo(auctionInfo['itemid']))
             xdebug.info('----------AuctionInfo----------')
             xdebug.info(itemLink)
         end)
@@ -580,7 +580,7 @@ refreshUI = function()
     end
 
     local filterWord = mainFrame.filterBox:GetText();
-    local displayFilter = UIDropDownMenu_GetText(mainFrame.filterDropDown)
+    local displayFilter = XAPI.UIDropDownMenu_GetText(mainFrame.filterDropDown)
     local dataList = {}
     for i, item in ipairs(XAutoAuctionList) do
         item.index = i
@@ -808,8 +808,8 @@ finishTask = function()
     if curTask then
         if curTask['action'] == 'auction' then
             if curTask['location'] then
-                if C_Item.DoesItemExist(curTask['location']) then
-                    C_Item.UnlockItem(curTask['location'])
+                if XAPI.C_Item_DoesItemExist(curTask['location']) then
+                    XAPI.C_Item_UnlockItem(curTask['location'])
                 end
             end
         end
@@ -1109,7 +1109,7 @@ local function onQueryItemListUpdate(...)
 
     local item = XAutoAuctionList[curTask['index']]
 
-    local res = { GetAuctionItemInfo('list', 1) }
+    local res = { XAPI.GetAuctionItemInfo('list', 1) }
     local itemName = res[1]
     local stackCount = res[3]
     local buyoutPrice = res[10]
@@ -1156,7 +1156,7 @@ local function processQueryTask(task)
         return
     end
     if not task['status'] then
-        if not CanSendAuctionQuery() then return end
+        if not XAPI.CanSendAuctionQuery() then return end
 
         resetItem(item, true)
 
@@ -1164,7 +1164,7 @@ local function processQueryTask(task)
         task['page'] = 0
         task['queryfound'] = nil
         task['queryresultprocessed'] = false
-        QueryAuctionItems(item['itemname'], nil, nil, task['page'], nil, nil, false, true)
+        XAPI.QueryAuctionItems(item['itemname'], nil, nil, task['page'], nil, nil, false, true)
 
         return
     elseif task['status'] == 'querying' then
@@ -1174,7 +1174,7 @@ local function processQueryTask(task)
 
                 local index = 1
                 while true do
-                    local res = { GetAuctionItemInfo('list', index) }
+                    local res = { XAPI.GetAuctionItemInfo('list', index) }
                     local itemName = res[1]
                     local stackCount = res[3]
                     local buyoutPrice = res[10]
@@ -1220,13 +1220,13 @@ local function processQueryTask(task)
                 task['queryresultprocessed'] = true
             end
 
-            if not CanSendAuctionQuery() then return end
+            if not XAPI.CanSendAuctionQuery() then return end
 
             task['page'] = task['page'] + 1
             task['starttime'] = time()
             task['queryfound'] = nil
             task['queryresultprocessed'] = false
-            QueryAuctionItems(item['itemname'], nil, nil, task['page'], nil, nil, false, true)
+            XAPI.QueryAuctionItems(item['itemname'], nil, nil, task['page'], nil, nil, false, true)
 
             return
         elseif task['queryfound'] == false then
@@ -1313,14 +1313,14 @@ local function processAuctionTask(task)
         end
 
         local position = bagItem['positions'][1]
-        ClearCursor()
-        ClickAuctionSellItemButton()
-        ClearCursor()
-        C_Container.PickupContainerItem(position[1], position[2])
-        ClickAuctionSellItemButton()
+        XAPI.ClearCursor()
+        XAPI.ClickAuctionSellItemButton()
+        XAPI.ClearCursor()
+        XAPI.C_Container_PickupContainerItem(position[1], position[2])
+        XAPI.ClickAuctionSellItemButton()
 
-        task['location'] = ItemLocation:CreateFromBagAndSlot(position[1], position[2])
-        C_Item.LockItem(task['location'])
+        task['location'] = XAPI.ItemLocation_CreateFromBagAndSlot(position[1], position[2])
+        XAPI.C_Item_LockItem(task['location'])
 
         task['status'] = 'inited'
         return
@@ -1328,7 +1328,7 @@ local function processAuctionTask(task)
         local price = task['price']
         local count = task['count']
 
-        if GetAuctionSellItemInfo() ~= item['itemname'] then
+        if XAPI.GetAuctionSellItemInfo() ~= item['itemname'] then
             finishTask()
             return
         end
@@ -1337,9 +1337,7 @@ local function processAuctionTask(task)
             return
         end
 
-        -- PostAuction(startPrice, buyoutPrice, duration, stackSize, stacks)
-
-        PostAuction(price, price, 1, 1, count)
+        XAPI.PostAuction(price, price, 1, 1, count)
 
         task['status'] = 'posted'
         return
@@ -1364,18 +1362,18 @@ local function processAuctionTask(task)
 end
 
 local function processCleanLowerTask(task)
-    if not AuctionFrame or not AuctionFrame:IsVisible() then
+    if not XAPI.IsAuctionFrameOpen() then
         finishTask()
         return
     end
-    local numItems = GetNumAuctionItems('owner')
+    local numItems = XAPI.GetNumAuctionItems('owner')
     if numItems <= 0 then
         finishTask()
         return
     end
 
     for i = numItems, 1, -1 do
-        local res = { GetAuctionItemInfo('owner', i) }
+        local res = { XAPI.GetAuctionItemInfo('owner', i) }
         local itemName = res[1]
         local stackCount = res[3]
         local buyoutPrice = res[10]
@@ -1385,7 +1383,7 @@ local function processCleanLowerTask(task)
             for _, item in ipairs(XAutoAuctionList) do
                 if item['itemname'] == itemName then
                     if buyoutPrice / stackCount > item['minpriceother'] then
-                        CancelAuction(i)
+                        XAPI.CancelAuction(i)
                         resetItem(item)
                         xdebug.info('清理：' .. item['itemname'])
                         return
@@ -1400,24 +1398,24 @@ local function processCleanLowerTask(task)
 end
 
 local function processCleanShortTask(task)
-    if not AuctionFrame or not AuctionFrame:IsVisible() then
+    if not XAPI.IsAuctionFrameOpen() then
         finishTask()
         return
     end
-    local numItems = GetNumAuctionItems('owner')
+    local numItems = XAPI.GetNumAuctionItems('owner')
     if numItems <= 0 then
         finishTask()
         return
     end
 
     for i = numItems, 1, -1 do
-        local res = { GetAuctionItemInfo('owner', i) }
+        local res = { XAPI.GetAuctionItemInfo('owner', i) }
         local saleStatus = res[16]
         if saleStatus ~= 1 then
-            local timeLeft = GetAuctionItemTimeLeft('owner', i)
-            local itemName = GetAuctionItemInfo('owner', i);
+            local timeLeft = XAPI.GetAuctionItemTimeLeft('owner', i)
+            local itemName = XAPI.GetAuctionItemInfo('owner', i);
             if timeLeft < 3 then
-                CancelAuction(i)
+                XAPI.CancelAuction(i)
 
                 for _, item in ipairs(XAutoAuctionList) do
                     if item['itemname'] == itemName then

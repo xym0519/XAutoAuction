@@ -97,7 +97,7 @@ XUIInputDialog.show = function(pkey, pcallback, pdata, title)
             editGroup = editGroupList[idx]
             editGroup:Show()
         else
-            editGroup = CreateFrame('Frame', nil, mainFrame)
+            editGroup = XAPI.CreateFrame('Frame', nil, mainFrame)
             editGroup:SetSize(mainFrame:GetWidth(), 30)
 
             editGroup.label = XUI.createLabel(editGroup, 70, '', 'CENTER')

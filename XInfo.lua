@@ -20,11 +20,11 @@ XInfo.reloadBag = function()
     local list = {}
     local emptyBagCount = 0
 
-    for i = -1, NUM_BAG_SLOTS + NUM_BANKBAGSLOTS do
-        local slotCount = C_Container.GetContainerNumSlots(i)
-        local isBag = (i >= 0 and i <= NUM_BAG_SLOTS)
+    for i = -1, XAPI.NUM_BAG_SLOTS + XAPI.NUM_BANKBAGSLOTS do
+        local slotCount = XAPI.C_Container_GetContainerNumSlots(i)
+        local isBag = (i >= 0 and i <= XAPI.NUM_BAG_SLOTS)
         for j = 1, slotCount do
-            local itemInfo = C_Container.GetContainerItemInfo(i, j)
+            local itemInfo = XAPI.C_Container_GetContainerItemInfo(i, j)
             if itemInfo then
                 local itemName = itemInfo.itemName
                 local count = itemInfo.stackCount
@@ -52,7 +52,7 @@ XInfo.reloadBag = function()
     end
 
     -- 银行未打开，从之前的数据中获取bankcount
-    if C_Container.GetContainerNumSlots(5) <= 0 then
+    if XAPI.C_Container_GetContainerNumSlots(5) <= 0 then
         for itemName, item in pairs(XInfoBagList) do
             local newItem = list[itemName]
             if not newItem then
@@ -83,26 +83,20 @@ end
 local lastAuctionUpdateTime = 0
 XInfo.reloadAuction = function()
     if time() - lastAuctionUpdateTime < 1 then return end
-    if not AuctionFrame or not AuctionFrame:IsVisible() then return end
+    if not XAPI.IsAuctionFrameOpen() then return end
 
     local list = {}
-    local numItems = GetNumAuctionItems('owner')
+    local numItems = XAPI.GetNumAuctionItems('owner')
     if numItems <= 0 then
         XInfo.auctionList = {}
         return
     end
     for i = 1, numItems do
-        local res = { GetAuctionItemInfo('owner', i) }
+        local res = { XAPI.GetAuctionItemInfo('owner', i) }
         local itemName = res[1]
         local stackCount = res[3]
-        local bidStart = res[8]
-        local bidIncrease = res[9]
         local buyoutPrice = res[10]
-        local bidPrice = res[11]
-        local isMine = res[12]
-        local seller = res[14]
         local saleStatus = res[16]
-        local itemId = res[17]
         if saleStatus ~= 1 then
             if list[itemName] then
                 local item = list[itemName]
@@ -138,18 +132,19 @@ XInfo.reloadTradeSkill = function(type)
     if time() - lastTradeSkillUpdateTime < 1 then return end
 
     if not type then type = '珠宝加工' end
-    local skillName = GetTradeSkillLine()
+    local skillName = XAPI.GetTradeSkillLine()
     if skillName ~= type then
         CastSpellByName(type)
         return false
     end
 
     local list = {}
-    for i = 1, GetNumTradeSkills() do
-        local itemLink = GetTradeSkillItemLink(i)
-        local skillName = GetTradeSkillInfo(i)
+    local count = XAPI.GetNumTradeSkills()
+    for i = 1, count do
+        local itemLink = XAPI.GetTradeSkillItemLink(i)
+        local skillName = XAPI.GetTradeSkillInfo(i)
         if itemLink and skillName then
-            local itemName = GetItemInfo(itemLink)
+            local itemName = XAPI.GetItemInfo(itemLink)
             list[itemName] = { index = i, skillname = skillName }
         end
     end
@@ -216,7 +211,7 @@ end
 
 -- Character
 XInfo.characterList = { '暗影肌', '阿肌' }
-XInfo.myName = UnitName('player')
+XInfo.myName = XAPI.UnitName('player')
 XInfo.isMe = function(characterName)
     return XUtils.inArray(characterName, XInfo.characterList)
 end
@@ -235,7 +230,7 @@ local function onUpdate()
                 -- do nothing
             else
                 local tname, itemLink, _, _, _, itemType,
-                itemSubType, _, _, _, vendorPrice = GetItemInfo(item.itemid)
+                itemSubType, _, _, _, vendorPrice = XAPI.GetItemInfo(item.itemid)
                 if tname then
                     if tname == itemName then
                         XExternal.updateItemInfo(itemName, item.itemid, itemType, itemSubType, vendorPrice)
@@ -249,8 +244,8 @@ local function onUpdate()
             end
         else
             local tname, itemLink, _, _, _, itemType,
-            itemSubType, _, _, _, vendorPrice = GetItemInfo(itemName)
-            local itemId = GetItemInfoInstant(itemLink)
+            itemSubType, _, _, _, vendorPrice = XAPI.GetItemInfo(itemName)
+            local itemId = XAPI.GetItemInfoInstant(itemLink)
             if tname then
                 if itemId then
                     if tname == itemName then
@@ -272,7 +267,7 @@ end
 local function onItemInfoReceived(...)
     local itemID = select(3, ...)
     local itemName, itemLink, _, _, _, itemType,
-    itemSubType, _, _, _, vendorPrice = GetItemInfo(itemID)
+    itemSubType, _, _, _, vendorPrice = XAPI.GetItemInfo(itemID)
     if itemName then
         XExternal.updateItemInfo(itemName, itemID, itemType, itemSubType, vendorPrice)
     end
