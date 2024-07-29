@@ -92,7 +92,7 @@ resetData = function()
 end
 
 initUI = function()
-    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 905, 430)
+    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 875, 430)
     mainFrame:SetFrameStrata('HIGH')
     mainFrame.title:SetText('自动拍卖')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
@@ -364,6 +364,19 @@ initUI = function()
                 XCraftQueue.addItem(itemName, count, 'fulfil')
             end, { { Name = '数量', Value = item['stackcount'] } }, item['itemname'])
         end)
+        itemNameButton:SetScript("OnEnter", function(self)
+            local idx = self.frame.index
+            local item = XAutoAuctionList[idx];
+            if not item then return end
+            local itemid = XInfo.getAuctionInfoField(item['itemname'], 'itemid')
+            if itemid > 0 then
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                GameTooltip:SetHyperlink("item:" .. itemid) -- 显示物品信息
+            end
+        end)
+        itemNameButton:SetScript("OnLeave", function(self)
+            GameTooltip:Hide()
+        end)
         frame.itemNameButton = itemNameButton
         itemNameButton.frame = frame
 
@@ -494,21 +507,6 @@ initUI = function()
             addQueryTaskByIndex(idx)
         end)
         itemRefreshButton.frame = frame
-
-        local viewButton = XUI.createButton(frame, 30, '看')
-        viewButton:SetPoint('LEFT', itemRefreshButton, 'RIGHT', 0, 0)
-        viewButton:SetScript('OnClick', function(self)
-            local idx = self.frame.index
-            local item = XAutoAuctionList[idx];
-            if not item then return end
-
-            local auctionInfo = XInfo.getAuctionInfo(item['itemname'])
-            if not auctionInfo then return end
-            local itemLink = select(2, XAPI.GetItemInfo(auctionInfo['itemid']))
-            xdebug.info('----------AuctionInfo----------')
-            xdebug.info(itemLink)
-        end)
-        viewButton.frame = frame
 
         table.insert(displayFrameList, frame)
         lastWidget = frame

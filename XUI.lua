@@ -73,12 +73,19 @@ XUI.createLabel = function(parent, width, text, align)
         local bg = label:CreateTexture(nil, 'BACKGROUND')
         bg:SetAllPoints(label)
         bg:SetColorTexture(1, 0, 0, 0.5)
+        -- label:SetFontObject(GameFontHighlight)
+        label:SetFontObject(ChatFontNormal)
     else
-        label = parent:CreateFontString(nil, 'ARTWORK')
-        label:SetJustifyH(align)
+        label = XAPI.CreateFrame('Frame', nil, parent)
+        label.text = label:CreateFontString(nil, 'ARTWORK')
+        label.text:SetJustifyH(align)
+        label.text:SetAllPoints()
+        -- label:SetFontObject(GameFontHighlight)
+        label.text:SetFontObject(ChatFontNormal)
+        label.SetText = function(self, t)
+            label.text:SetText(t)
+        end
     end
-    -- label:SetFontObject(GameFontHighlight)
-    label:SetFontObject(ChatFontNormal)
     label:SetSize(width, 25)
     label:SetText(text)
     return label

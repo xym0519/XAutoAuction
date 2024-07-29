@@ -172,7 +172,7 @@ XInfo.getAuctionInfoField = function(itemName, fieldName, defaultValue, allHisto
         allHistory = XInfo.allHistory
     end
 
-    local fields = { 'itemname', 'vendorprice', 'sort', 'category', 'class', 'group' }
+    local fields = { 'itemid', 'itemname', 'vendorprice', 'sort', 'category', 'class', 'group' }
     if not XUtils.inArray(fieldName, fields) then
         if allHistory == 1 then
             fieldName = fieldName .. '10'
