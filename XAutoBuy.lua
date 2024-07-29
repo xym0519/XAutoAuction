@@ -165,15 +165,15 @@ initUI = function()
         end)
         frame.itemNameButton = itemNameButton
 
-        local label = XUI.createLabel(frame, 60, '')
+        local label = XUI.createLabel(frame, 50, '')
         label:SetPoint('LEFT', itemNameButton, 'RIGHT', 8, 0)
         frame.label = label
 
-        local label2 = XUI.createLabel(frame, 40, '')
+        local label2 = XUI.createLabel(frame, 55, '')
         label2:SetPoint('LEFT', label, 'RIGHT', 0, 0)
         frame.label2 = label2
 
-        local label3 = XUI.createLabel(frame, 60, '')
+        local label3 = XUI.createLabel(frame, 55, '')
         label3:SetPoint('LEFT', label2, 'RIGHT', 0, 0)
         frame.label3 = label3
 
@@ -241,20 +241,20 @@ refreshUI = function()
             local item = XAutoBuyList[idx]
             local itemName = item['itemname']
 
-            local price = item['price'] / 10000
-            local priceStr = XUI.White .. price
+            local price = item['price']
+            local priceStr = XUI.White .. XUtils.priceToString(price)
 
-            local minPrice = 999999
-            if item['minprice'] then minPrice = item['minprice'] / 10000 end
-            local minPriceStr = XUI.White .. minPrice
+            local minPrice = 9999999
+            if item['minprice'] then minPrice = item['minprice'] end
+            local minPriceStr = XUI.White .. XUtils.priceToString(minPrice)
             if minPrice <= price then
-                minPriceStr = XUI.White .. minPrice
+                minPriceStr = XUI.White .. XUtils.priceToString(minPrice)
             elseif minPrice <= price * 1.2 then
-                minPriceStr = XUI.Yellow .. minPrice
+                minPriceStr = XUI.Yellow .. XUtils.priceToString(minPrice)
             elseif minPrice <= price * 1.5 then
-                minPriceStr = XUI.Orange .. minPrice
+                minPriceStr = XUI.Orange .. XUtils.priceToString(minPrice)
             else
-                minPriceStr = XUI.Red .. minPrice
+                minPriceStr = XUI.Red .. XUtils.priceToString(minPrice)
             end
 
             local bagCount = 0
