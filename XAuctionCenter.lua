@@ -1562,6 +1562,12 @@ local function onUpdate()
     end
 
     if nextTaskIndex == -1 then
+        queryIndex = 1
+        starQueryIndex = 1
+        queryStarFlag = true
+
+        queryRound = queryRound + 1
+        queryRoundFinishTime = time()
         refreshUI()
         return
     end

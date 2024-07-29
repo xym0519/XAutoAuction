@@ -16,6 +16,9 @@ local bgLabel = nil
 local bbLabel = nil
 local bpLabel = nil
 
+local tyLabel = nil
+local ddLabel = nil
+
 -- Function definition
 local initUI
 local refreshUI
@@ -30,7 +33,7 @@ createLabel = function()
 end
 
 initUI = function()
-    mainFrame = XUI.createFrame('XJewCountMainFrame', 270, 150)
+    mainFrame = XUI.createFrame('XJewCountMainFrame', 270, 170)
     mainFrame.title:SetText('原石数量')
     mainFrame:SetPoint('BOTTOM', UIParent, 'BOTTOM', 0, 60)
     mainFrame:Hide()
@@ -71,6 +74,13 @@ initUI = function()
     bpLabel = createLabel()
     bpLabel:SetPoint('TOPLEFT', bbLabel, 'BOTTOMLEFT', 0, 0)
 
+
+    tyLabel = createLabel()
+    tyLabel:SetPoint('TOPLEFT', ppLabel, 'BOTTOMLEFT', 0, 0)
+
+    ddLabel = createLabel()
+    ddLabel:SetPoint('TOPLEFT', bpLabel, 'BOTTOMLEFT', 0, 0)
+
     refreshUI()
 end
 
@@ -103,6 +113,11 @@ refreshUI = function()
     bbLabel:SetText(getItemInfo('天蓝石'))
     if not bpLabel then return end
     bpLabel:SetText(getItemInfo('曙光猫眼石'))
+    
+    if not tyLabel then return end
+    tyLabel:SetText(getItemInfo('天焰钻石'))
+    if not ddLabel then return end
+    ddLabel:SetText(getItemInfo('大地侵攻钻石'))
 end
 
 getItemInfo = function(itemName)
