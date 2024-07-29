@@ -1107,6 +1107,14 @@ local function onQueryItemListUpdate(...)
 
     local item = XAutoAuctionList[curTask['index']]
 
+    local batchCount, totalCount = XAPI.GetNumAuctionItems('list')
+
+    if totalCount <= 0 or batchCount <= 0 then
+        curTask['queryfound'] = false
+        curTask['queryresultprocessed'] = false
+        return
+    end
+
     local res = { XAPI.GetAuctionItemInfo('list', 1) }
     local itemName = res[1]
     local stackCount = res[3]
@@ -1125,12 +1133,7 @@ local function onQueryItemListUpdate(...)
         if buyoutPrice <= item['lowestprice'] then
             curTask['queryfound'] = true
         else
-            if not curTask['onemorepage'] then
-                curTask['onemorepage'] = true
-                curTask['queryfound'] = true
-            else
-                curTask['queryfound'] = false
-            end
+            curTask['queryfound'] = false
         end
     else
         curTask['queryfound'] = true
@@ -1155,17 +1158,14 @@ local function processQueryTask(task)
     end
     if not task['status'] then
         if not XAPI.CanSendAuctionQuery() then return end
-
         resetItem(item, true)
-
         task['status'] = 'querying'
         task['page'] = 0
         task['queryfound'] = nil
         task['queryresultprocessed'] = false
         XAPI.QueryAuctionItems(item['itemname'], nil, nil, task['page'], nil, nil, false, true)
-
         return
-    elseif task['status'] == 'querying' then
+    elseif task['status'] == 'querying' or task['status'] == 'confirm' then
         if task['queryfound'] == true then
             if not task['queryresultprocessed'] then
                 item['updatetime'] = time()
@@ -1220,6 +1220,7 @@ local function processQueryTask(task)
 
             if not XAPI.CanSendAuctionQuery() then return end
 
+            task['status'] = 'querying'
             task['page'] = task['page'] + 1
             task['starttime'] = time()
             task['queryfound'] = nil
@@ -1228,6 +1229,18 @@ local function processQueryTask(task)
 
             return
         elseif task['queryfound'] == false then
+            if task['status'] == 'querying' then
+                if not XAPI.CanSendAuctionQuery() then return end
+
+                task['status'] = 'confirm'
+                task['starttime'] = time()
+                task['queryfound'] = nil
+                task['queryresultprocessed'] = false
+                XAPI.QueryAuctionItems(item['itemname'], nil, nil, task['page'], nil, nil, false, true)
+
+                return
+            end
+
             item['updatetime'] = time()
             item['lastround'] = queryRound
 
@@ -1335,6 +1348,7 @@ local function processAuctionTask(task)
             return
         end
 
+        xdebug.info('拍卖：' .. task['itemname'] .. '(' .. XUtils.priceToMoneyString(price) .. ')')
         XAPI.PostAuction(price, price, 1, 1, count)
 
         task['status'] = 'posted'
@@ -1381,9 +1395,11 @@ local function processCleanLowerTask(task)
             for _, item in ipairs(XAutoAuctionList) do
                 if item['itemname'] == itemName then
                     if buyoutPrice / stackCount > item['minpriceother'] then
+                        xdebug.info('清理低价：' .. item['itemname']
+                            .. '(' .. XUtils.priceToMoneyString(buyoutPrice / stackCount)
+                            .. '/' .. XUtils.priceToMoneyString(item['minpriceother']) .. ')')
                         XAPI.CancelAuction(i)
                         resetItem(item)
-                        xdebug.info('清理：' .. item['itemname'])
                         return
                     end
                     break
@@ -1393,6 +1409,7 @@ local function processCleanLowerTask(task)
     end
     XInfo.reloadAuction()
     finishTask()
+    xdebug.info('清理低价结束')
 end
 
 local function processCleanShortTask(task)
@@ -1418,7 +1435,7 @@ local function processCleanShortTask(task)
                 for _, item in ipairs(XAutoAuctionList) do
                     if item['itemname'] == itemName then
                         resetItem(item)
-                        xdebug.info('清理：' .. item['itemname'])
+                        xdebug.info('清理短期：' .. item['itemname'])
                         break
                     end
                 end
@@ -1429,6 +1446,7 @@ local function processCleanShortTask(task)
 
     XInfo.reloadAuction()
     finishTask()
+    xdebug.info('清理短期结束')
 end
 
 local function onUpdate()

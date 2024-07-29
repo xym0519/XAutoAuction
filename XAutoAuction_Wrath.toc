@@ -6,9 +6,9 @@
 ## SavedVariablesPerCharacter: XInfoBagList, XInfoTradeSkillList, XSpeakWordList, XAutoAuctionList, XAutoBuyList, XJewWordList, XJewWordSetting, XFrameLevel
 ## Dependencies: XAutoAuction_Data
 
-XAPI.lua
 XUtils.lua
 XDebug.lua
+XAPI.lua
 XUI.lua
 XAutoAuction.lua
 XExternal.lua
