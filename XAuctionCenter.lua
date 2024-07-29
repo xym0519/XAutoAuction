@@ -495,7 +495,7 @@ initUI = function()
             refreshUI()
         end)
         frame.starButton = starButton
-        startButton.frame = frame
+        starButton.frame = frame
 
         local itemRefreshButton = XUI.createButton(frame, 30, '刷')
         itemRefreshButton:SetPoint('LEFT', starButton, 'RIGHT', 0, 0)
@@ -1410,7 +1410,7 @@ local function processCleanLowerTask(task)
     end
     XInfo.reloadAuction()
     finishTask()
-    xdebug.info('清理低价结束')
+    xdebug.warn('清理低价结束')
 end
 
 local function processCleanShortTask(task)
@@ -1447,12 +1447,16 @@ local function processCleanShortTask(task)
 
     XInfo.reloadAuction()
     finishTask()
-    xdebug.info('清理短期结束')
+    xdebug.warn('清理短期结束')
 end
 
 local function onUpdate()
     refreshUI()
     if not isStarted then return end
+
+    if autoAuction then
+        addCraftQueue(false, false)
+    end
 
     if curTask then
         if time() - curTask['starttime'] > curTask['timeout'] then
@@ -1495,7 +1499,6 @@ local function onUpdate()
     end
 
     if autoAuction then
-        addCraftQueue(false, false)
         puton(false)
     end
 
