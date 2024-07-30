@@ -88,6 +88,20 @@ initUI = function()
 
         local nameLabel = XUI.createLabel(frame, 70, '')
         nameLabel:SetPoint('LEFT', frame, 'LEFT', 15, 0)
+        nameLabel:SetScript("OnEnter", function(self)
+            local idx = displayPageNo * displayPageSize + i
+            local item = craftQueue[idx]
+
+            if not item then return end
+            local itemid = XInfo.getAuctionInfoField(item['itemname'], 'itemid')
+            if itemid > 0 then
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                GameTooltip:SetHyperlink("item:" .. itemid) -- 显示物品信息
+            end
+        end)
+        nameLabel:SetScript("OnLeave", function(self)
+            GameTooltip:Hide()
+        end)
         frame.nameLabel = nameLabel
 
         local countLabel = XUI.createLabel(frame, 60, '')

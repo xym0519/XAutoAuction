@@ -91,6 +91,19 @@ initUI = function()
                 end
             end, { { Name = '类型', Value = item['itemname'] }, { Name = '数量', Value = count } }, item['itemname'])
         end)
+        nameButton:SetScript("OnEnter", function(self)
+            local idx = displayPageNo * displayPageSize + i
+            local item = dealList[idx];
+            if not item then return end
+            local itemid = XInfo.getAuctionInfoField(item['itemname'], 'itemid')
+            if itemid > 0 then
+                GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+                GameTooltip:SetHyperlink("item:" .. itemid) -- 显示物品信息
+            end
+        end)
+        nameButton:SetScript("OnLeave", function(self)
+            GameTooltip:Hide()
+        end)
         frame.nameButton = nameButton
 
         local infoLabel = XUI.createLabel(frame, 70, '')
