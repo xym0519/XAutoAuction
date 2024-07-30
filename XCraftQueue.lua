@@ -92,6 +92,9 @@ initUI = function()
 
         local countLabel = XUI.createLabel(frame, 60, '')
         countLabel:SetPoint('LEFT', nameLabel, 'RIGHT', 5, 0)
+        countLabel:SetScript('OnMouseDown', function()
+            xdebug.info('制造数量 / 拥有数量 / 材料数量')
+        end)
         frame.countLabel = countLabel
 
         local deleteButton = XUI.createButton(frame, 20, 'D')
