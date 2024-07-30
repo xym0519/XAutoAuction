@@ -52,6 +52,7 @@ local stop
 local finishTask
 local addItem
 local resetItem
+local resetItemByName
 local getAuctionItem
 local addQueryTaskByIndex
 local addQueryTaskByItemName
@@ -896,6 +897,15 @@ resetItem = function(item, keepUpdateTime)
     end
 end
 
+resetItemByName = function(itemName)
+    for _, item in ipairs(XAutoAuctionList) do
+        if item['itemname'] == itemName then
+            resetItem(item)
+            return
+        end
+    end
+end
+
 getAuctionItem = function(itemName)
     for _, item in ipairs(XAutoAuctionList) do
         if item['itemname'] == itemName then
@@ -1465,7 +1475,14 @@ local function processCleanLowerTask(task)
                             .. '(' .. XUtils.priceToMoneyString(buyoutPrice / stackCount)
                             .. '/' .. XUtils.priceToMoneyString(item['minpriceother']) .. ')')
                         XAPI.CancelAuction(i)
-                        resetItem(item)
+
+                        if task['cleaned'] == nil then
+                            task['cleaned'] = { item['itemname'] }
+                        else
+                            if not XUtils.inArray(item['itemname'], task['cleaned']) then
+                                table.insert(task['cleaned'], item['itemname'])
+                            end
+                        end
                         return
                     end
                     break
@@ -1474,6 +1491,11 @@ local function processCleanLowerTask(task)
         end
     end
     XInfo.reloadAuction()
+    if task['cleaned'] then
+        for _, itemName in ipairs(task['cleaned']) do
+            resetItemByName(itemName)
+        end
+    end
     finishTask()
     xdebug.warn('清理低价结束')
 end

@@ -219,6 +219,10 @@ addItem = function(itemName, count, type)
     if count == nil then count = 1 end
     if type == nil then type = 'add' end
     local found = false
+    if curTask ~= nil and curTask['itemname'] == itemName then
+        refreshUI()
+        return
+    end
     for _, item in ipairs(craftQueue) do
         if item['itemname'] == itemName then
             if type == 'add' then
