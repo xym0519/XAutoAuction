@@ -621,27 +621,28 @@ refreshUI = function()
         mainFrame.multiAuctionButton:SetText('单倍')
     end
 
+    local labelText = format('(%s) ', #taskList)
     if not curTask then
-        mainFrame.hintLabel:SetText('等待')
+        labelText = labelText .. '等待'
     else
         if curTask['action'] == 'query' then
             local item = XAutoAuctionList[curTask['index']]
             if item == nil then
-                mainFrame.hintLabel:SetText('查询: 无')
+                labelText = labelText .. '查询: 无'
             else
                 local page = curTask['page']
                 if page == nil then page = 0 end
-                mainFrame.hintLabel:SetText('查询: [' .. curTask['index']
-                    .. ']' .. item['itemname'] .. '(' .. page .. ')')
+                labelText = labelText .. format('查询: [%s]%s(%s)', curTask['index'], item['itemname'], page)
             end
         elseif curTask['action'] == 'auction' then
-            mainFrame.hintLabel:SetText('拍卖: ' .. curTask['itemname'])
+            labelText = labelText .. '拍卖: ' .. curTask['itemname']
         elseif curTask['action'] == 'cleanlower' then
-            mainFrame.hintLabel:SetText('清理低价')
+            labelText = labelText .. '清理低价'
         elseif curTask['action'] == 'cleanshort' then
-            mainFrame.hintLabel:SetText('清理短期')
+            labelText = labelText .. '清理短期'
         end
     end
+    mainFrame.hintLabel:SetText(labelText)
 
     local filterWord = mainFrame.filterBox:GetText();
     local displayFilter = XAPI.UIDropDownMenu_GetText(mainFrame.filterDropDown)
@@ -702,7 +703,7 @@ refreshUI = function()
     mainFrame.title:SetText('自动拍卖 (' .. (displayPageNo + 1) .. '/'
         .. (math.ceil(#dataList / displayPageSize)) .. ')    Querying: '
         .. queryIndex .. '    StarQuerying: ' .. starQueryIndex .. '    Round: ' .. queryRound
-        .. '    Queue: ' .. #taskList .. '    EmptyBag: ' .. XInfo.emptyBagCount)
+        .. '    EmptyBag: ' .. XInfo.emptyBagCount)
 
     for i = 1, displayPageSize do
         local frame = displayFrameList[i]
@@ -1181,7 +1182,6 @@ local function onQueryItemListUpdate(...)
 
     local res = { XAPI.GetAuctionItemInfo('list', 1) }
     local itemName = res[1]
-    local buyoutPrice = res[10]
     if not itemName then
         curTask['queryfound'] = false
         curTask['queryresultprocessed'] = false
@@ -1460,6 +1460,7 @@ local function processCleanLowerTask(task)
         return
     end
 
+    XCraftQueue.stop()
     for i = numItems, 1, -1 do
         local res = { XAPI.GetAuctionItemInfo('owner', i) }
         local itemName = res[1]
@@ -1505,6 +1506,8 @@ local function processCleanShortTask(task)
         finishTask()
         return
     end
+
+
     local numItems = XAPI.GetNumAuctionItems('owner')
     if numItems <= 0 then
         finishTask()

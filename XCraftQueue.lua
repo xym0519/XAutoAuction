@@ -390,6 +390,9 @@ end
 SLASH_XCRAFTQUEUESTOP1 = '/xcraftqueue_stop'
 
 -- Interfaces
--- TODO 111
--- XCraftQueue.start = start
 XCraftQueue.addItem = addItem
+XCraftQueue.stop = function()
+    isRunning = false
+    craftQueue = {}
+    refreshUI()
+end
