@@ -16,7 +16,7 @@ local addItem
 -- Function implemention
 initUI = function()
     mainFrame = XUI.createFrame('XAuctionHistoryMainFrame', 320, 430)
-    mainFrame.title:SetText('拍卖记录BTMAD')
+    mainFrame.title:SetText('拍卖记录')
     mainFrame:SetPoint('RIGHT', UIParent, 'RIGHT', -40, 0)
     mainFrame:Hide()
 
@@ -65,13 +65,9 @@ initUI = function()
 
         frame:Hide()
 
-        local nameLabel = XUI.createLabel(frame, 105, '')
-        nameLabel:SetPoint('LEFT', frame, 'LEFT', 15, 0)
-        frame.nameLabel = nameLabel
-
-        local infoButton = XUI.createButton(frame, 95, '')
-        infoButton:SetPoint('LEFT', nameLabel, 'RIGHT', 3, 0)
-        infoButton:SetScript('OnClick', function()
+        local nameButton = XUI.createButton(frame, 125, '')
+        nameButton:SetPoint('LEFT', frame, 'LEFT', 15, 0)
+        nameButton:SetScript('OnClick', function()
             refreshUI()
 
             local idx = displayPageNo * displayPageSize + i
@@ -95,10 +91,17 @@ initUI = function()
                 end
             end, { { Name = '类型', Value = item['itemname'] }, { Name = '数量', Value = count } }, item['itemname'])
         end)
-        frame.infoButton = infoButton
+        frame.nameButton = nameButton
+
+        local infoLabel = XUI.createLabel(frame, 70, '')
+        infoLabel:SetPoint('LEFT', nameButton, 'RIGHT', 8, 0)
+        infoLabel:SetScript('OnMouseDown', function()
+            xdebug.info('背包数量 / 全部数量 / 材料数量 / 拍卖数量 / 成交数量')
+        end)
+        frame.infoLabel = infoLabel
 
         local printButton = XUI.createButton(frame, 30, 'E')
-        printButton:SetPoint('LEFT', infoButton, 'RIGHT', 1, 0)
+        printButton:SetPoint('LEFT', infoLabel, 'RIGHT', 1, 0)
         printButton:SetScript('OnClick', function()
             local idx = displayPageNo * displayPageSize + i
             local item = dealList[idx];
@@ -138,7 +141,7 @@ end
 refreshUI = function()
     if not mainFrame then return end
 
-    mainFrame.title:SetText('拍卖记录BTMAD (' ..
+    mainFrame.title:SetText('拍卖记录 (' ..
         (displayPageNo + 1) ..
         '/' .. (math.ceil(#dealList / displayPageSize)) .. ')')
 
@@ -183,8 +186,8 @@ refreshUI = function()
 
             local dealCountStr = XUI.White .. XUtils.formatCount(item['count'], 1)
 
-            frame.nameLabel:SetText(string.sub(item['itemname'], 1, 18))
-            frame.infoButton:SetText(
+            frame.nameButton:SetText(string.sub(item['itemname'], 1, 18))
+            frame.infoLabel:SetText(
                 bagCountStr ..
                 XUI.White .. '/' ..
                 totalCountStr ..

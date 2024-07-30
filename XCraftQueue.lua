@@ -21,6 +21,9 @@ local initUI
 local refreshUI
 local addItem
 local finishCurTask
+local start
+local stop
+local reset
 
 -- Function implemention
 initUI = function()
@@ -32,14 +35,7 @@ initUI = function()
     local startButton = XUI.createButton(mainFrame, 35, '起')
     startButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -30)
     startButton:SetScript('OnClick', function()
-        if not isRunning then
-            if not XInfo.reloadTradeSkill('珠宝加工') then
-                refreshUI()
-                return
-            end
-        end
-        isRunning = not isRunning
-        refreshUI()
+        start()
     end)
     mainFrame.startButton = startButton
 
@@ -260,6 +256,27 @@ finishCurTask = function()
     taskExpires = 0
 end
 
+start = function()
+    if not isRunning then
+        if not XInfo.reloadTradeSkill('珠宝加工') then
+            refreshUI()
+            return
+        end
+    end
+    isRunning = not isRunning
+    refreshUI()
+end
+
+stop = function()
+    isRunning = false
+    refreshUI()
+end
+
+reset = function()
+    craftQueue = {}
+    refreshUI()
+end
+
 -- Event callback
 local function onUpdate()
     if not isRunning then return end
@@ -391,8 +408,6 @@ SLASH_XCRAFTQUEUESTOP1 = '/xcraftqueue_stop'
 
 -- Interfaces
 XCraftQueue.addItem = addItem
-XCraftQueue.stop = function()
-    isRunning = false
-    craftQueue = {}
-    refreshUI()
-end
+XCraftQueue.start = start
+XCraftQueue.stop = stop
+XCraftQueue.reset = reset
