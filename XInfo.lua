@@ -132,8 +132,8 @@ XInfo.reloadTradeSkill = function(type)
     if time() - lastTradeSkillUpdateTime < 1 then return end
 
     if not type then type = '珠宝加工' end
-    local skillName = XAPI.GetTradeSkillLine()
-    if skillName ~= type then
+    local tradeSkillName = XAPI.GetTradeSkillLine()
+    if tradeSkillName ~= type then
         CastSpellByName(type)
         return false
     end
@@ -141,11 +141,13 @@ XInfo.reloadTradeSkill = function(type)
     local list = {}
     local count = XAPI.GetNumTradeSkills()
     for i = 1, count do
-        local itemLink = XAPI.GetTradeSkillItemLink(i)
-        local skillName = XAPI.GetTradeSkillInfo(i)
-        if itemLink and skillName then
-            local itemName = XAPI.GetItemInfo(itemLink)
-            list[itemName] = { index = i, skillname = skillName }
+        local skillName, skillType = XAPI.GetTradeSkillInfo(i)
+        if skillType ~= 'header' and skillType ~= 'subheader' then
+            local itemLink = XAPI.GetTradeSkillItemLink(i)
+            if itemLink and skillName then
+                local itemName = XAPI.GetItemInfo(itemLink)
+                list[itemName] = { index = i, skillname = skillName }
+            end
         end
     end
 
@@ -172,7 +174,8 @@ XInfo.getAuctionInfoField = function(itemName, fieldName, defaultValue, allHisto
         allHistory = XInfo.allHistory
     end
 
-    local fields = { 'itemid', 'itemname', 'vendorprice', 'sort', 'category', 'class', 'group' }
+    local fields = { 'itemid', 'itemname', 'itemlink', 'quality', 'level', 'icon',
+        'vendorprice', 'sort', 'category', 'class', 'group' }
     if not XUtils.inArray(fieldName, fields) then
         if allHistory == 1 then
             fieldName = fieldName .. '10'
@@ -229,13 +232,15 @@ local function onUpdate()
             if item.category and item.category ~= '' then
                 -- do nothing
             else
-                local tname, itemLink, _, _, _, itemType,
-                itemSubType, _, _, _, vendorPrice = XAPI.GetItemInfo(item.itemid)
+                local tname, itemLink, quality, level, _, itemType,
+                itemSubType, _, _, icon, vendorPrice = XAPI.GetItemInfo(item.itemid)
                 if tname then
                     if tname == itemName then
-                        XExternal.updateItemInfo(itemName, item.itemid, itemType, itemSubType, vendorPrice)
+                        XExternal.updateItemInfo(itemName, item.itemid, itemLink, itemType, itemSubType, vendorPrice,
+                            quality, level, icon)
                     else
-                        XExternal.updateItemInfo(tname, item.itemid, itemType, itemSubType, vendorPrice)
+                        XExternal.updateItemInfo(tname, item.itemid, itemLink, itemType, itemSubType, vendorPrice,
+                            quality, level, icon)
                         XItemUpdateList[itemName] = nil
                     end
                 else
@@ -243,15 +248,17 @@ local function onUpdate()
                 end
             end
         else
-            local tname, itemLink, _, _, _, itemType,
-            itemSubType, _, _, _, vendorPrice = XAPI.GetItemInfo(itemName)
+            local tname, itemLink, quality, level, _, itemType,
+            itemSubType, _, _, icon, vendorPrice = XAPI.GetItemInfo(itemName)
             local itemId = XAPI.GetItemInfoInstant(itemLink)
             if tname then
                 if itemId then
                     if tname == itemName then
-                        XExternal.updateItemInfo(itemName, itemId, itemType, itemSubType, vendorPrice)
+                        XExternal.updateItemInfo(itemName, itemId, itemLink, itemType, itemSubType, vendorPrice, quality,
+                            level, icon)
                     else
-                        XExternal.updateItemInfo(tname, itemId, itemType, itemSubType, vendorPrice)
+                        XExternal.updateItemInfo(tname, itemId, itemLink, itemType, itemSubType, vendorPrice, quality,
+                            level, icon)
                         XItemUpdateList[itemName] = nil
                     end
                 else
@@ -266,10 +273,10 @@ end
 
 local function onItemInfoReceived(...)
     local itemID = select(3, ...)
-    local itemName, itemLink, _, _, _, itemType,
-    itemSubType, _, _, _, vendorPrice = XAPI.GetItemInfo(itemID)
+    local itemName, itemLink, quality, level, _, itemType,
+    itemSubType, _, _, icon, vendorPrice = XAPI.GetItemInfo(itemID)
     if itemName then
-        XExternal.updateItemInfo(itemName, itemID, itemType, itemSubType, vendorPrice)
+        XExternal.updateItemInfo(itemName, itemID, itemLink, itemType, itemSubType, vendorPrice, quality, level, icon)
     end
 end
 

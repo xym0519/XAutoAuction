@@ -109,7 +109,7 @@ end
 -- Returns:
 --   1. itemName: string - The localized name of the item.
 --   2. itemLink: string : ItemLink - The localized link of the item.
---   3. itemQuality: Enum.ItemQuality🔗 - The quality of the item, e.g. 2 for Uncommon and 3 for Rare quality items.
+--   3. itemQuality: Enum.ItemQuality - The quality of the item, e.g. 2 for Uncommon and 3 for Rare quality items.
 --   4. itemLevel: number - The base item level, not including upgrades. See GetDetailedItemLevelInfo() for getting the actual item level.
 --   5. itemMinLevel: number - The minimum level required to use the item, or 0 if there is no level requirement.
 --   6. itemType: string : ItemType - The localized type name of the item: Armor, Weapon, Quest, etc.

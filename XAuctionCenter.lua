@@ -262,8 +262,73 @@ initUI = function()
         end, { { Name = '宝石名称' }, { Name = '最低售价' }, { Name = '默认价格' }, { Name = '拍卖数量' } }, '添加')
     end)
 
+    local checkRecipeButton = XUI.createButton(mainFrame, dft_buttonWidth, '配方')
+    checkRecipeButton:SetPoint('LEFT', settingButton, 'RIGHT', dft_buttonGap, 0)
+    checkRecipeButton:SetScript('OnClick', function()
+        if not XInfo.reloadTradeSkill() then
+            return
+        end
+        local list = XInfoTradeSkillList['珠宝加工']
+        local newList = {}
+        local disabledList = {}
+        for itemName, _ in pairs(list) do
+            if XUtils.stringEndsWith(itemName, '赤玉石')
+                or XUtils.stringEndsWith(itemName, '紫黄晶')
+                or XUtils.stringEndsWith(itemName, '王者琥珀')
+                or XUtils.stringEndsWith(itemName, '祖尔之眼')
+                or XUtils.stringEndsWith(itemName, '巨锆石')
+                or XUtils.stringEndsWith(itemName, '恐惧石')
+                or XUtils.stringEndsWith(itemName, '血玉石')
+                or XUtils.stringEndsWith(itemName, '帝黄晶')
+                or XUtils.stringEndsWith(itemName, '秋色石')
+                or XUtils.stringEndsWith(itemName, '森林翡翠')
+                or XUtils.stringEndsWith(itemName, '天蓝石')
+                or XUtils.stringEndsWith(itemName, '曙光猫眼石')
+                or XUtils.stringEndsWith(itemName, '天焰钻石')
+                or XUtils.stringEndsWith(itemName, '大地侵攻钻石') then
+                local existed = false
+                for _, item in ipairs(XAutoAuctionList) do
+                    if item['itemname'] == itemName then
+                        if not item['enabled'] then
+                            table.insert(disabledList, itemName)
+                        end
+                        existed = true
+                        break
+                    end
+                end
+                if not existed then
+                    table.insert(newList, itemName)
+                end
+            end
+        end
+        if #disabledList > 0 then
+            xdebug.warn('以下配方未开启：')
+            for idx, itemName in ipairs(disabledList) do
+                local itemLink = select(2, XAPI.GetItemInfo(itemName))
+                if not itemLink then itemLink = itemName end
+                xdebug.warn(idx .. ': ' .. itemLink)
+            end
+            xdebug.warn()
+        end
+        if #newList > 0 then
+            xdebug.warn('以下配方未添加：')
+            for idx, itemName in ipairs(newList) do
+                local itemLink = select(2, XAPI.GetItemInfo(itemName))
+                if not itemLink then itemLink = itemName end
+                xdebug.warn(idx .. ': ' .. itemLink)
+            end
+            xdebug.warn()
+            XUIConfirmDialog.show(moduleName, '确认', '是否确认添加配方', function()
+                for _, itemName in ipairs(newList) do
+                    addItem(itemName, dft_minPrice, dft_minPrice, 1)
+                end
+                xdebug.info('添加成功')
+            end)
+        end
+    end)
+
     local priceButton = XUI.createButton(mainFrame, dft_buttonWidth, '调价')
-    priceButton:SetPoint('LEFT', settingButton, 'RIGHT', dft_buttonGap, 0)
+    priceButton:SetPoint('LEFT', checkRecipeButton, 'RIGHT', dft_buttonGap, 0)
     priceButton:SetScript('OnClick', function()
         XUIInputDialog.show(moduleName, function(data)
             local itemName = nil
