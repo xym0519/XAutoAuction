@@ -13,7 +13,7 @@ local dft_taskTimeout = 30
 local dft_filterList = { '全部', '可售', '优质', '价低', '有效', '无效' }
 local dft_deltaPrice = 10
 local dft_postdelay = 2
-local dft_autoCleanInterval = 300
+local dft_autoCleanInterval = 60
 
 local dft_buttonWidth = 45
 local dft_buttonGap = 1
