@@ -43,6 +43,7 @@ local queryRound = 1
 local queryRoundFinishTime = 0
 
 local cleaningItems = {}
+local craftRunning = false
 
 -- Function definition
 local initData
@@ -64,12 +65,15 @@ local insertCleanLowerTask
 
 local getMaterialCount
 local getMaterialPrice
+local checkImportant
 
 local addCraftQueue
 local cleanLower
 local cleanShort
 local puton
 local printList
+local printItemsByName
+local setPriceByName
 
 -- Function implemention
 initData = function()
@@ -344,47 +348,11 @@ initUI = function()
                 if item.Name == '最低售价' then lowestPrice = tonumber(item.Value) end
                 if item.Name == '默认价格' then defaultPrice = tonumber(item.Value) end
             end
-            if itemName and lowestPrice and defaultPrice then
-                local all = false
-                if XUtils.stringStartsWith(itemName, '*') then
-                    all = true
-                    itemName = string.gsub(itemName, '^%*', '')
-                end
-                xdebug.info('----------')
-                for _, item in ipairs(XAutoAuctionList) do
-                    if XUtils.stringContains(item['itemname'], itemName) then
-                        if item['enabled'] ~= nil and item['enabled'] then
-                            if all or (not item['star']) then
-                                item['lowestprice'] = lowestPrice
-                                item['defaultprice'] = defaultPrice
-                                xdebug.info(item['itemname'] .. ':  '
-                                    .. XUtils.priceToMoneyString(item['lowestprice']) .. ' / '
-                                    .. XUtils.priceToMoneyString(item['defaultprice']))
-                            end
-                        end
-                    end
-                end
-            end
+            setPriceByName(itemName, lowestPrice, defaultPrice)
         end, { {
             Name = '宝石名称',
             OnEnterPressed = function(tname)
-                local all = false
-                if XUtils.stringStartsWith(tname, '*') then
-                    all = true
-                    tname = string.gsub(tname, '^%*', '')
-                end
-                xdebug.info('----------')
-                for _, item in ipairs(XAutoAuctionList) do
-                    if XUtils.stringContains(item['itemname'], tname) then
-                        if item['enabled'] ~= nil and item['enabled'] then
-                            if all or (not item['star']) then
-                                xdebug.info(item['itemname'] .. ':  '
-                                    .. XUtils.priceToMoneyString(item['lowestprice']) .. ' / '
-                                    .. XUtils.priceToMoneyString(item['defaultprice']))
-                            end
-                        end
-                    end
-                end
+                printItemsByName(tname)
             end
         }, { Name = '最低售价' }, { Name = '默认价格' } }, '调价')
     end)
@@ -1015,6 +983,7 @@ insertCleanLowerTask = function()
         timeout = 120
     }
     table.insert(taskList, 1, task)
+    craftRunning = XCraftQueue.isRunning()
 end
 
 getMaterialCount = function(itemName, type)
@@ -1032,6 +1001,14 @@ getMaterialPrice = function(itemName)
         if autoBuyItem then price = autoBuyItem['price'] end
     end
     return price
+end
+
+checkImportant = function(item)
+    local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0)
+    if item['star'] or dealCount >= 50 then
+        return true
+    end
+    return false
 end
 
 addCraftQueue = function(printCount, manualAdd)
@@ -1062,17 +1039,13 @@ addCraftQueue = function(printCount, manualAdd)
                         auctionCount = auctionItem['count']
                     end
                     local stackCount = item['stackcount']
-                    local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0)
                     local materialCount = getMaterialCount(item['itemname'])
-                    local minPriceCount = #item['myvalidlist']
-                    local multiRate = 3
-                    if XInfo.allHistory == 1 then multiRate = 1 end
 
                     local subCount = stackCount - auctionCount - bagCount
                     if queryRound > 1 or manualAdd then
-                        if item['star'] or dealCount >= 20 * multiRate then
-                            if auctionCount + bagCount < stackCount * 3 then
-                                subCount = stackCount * 2 - minPriceCount - bagCount
+                        if checkImportant(item) then
+                            if auctionCount + bagCount < stackCount * 2 then
+                                subCount = stackCount * 2 - auctionCount - bagCount
                             end
                         end
                     end
@@ -1199,13 +1172,10 @@ puton = function(printCount)
             local minPriceCount = #item['myvalidlist']
             if minPriceCount < auctionCount then auctionCount = minPriceCount end
             local stackCount = item['stackcount']
-            local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0)
-            local multiRate = 3
-            if XInfo.allHistory == 1 then multiRate = 1 end
             if multiAuction == 2 then
                 stackCount = 999
             elseif multiAuction == 1 then
-                if item['star'] or dealCount >= 20 * multiRate then
+                if checkImportant(item) then
                     stackCount = stackCount * 2
                 end
             end
@@ -1268,6 +1238,50 @@ printList = function()
         xdebug.info('当前任务：无')
     end
     xdebug.info('total: ' .. #taskList)
+end
+
+printItemsByName = function(key)
+    local all = false
+    if XUtils.stringStartsWith(key, '*') then
+        all = true
+        key = string.gsub(key, '^%*', '')
+    end
+    xdebug.info('----------')
+    for _, item in ipairs(XAutoAuctionList) do
+        if XUtils.stringContains(item['itemname'], key) then
+            if item['enabled'] ~= nil and item['enabled'] then
+                if all or (not item['star']) then
+                    xdebug.info(item['itemname'] .. ':  '
+                        .. XUtils.priceToMoneyString(item['lowestprice']) .. ' / '
+                        .. XUtils.priceToMoneyString(item['defaultprice']))
+                end
+            end
+        end
+    end
+end
+
+setPriceByName = function(itemName, lowestPrice, defaultPrice)
+    if itemName and lowestPrice and defaultPrice then
+        local all = false
+        if XUtils.stringStartsWith(itemName, '*') then
+            all = true
+            itemName = string.gsub(itemName, '^%*', '')
+        end
+        xdebug.info('----------')
+        for _, item in ipairs(XAutoAuctionList) do
+            if XUtils.stringContains(item['itemname'], itemName) then
+                if item['enabled'] ~= nil and item['enabled'] then
+                    if all or (not item['star']) then
+                        item['lowestprice'] = lowestPrice
+                        item['defaultprice'] = defaultPrice
+                        xdebug.info(item['itemname'] .. ':  '
+                            .. XUtils.priceToMoneyString(item['lowestprice']) .. ' / '
+                            .. XUtils.priceToMoneyString(item['defaultprice']))
+                    end
+                end
+            end
+        end
+    end
 end
 
 -- Event callback
@@ -1334,9 +1348,6 @@ local function processQueryTask_Auction(task)
         return
     end
 
-    local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0)
-    local multiRate = 3
-    if XInfo.allHistory == 1 then multiRate = 1 end
     local myValidCount = 0
     local auctionItem = XInfo.getAuctionItem(item['itemname'])
     if auctionItem then myValidCount = auctionItem['count'] end
@@ -1347,7 +1358,7 @@ local function processQueryTask_Auction(task)
     if multiAuction == 2 then
         targetCount = 999
     elseif multiAuction == 1 then
-        if item['star'] or dealCount >= 20 * multiRate then
+        if checkImportant(item) then
             targetCount = targetCount * 2
         end
     end
@@ -1579,8 +1590,7 @@ local function processCleanLowerTask(task)
         if saleStatus ~= 1 then
             for _, item in ipairs(XAutoAuctionList) do
                 if item['itemname'] == itemName then
-                    local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0)
-                    if item['star'] or dealCount >= 50 then
+                    if checkImportant(item) then
                         if buyoutPrice / stackCount > item['minpriceother'] then
                             xdebug.info('清理低价：' .. item['itemname']
                                 .. '(' .. XUtils.priceToMoneyString(buyoutPrice / stackCount)
@@ -1610,13 +1620,22 @@ local function processCleanLowerTask(task)
     end
     finishTask()
     XCraftQueue.reset()
-    XCraftQueue.start()
+    if craftRunning then
+        XCraftQueue.start()
+    end
     xdebug.warn('清理低价结束')
 end
 
 local function onUpdate()
     refreshUI()
-    if not isStarted then return end
+    if not XAutoAuction.XSellBuyFlag then return end
+    if not isStarted then
+        if XAutoAuction.XSellBuyFlag then
+            XAutoAuction.XSellBuyFlag = false
+        end
+        return
+    end
+
 
     if autoAuction then
         addCraftQueue(false, false)
@@ -1753,6 +1772,10 @@ local function onUpdate()
 
         queryRound = queryRound + 1
         queryRoundFinishTime = time()
+
+        if XAutoAuction.XSellBuyFlag then
+            XAutoAuction.XSellBuyFlag = not XAutoAuction.XSellBuyFlag
+        end
         refreshUI()
         return
     end
@@ -1842,3 +1865,5 @@ SLASH_XAUCTIONCENTERCLEANLOWER1 = '/xauctioncenter_cleanlower'
 -- Interfaces
 XAuctionCenter.addQueryTaskByItemName = addQueryTaskByItemName
 XAuctionCenter.getAuctionItem = getAuctionItem
+XAuctionCenter.printItemsByName = printItemsByName
+XAuctionCenter.setPriceByName = setPriceByName

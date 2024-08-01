@@ -428,3 +428,6 @@ XCraftQueue.addItem = addItem
 XCraftQueue.start = start
 XCraftQueue.stop = stop
 XCraftQueue.reset = reset
+XCraftQueue.isRunning = function()
+    return isRunning
+end

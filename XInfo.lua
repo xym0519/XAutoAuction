@@ -220,7 +220,7 @@ XInfo.isMe = function(characterName)
 end
 
 -- Other 0-all 1-10 2-30
-XInfo.allHistory = 2
+XInfo.allHistory = 1
 
 -- Event callback
 local dft_interval = 3
