@@ -10,7 +10,7 @@ local dft_lowestPriceRate = 1.5
 local dft_roundInterval = 3
 local dft_taskInterval = 1
 local dft_taskTimeout = 30
-local dft_filterList = { '全部', '可售', '优质', '价低', '有效', '无效' }
+local dft_filterList = { '全部', '可售', '优质', '价低', '有效', '无效', '星星' }
 local dft_deltaPrice = 10
 local dft_postdelay = 2
 local dft_autoCleanInterval = 60
@@ -20,7 +20,7 @@ local dft_buttonGap = 1
 local dft_sectionGap = 10
 
 local fastAuction = true
-local autoAuction = false
+local autoAuction = true
 local autoClean = true
 local multiAuction = 0
 
@@ -721,6 +721,10 @@ refreshUI = function()
             if not enabled then
                 disFlag = true
             end
+        elseif displayFilter == '星星' then
+            if enabled and star then
+                disFlag = true
+            end
         end
 
         if filterWord ~= '' and (not XUtils.stringContains(itemName, filterWord)) then
@@ -960,7 +964,12 @@ addQueryTaskByIndex = function(index)
 
     resetItem(item)
     local task = { action = 'query', index = index, page = 1, timeout = dft_taskTimeout }
-    table.insert(taskList, task)
+    local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0, 1)
+    if item['star'] or dealCount > 50 then
+        table.insert(taskList, 1, task)
+    else
+        table.insert(taskList, task)
+    end
 end
 
 addQueryTaskByItemName = function(itemName)
