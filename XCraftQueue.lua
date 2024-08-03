@@ -253,7 +253,7 @@ addItem = function(itemName, count, type)
     end
     if not found then
         if #craftQueue > 1 then
-            local autoAuctionItem = XAuctionCenter.getAuctionItem(itemName)
+            local autoAuctionItem = XAuctionCenter.getItem(itemName)
             if autoAuctionItem then
                 if autoAuctionItem['enabled'] and autoAuctionItem['star'] then
                     table.insert(craftQueue, 2, { itemname = itemName, count = count })

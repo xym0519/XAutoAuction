@@ -25,7 +25,7 @@ local initUI_Setting
 local initUI_Edit
 local refreshUI
 local addItem
-local getWordItem
+local getItem
 local send
 
 -- Function implemention
@@ -280,7 +280,7 @@ addItem = function(text, enabled)
     table.insert(XSpeakWordList, { text = text, enabled = enabled })
 end
 
-getWordItem = function(index)
+getItem = function(index)
     return XSpeakWordList[index]
 end
 
@@ -359,4 +359,4 @@ SLASH_XAUTOSPEAKSEND1 = '/xautospeak_send'
 
 -- Interface
 XAutoSpeak.addItem = addItem
-XAutoSpeak.getWordItem = getWordItem
+XAutoSpeak.getItem = getItem

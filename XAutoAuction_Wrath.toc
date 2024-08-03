@@ -21,7 +21,6 @@ XInfo.lua
 XAuctionTip.lua
 XAutoSpeak.lua
 XCraftQueue.lua
-XAuctionHistory.lua
 XAuctionCenter.lua
 XAutoBuy.lua
 XJewWords.lua

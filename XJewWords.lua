@@ -12,7 +12,7 @@ local displaySettingItem = nil
 -- Function definition
 local initUI
 local refreshUI
-local getWordItem
+local getItem
 local addItem
 
 -- Function implemention
@@ -180,7 +180,7 @@ initUI = function()
         setAutoBuyButton:SetScript('OnClick', function()
             local idx = displayPageNo * displayPageSize + i
             local item = XJewWordList[idx]
-            local autoBuyItem = XAutoBuy.getBuyItem(item['itemname'])
+            local autoBuyItem = XAutoBuy.getItem(item['itemname'])
             if autoBuyItem then
                 autoBuyItem['price'] = item['price1'] * 10000
             end
@@ -238,7 +238,7 @@ initUI = function()
     setButton:SetScript('OnClick', function(self)
         XUIConfirmDialog.show(moduleName, '确认', '是否设置喊话内容', function()
             local text = mainFrame.price1Editbox:GetText()
-            local wordItem = XAutoSpeak.getWordItem(1)
+            local wordItem = XAutoSpeak.getItem(1)
             if wordItem ~= nil then
                 wordItem['text'] = text
             else
@@ -311,7 +311,7 @@ refreshUI = function()
             local itemName = item['itemname']
             local price1 = item['price1']
             local price2 = 0;
-            local autoBuyItem = XAutoBuy.getBuyItem(itemName)
+            local autoBuyItem = XAutoBuy.getItem(itemName)
             if autoBuyItem then price2 = autoBuyItem['price'] / 10000 end
             local unit = item['unit']
             local ccount = item['ccount']
@@ -392,7 +392,7 @@ refreshUI = function()
     mainFrame.price3Editbox:SetText(price3Str)
 end
 
-getWordItem = function(itemName)
+getItem = function(itemName)
     for _, item in ipairs(XJewWordList) do
         if item['itemname'] == itemName then
             return item
@@ -402,7 +402,7 @@ getWordItem = function(itemName)
 end
 
 addItem = function(itemName, price1, unit)
-    if getWordItem(itemName) then return end
+    if getItem(itemName) then return end
     local item = {
         itemname = itemName,
         price1 = price1,
@@ -436,3 +436,6 @@ SlashCmdList['XJEWWORDSCLOSE'] = function()
     if mainFrame then mainFrame:Hide() end
 end
 SLASH_XJEWWORDSCLOSE1 = '/xjewwords_close'
+
+-- Interfaces
+XJewWords.getItem = getItem

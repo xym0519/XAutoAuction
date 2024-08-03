@@ -50,8 +50,6 @@ XExternal.processMail = function(mailIndex, mailType, msgSubject)
 
         if invoiceType == 'seller' then
             XExternal.addSellHistory(itemName, time(), true, bid / count, count)
-
-            XAuctionHistory.addItem(itemName)
         end
     end
 end

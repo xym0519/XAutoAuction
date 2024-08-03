@@ -30,7 +30,7 @@ local checkOnly = true
 -- Function definition
 local initUI
 local refreshUI
-local getBuyItem
+local getItem
 local addItem
 local startBuy
 local stopBuy
@@ -218,29 +218,29 @@ initUI = function()
             XAuctionCenter.printItemsByName('*' .. item['itemname'])
             local price = item['minbuyoutprice'];
             XUIInputDialog.show(moduleName, function(data)
-                    local lowestPrice = nil
+                    local basePrice = nil
                     local profitRate = nil
                     local isDealRate = nil
                     for _, titem in ipairs(data) do
-                        if titem.Name == '最低售价' then lowestPrice = tonumber(titem.Value) end
+                        if titem.Name == '基准价格' then basePrice = tonumber(titem.Value) end
                         if titem.Name == '利润率' then profitRate = tonumber(titem.Value) end
                         if titem.Name == '手续费' then isDealRate = tonumber(titem.Value) end
                     end
-                    XAuctionCenter.setPriceByName('*' .. item['itemname'], lowestPrice, profitRate, isDealRate == 1, true)
+                    XAuctionCenter.setPriceByName('*' .. item['itemname'], basePrice, profitRate, isDealRate == 1, true)
                 end,
                 { {
-                    Name = '最低售价',
+                    Name = '基准价格',
                     Value = price,
                     OnEnterPressed = function(_, data)
-                        local lowestPrice = nil
+                        local basePrice = nil
                         local profitRate = nil
                         local isDealRate = nil
                         for _, titem in ipairs(data) do
-                            if titem.Name == '最低售价' then lowestPrice = tonumber(titem.Value) end
+                            if titem.Name == '基准价格' then basePrice = tonumber(titem.Value) end
                             if titem.Name == '利润率' then profitRate = tonumber(titem.Value) end
                             if titem.Name == '手续费' then isDealRate = tonumber(titem.Value) end
                         end
-                        XAuctionCenter.setPriceByName('*' .. item['itemname'], lowestPrice, profitRate, isDealRate == 1,
+                        XAuctionCenter.setPriceByName('*' .. item['itemname'], basePrice, profitRate, isDealRate == 1,
                             false)
                     end
                 }, { Name = '利润率', Value = 0.2 },
@@ -347,7 +347,7 @@ refreshUI = function()
     end
 end
 
-getBuyItem = function(itemName)
+getItem = function(itemName)
     for _, item in ipairs(XAutoBuyList) do
         if item['itemname'] == itemName then
             return item
@@ -357,7 +357,7 @@ getBuyItem = function(itemName)
 end
 
 addItem = function(itemName, price)
-    if getBuyItem(itemName) then return end
+    if getItem(itemName) then return end
     local item = {
         itemname = itemName,
         price = price
@@ -624,4 +624,4 @@ end
 SLASH_XAUTOBUYHIDE1 = '/xautobuy_close'
 
 -- Interface
-XAutoBuy.getBuyItem = getBuyItem
+XAutoBuy.getItem = getItem

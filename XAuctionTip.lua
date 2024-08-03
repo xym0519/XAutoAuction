@@ -80,42 +80,31 @@ GameTooltip:HookScript('OnTooltipSetItem', function(self)
         XUI.White .. XUtils.priceToMoneyString(XInfo.getAuctionInfoField(itemName, 'maxscanprice', 0)))
 
     self:AddLine(XUI.Green .. '---------- 实时信息 ----------')
-    local auctionItem = nil
-    for _, titem in ipairs(XAutoAuctionList) do
-        if titem['itemname'] == itemName then
-            auctionItem = titem
-            break;
-        end
+    local autoAuctionItem = XAuctionCenter.getItem(itemName)
+    local auctionItem = XInfo.getAuctionItem(itemName)
+    if autoAuctionItem then
+        self:AddDoubleLine('他最低价:', XUI.White .. XUtils.priceToMoneyString(autoAuctionItem['minpriceother']))
     end
     if auctionItem then
-        self:AddDoubleLine('他最低价:', XUI.White .. XUtils.priceToMoneyString(auctionItem['minpriceother']))
-        self:AddDoubleLine('我最低数:', XUI.White .. #auctionItem['myvalidlist'])
+        self:AddDoubleLine('我有效数:', XUI.White .. auctionItem['validcount'])
+    else
+        self:AddDoubleLine('我有效数:', XUI.White .. '0')
+    end
+    if autoAuctionItem then
         local materialName = XInfo.getMaterialName(itemName)
         if materialName then
             local materialBagItem = XInfo.getBagItem(materialName)
             if materialBagItem then
                 self:AddDoubleLine('原料数量:', XUI.White ..
-                materialBagItem['count'] .. ' / ' .. materialBagItem['bankcount'])
+                    materialBagItem['count'] .. ' / ' .. materialBagItem['bankcount'])
             end
-            local buyItem = nil
-            for _, titem in ipairs(XAutoBuyList) do
-                if titem['itemname'] == materialName then
-                    buyItem = titem
-                    break
-                end
-            end
+            local buyItem = XAutoBuy.getItem(materialName)
             if buyItem then
                 self:AddDoubleLine('原料Bid:', XUI.White .. XUtils.priceToMoneyString(buyItem['minprice']))
                 self:AddDoubleLine('原料Buyout:', XUI.White .. XUtils.priceToMoneyString(buyItem['minbuyoutprice']))
                 self:AddDoubleLine('扫描价格:', XUI.White .. XUtils.priceToMoneyString(buyItem['price']))
             end
-            local wordItem = nil
-            for _, titem in ipairs(XJewWordList) do
-                if titem['itemname'] == materialName then
-                    wordItem = titem
-                    break
-                end
-            end
+            local wordItem = XJewWords.getItem(materialName)
             if wordItem then
                 self:AddDoubleLine('喊话价格:', XUI.White .. XUtils.priceToMoneyString(tonumber(wordItem['price1']) * 10000))
             end
@@ -127,5 +116,4 @@ GameTooltip:HookScript('OnTooltipSetItem', function(self)
 
 
     self:AddLine('--------------------------------')
-    -- self:AddDoubleLine('ItemId:', itemId)
 end)
