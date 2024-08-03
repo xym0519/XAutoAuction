@@ -114,7 +114,7 @@ end
 
 refreshUI = function()
     if not mainFrame then return end
-    if not mainFrame:isViewable() then return end
+    if not mainFrame:IsVisible() then return end
 
     XInfo.reloadBag()
 

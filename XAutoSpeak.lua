@@ -241,6 +241,7 @@ end
 
 refreshUI = function()
     if not mainFrame then return end
+    if not mainFrame:IsVisible() then return end
 
     if mainFrame.startButton then
         if isRunning then

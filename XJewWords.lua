@@ -290,7 +290,7 @@ end
 
 refreshUI = function()
     if not mainFrame then return end
-    if not mainFrame:isViewable() then return end
+    if not mainFrame:IsVisible() then return end
 
     mainFrame.title:SetText('珠宝文案 (' .. (displayPageNo + 1) .. '/'
         .. (math.ceil(#XJewWordList / displayPageSize)) .. ')')
