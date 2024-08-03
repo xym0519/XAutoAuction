@@ -259,6 +259,7 @@ end
 
 refreshUI = function()
     if not mainFrame then return end
+    if not mainFrame:isViewable() then return end
 
     mainFrame.title:SetText('自动购买 (' .. (displayPageNo + 1) .. '/'
         .. (math.ceil(#XAutoBuyList / displayPageSize)) .. ')    Querying: '

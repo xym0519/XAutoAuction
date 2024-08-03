@@ -189,6 +189,9 @@ initUI = function()
 end
 
 refreshUI = function()
+    if not mainFrame then return end
+    if not mainFrame:isViewable() then return end
+
     XInfo.reloadBag()
 
     if curTask then

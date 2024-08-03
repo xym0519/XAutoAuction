@@ -153,6 +153,7 @@ end
 
 refreshUI = function()
     if not mainFrame then return end
+    if not mainFrame:isViewable() then return end
 
     mainFrame.title:SetText('拍卖记录 (' ..
         (displayPageNo + 1) ..

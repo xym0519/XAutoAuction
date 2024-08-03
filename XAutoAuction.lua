@@ -85,6 +85,7 @@ local onUIUpdate = function()
         return
     end
     lastUIUpdateTime = currentTime
+    XAutoAuction.refreshUI()
     for _, callback in pairs(uiUpdateCallback) do
         if type(callback) == 'function' then
             callback()
