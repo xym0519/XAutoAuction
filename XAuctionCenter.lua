@@ -14,7 +14,6 @@ local dft_filterList = { '全部', '可售', '优质', '价低', '有效', '无�
 local dft_deltaPrice = 10
 local dft_postdelay = 2
 local dft_autoCleanInterval = 60
-local dft_dealFailedMoney = 13500
 
 local dft_buttonWidth = 45
 local dft_buttonGap = 1
@@ -748,13 +747,8 @@ refreshUI = function()
                 bagTotalCount = itemBag['totalcount']
             end
 
-            local auctionItem = XInfo.getAuctionItem(itemName)
-            local auctionCount = 0
-            local validCount = 0
-            if auctionItem then
-                auctionCount = auctionItem['count']
-                validCount = auctionItem['validcount']
-            end
+            local auctionCount = XInfo.getAuctionItemCount(itemName)
+            local validCount = XInfo.getAuctionItemValidCount(itemName)
             local bagAuctionCount = bagTotalCount + auctionCount
 
             local dealRate = XInfo.getAuctionInfoField(itemName, 'dealrate', 99)
@@ -763,14 +757,16 @@ refreshUI = function()
             local recipe = XInfo.getTradeSkillItem(itemName)
 
             local itemNameStr = string.sub(itemName, 1, 18);
-            if enabled then
-                if validCount > 0 then
-                    itemNameStr = XUI.Green .. itemNameStr
-                else
-                    itemNameStr = XUI.Red .. itemNameStr
-                end
-            else
+            if not enabled then
                 itemNameStr = XUI.Gray .. itemNameStr
+            elseif minPriceOther < basePrice then
+                itemNameStr = XUI.Red .. itemNameStr
+            elseif validCount <= 0 then
+                itemNameStr = XUI.Purple .. itemNameStr
+            elseif validCount ~= auctionCount or validCount ~= stackCount then
+                itemNameStr = XUI.Yellow .. itemNameStr
+            else
+                itemNameStr = XUI.Green .. itemNameStr
             end
 
             if star then
@@ -1048,11 +1044,7 @@ addCraftQueue = function(printCount, manualAdd)
                     if bagItem ~= nil then
                         bagCount = bagItem['count']
                     end
-                    local auctionCount = 0
-                    local auctionItem = XInfo.getAuctionItem(item['itemname'])
-                    if auctionItem ~= nil then
-                        auctionCount = auctionItem['count']
-                    end
+                    local auctionCount = XInfo.getAuctionItemCount(item['itemname'])
                     local stackCount = item['stackcount']
                     local materialCount = getMaterialCount(item['itemname'])
 
@@ -1096,6 +1088,8 @@ cleanLower = function()
         return
     end
     local numItems = XAPI.GetNumAuctionItems('owner')
+
+    XInfo.reloadAuction()
 
     XCraftQueue.stop()
     for i = numItems, 1, -1 do
@@ -1181,11 +1175,7 @@ puton = function(printCount)
             local bagCount = 0
             local bagItem = XInfo.getBagItem(item['itemname'])
             if bagItem then bagCount = bagItem['count'] end
-            local validCount = 0
-            local auctionItem = XInfo.getAuctionItem(item['itemname'])
-            if auctionItem then
-                validCount = auctionItem['validcount']
-            end
+            local validCount = XInfo.getAuctionItemValidCount(item['itemname'])
             local stackCount = item['stackcount']
             if multiAuction == 2 then
                 stackCount = 999
@@ -1288,10 +1278,11 @@ setPriceByName = function(itemName, basePrice, profitRate, isDealRate, confirm)
             if XUtils.stringContains(item['itemname'], itemName) then
                 if item['enabled'] ~= nil and item['enabled'] then
                     if all or (not item['star']) then
+                        local vendorPrice = XInfo.getAuctionInfoField(item['itemname'], 'vendorprice', 0)
                         local dealRate = XInfo.getAuctionInfoField(item['itemname'], 'dealrate', 99, 1)
                         local price = basePrice / (1 - profitRate)
                         if isDealRate then
-                            price = price + dealRate * dft_dealFailedMoney
+                            price = price + dealRate * vendorPrice * 0.15
                         end
                         if confirm then
                             item['baseprice'] = price
@@ -1369,9 +1360,7 @@ local function processQueryTask_Auction(task)
         return
     end
 
-    local validCount = 0
-    local auctionItem = XInfo.getAuctionItem(item['itemname'])
-    if auctionItem then validCount = auctionItem['validcount'] end
+    local validCount = XInfo.getAuctionItemValidCount(item['itemname'])
 
     local targetCount = item['stackcount']
     if multiAuction == 2 then

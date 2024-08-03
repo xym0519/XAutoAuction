@@ -72,12 +72,39 @@ end
 -- Auction Items
 XInfo.auctionList = {}
 
--- count, validcount, minprice, items(index, count, price), validitems(index,  count, price)
+-- count, minprice, items(index, count, price)
 XInfo.getAuctionItem = function(itemName)
     if XInfo.auctionList and XInfo.auctionList[itemName] then
         return XInfo.auctionList[itemName]
     end
     return nil
+end
+
+XInfo.getAuctionItemCount = function(itemName)
+    local item = XInfo.getAuctionItem(itemName)
+    if item then
+        return item['count']
+    else
+        return 0
+    end
+end
+
+XInfo.getAuctionItemValidCount = function(itemName)
+    local item = XInfo.getAuctionItem(itemName)
+    if item then
+        local auctionItem = XAuctionCenter.getItem(itemName)
+        if not auctionItem then return 0 end
+        if auctionItem['minpriceother'] == 9999999 then return 0 end
+        local count = 0
+        for _, record in ipairs(item['items']) do
+            if record['price'] <= auctionItem['minpriceother'] then
+                count = count + 1
+            end
+        end
+        return count
+    else
+        return 0
+    end
 end
 
 local lastAuctionUpdateTime = 0
@@ -104,9 +131,6 @@ XInfo.reloadAuction = function()
         local buyoutPrice = res[10]
         local saleStatus = res[16]
         if saleStatus ~= 1 then
-            local auctionItem = XAuctionCenter.getItem(itemName)
-            local basePrice = nil
-            if auctionItem then basePrice = auctionItem['baseprice'] end
             local record = { index = i, count = stackCount, price = buyoutPrice / stackCount }
             if list[itemName] then
                 local item = list[itemName]
@@ -115,26 +139,12 @@ XInfo.reloadAuction = function()
                 if item['minprice'] > buyoutPrice / stackCount then
                     item['minprice'] = buyoutPrice / stackCount
                 end
-                if not basePrice then
-                    if buyoutPrice / stackCount >= basePrice then
-                        item['validcount'] = stackCount
-                        table.insert(item['validitems'], record)
-                    end
-                end
             else
                 list[itemName] = {
                     count = stackCount,
-                    validcount = 0,
                     minprice = buyoutPrice / stackCount,
-                    items = { record },
-                    validitems = {}
+                    items = { record }
                 }
-                if not basePrice then
-                    if buyoutPrice / stackCount >= basePrice then
-                        list[itemName]['validcount'] = stackCount
-                        table.insert(list[itemName]['validitems'], record)
-                    end
-                end
             end
             tAuctioningCount = tAuctioningCount + 1
         else

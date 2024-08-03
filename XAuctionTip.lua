@@ -81,15 +81,11 @@ GameTooltip:HookScript('OnTooltipSetItem', function(self)
 
     self:AddLine(XUI.Green .. '---------- 实时信息 ----------')
     local autoAuctionItem = XAuctionCenter.getItem(itemName)
-    local auctionItem = XInfo.getAuctionItem(itemName)
+    local validCount = XInfo.getAuctionItemValidCount(itemName)
     if autoAuctionItem then
         self:AddDoubleLine('他最低价:', XUI.White .. XUtils.priceToMoneyString(autoAuctionItem['minpriceother']))
     end
-    if auctionItem then
-        self:AddDoubleLine('我有效数:', XUI.White .. auctionItem['validcount'])
-    else
-        self:AddDoubleLine('我有效数:', XUI.White .. '0')
-    end
+    self:AddDoubleLine('我有效数:', XUI.White .. validCount)
     if autoAuctionItem then
         local materialName = XInfo.getMaterialName(itemName)
         if materialName then
