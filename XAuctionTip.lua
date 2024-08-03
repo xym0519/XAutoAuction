@@ -21,22 +21,23 @@ GameTooltip:HookScript('OnTooltipSetItem', function(self)
     else
         type = '30D'
     end
-    self:AddDoubleLine('类型:', type)
-
+    self:AddLine('---------- 物品信息 ----------')
     local bagItem = XInfo.getBagItem(itemName)
     if bagItem ~= nil then
-        self:AddDoubleLine(XUI.Green .. '背包:', XUI.Green .. bagItem['count'])
-        self:AddDoubleLine(XUI.Green .. '银行:', XUI.Green .. bagItem['bankcount'])
+        if bagItem['count'] > 0 then
+            self:AddDoubleLine('背包:', XUI.Green .. bagItem['count'])
+        else
+            self:AddDoubleLine('背包:', XUI.Red .. 0)
+        end
+        if bagItem['bankcount'] > 0 then
+            self:AddDoubleLine('银行:', XUI.Green .. bagItem['bankcount'])
+        else
+            self:AddDoubleLine('银行:', XUI.Red .. 0)
+        end
     else
-        self:AddDoubleLine(XUI.Red .. '背包:', XUI.Red .. 0)
-        self:AddDoubleLine(XUI.Red .. '银行:', XUI.Red .. 0)
+        self:AddDoubleLine('背包:', XUI.Red .. 0)
+        self:AddDoubleLine('银行:', XUI.Red .. 0)
     end
-
-    local dealRate = XInfo.getAuctionInfoField(itemName, 'dealrate', 99)
-    local dealRateColor = XUI.getColor_DealRate(dealRate)
-
-    local dealCount = XInfo.getAuctionInfoField(itemName, 'dealcount', 0)
-    local dealCountColor = XUI.getColor_DealCount(dealCount)
 
     local category = XInfo.getAuctionInfoField(itemName, 'category', '')
     if category == '珠宝' then
@@ -58,10 +59,15 @@ GameTooltip:HookScript('OnTooltipSetItem', function(self)
         end
     end
 
+    self:AddLine(XUI.Green .. '---------- 交易信息 ----------')
+    local dealRate = XInfo.getAuctionInfoField(itemName, 'dealrate', 99)
+    local dealRateColor = XUI.getColor_DealRate(dealRate)
+
+    local dealCount = XInfo.getAuctionInfoField(itemName, 'dealcount', 0)
+    local dealCountColor = XUI.getColor_DealCount(dealCount)
+
     self:AddDoubleLine(dealRateColor .. '成交几率:', dealRateColor .. dealRate .. '次')
     self:AddDoubleLine(dealCountColor .. '成交次数:', dealCountColor .. dealCount .. '次')
-    self:AddDoubleLine(XUI.Red .. '保本价:',
-        XUI.White .. XUtils.priceToMoneyString(XInfo.getAuctionInfoField(itemName, 'lowestprice', 0)))
     self:AddDoubleLine('制造价:',
         XUI.White .. XUtils.priceToMoneyString(XInfo.getAuctionInfoField(itemName, 'makeprice', 0)))
     self:AddDoubleLine('成本价:',
@@ -73,5 +79,52 @@ GameTooltip:HookScript('OnTooltipSetItem', function(self)
     self:AddDoubleLine('最高价:',
         XUI.White .. XUtils.priceToMoneyString(XInfo.getAuctionInfoField(itemName, 'maxscanprice', 0)))
 
+    self:AddLine(XUI.Green .. '---------- 实时信息 ----------')
+    local auctionItem = nil
+    for _, titem in ipairs(XAutoAuctionList) do
+        if titem['itemname'] == itemName then
+            auctionItem = titem
+            break;
+        end
+    end
+    if auctionItem then
+        self:AddDoubleLine('他最低价:', XUtils.priceToMoneyString(auctionItem['minpriceother']))
+        self:AddDoubleLine('我最低数:', #auctionItem['myvalidlist'])
+        local materialName = XInfo.getMaterialName(itemName)
+        if materialName then
+            local materialBagItem = XInfo.getBagItem(materialName)
+            if materialBagItem then
+                self:AddDoubleLine('原料数量:', materialBagItem['count'] .. ' / ' .. materialBagItem['bankcount'])
+            end
+            local buyItem = nil
+            for _, titem in ipairs(XAutoBuyList) do
+                if titem['itemname'] == materialName then
+                    buyItem = titem
+                    break
+                end
+            end
+            if buyItem then
+                self:AddDoubleLine('原料Bid:', XUI.White .. XUtils.priceToMoneyString(buyItem['minprice']))
+                self:AddDoubleLine('原料Buyout:', XUI.White .. XUtils.priceToMoneyString(buyItem['minbuyoutprice']))
+                self:AddDoubleLine('扫描价格:', XUI.White .. XUtils.priceToMoneyString(buyItem['price']))
+            end
+            local wordItem = nil
+            for _, titem in ipairs(XJewWordList) do
+                if titem['itemname'] == materialName then
+                    wordItem = titem
+                    break
+                end
+            end
+            if wordItem then
+                self:AddDoubleLine('喊话价格:', XUI.White .. XUtils.priceToMoneyString(tonumber(wordItem['price1']) * 10000))
+            end
+        end
+    end
+
+    self:AddLine('---------- 其他信息 ----------')
+    self:AddDoubleLine('周期:', type)
+
+
+    self:AddLine('--------------------------------')
     -- self:AddDoubleLine('ItemId:', itemId)
 end)
