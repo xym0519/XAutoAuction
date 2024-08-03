@@ -3,32 +3,46 @@ local moduleName = 'XJewCount'
 
 -- Variable definition
 local mainFrame = nil
-local prLabel = nil
-local poLabel = nil
-local pyLabel = nil
-local pgLabel = nil
-local pbLabel = nil
-local ppLabel = nil
-local brLabel = nil
-local boLabel = nil
-local byLabel = nil
-local bgLabel = nil
-local bbLabel = nil
-local bpLabel = nil
-
-local tyLabel = nil
-local ddLabel = nil
-
--- Function definition
+local labels = {}
 local initUI
 local refreshUI
 local createLabel
-local getItemInfo
 
 -- Function implemention
-createLabel = function()
+createLabel = function(itemName)
     local label = XUI.createLabel(mainFrame, 120)
+    label.itemName = itemName
     label:SetHeight(18)
+    label:SetScript("OnEnter", function(self)
+        local titemName = self.itemName
+        local itemId = XInfo.getAuctionInfoField(titemName, 'itemid')
+        if itemId > 0 then
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetHyperlink("item:" .. itemId) -- 显示物品信息
+        end
+    end)
+    label:SetScript("OnLeave", function(self)
+        GameTooltip:Hide()
+    end)
+    label.Refresh = function(self)
+        local titemName = self.itemName
+        local bagCount = 0
+        local totalCount = 0
+        local item = XInfo.getBagItem(titemName)
+        if item then
+            bagCount = item['count']
+            totalCount = item['totalcount']
+        end
+
+        titemName = string.sub(titemName, 1, 3)
+
+        local bagCountStr = XUI.getColor_BagCount(bagCount) .. bagCount
+
+        local totalCountStr = XUI.getColor_BagBankCount(totalCount) .. totalCount
+
+        local content = titemName .. '： ' .. bagCountStr .. XUI.White .. ' / ' .. totalCountStr
+        self:SetText(content)
+    end
     return label
 end
 
@@ -38,48 +52,62 @@ initUI = function()
     mainFrame:SetPoint('BOTTOM', UIParent, 'BOTTOM', 0, 60)
     mainFrame:Hide()
 
-    prLabel = createLabel()
+    local prLabel = createLabel('赤玉石')
     prLabel:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 20, -30)
+    table.insert(labels, prLabel)
 
-    poLabel = createLabel()
+    local poLabel = createLabel('紫黄晶')
     poLabel:SetPoint('TOPLEFT', prLabel, 'BOTTOMLEFT', 0, 0)
+    table.insert(labels, poLabel)
 
-    pyLabel = createLabel()
+    local pyLabel = createLabel('王者琥珀')
     pyLabel:SetPoint('TOPLEFT', poLabel, 'BOTTOMLEFT', 0, 0)
+    table.insert(labels, pyLabel)
 
-    pgLabel = createLabel()
+    local pgLabel = createLabel('祖尔之眼')
     pgLabel:SetPoint('TOPLEFT', pyLabel, 'BOTTOMLEFT', 0, 0)
+    table.insert(labels, pgLabel)
 
-    pbLabel = createLabel()
+    local pbLabel = createLabel('巨锆石')
     pbLabel:SetPoint('TOPLEFT', pgLabel, 'BOTTOMLEFT', 0, 0)
+    table.insert(labels, pbLabel)
 
-    ppLabel = createLabel()
+    local ppLabel = createLabel('恐惧石')
     ppLabel:SetPoint('TOPLEFT', pbLabel, 'BOTTOMLEFT', 0, 0)
+    table.insert(labels, ppLabel)
 
-    brLabel = createLabel()
+    local brLabel = createLabel('血玉石')
     brLabel:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 140, -30)
+    table.insert(labels, brLabel)
 
-    boLabel = createLabel()
+    local boLabel = createLabel('帝黄晶')
     boLabel:SetPoint('TOPLEFT', brLabel, 'BOTTOMLEFT', 0, 0)
+    table.insert(labels, boLabel)
 
-    byLabel = createLabel()
+    local byLabel = createLabel('秋色石')
     byLabel:SetPoint('TOPLEFT', boLabel, 'BOTTOMLEFT', 0, 0)
+    table.insert(labels, byLabel)
 
-    bgLabel = createLabel()
+    local bgLabel = createLabel('森林翡翠')
     bgLabel:SetPoint('TOPLEFT', byLabel, 'BOTTOMLEFT', 0, 0)
+    table.insert(labels, bgLabel)
 
-    bbLabel = createLabel()
+    local bbLabel = createLabel('天蓝石')
     bbLabel:SetPoint('TOPLEFT', bgLabel, 'BOTTOMLEFT', 0, 0)
+    table.insert(labels, bbLabel)
 
-    bpLabel = createLabel()
+    local bpLabel = createLabel('曙光猫眼石')
     bpLabel:SetPoint('TOPLEFT', bbLabel, 'BOTTOMLEFT', 0, 0)
+    table.insert(labels, bpLabel)
 
 
-    tyLabel = createLabel()
+    local tyLabel = createLabel('天焰钻石')
     tyLabel:SetPoint('TOPLEFT', ppLabel, 'BOTTOMLEFT', 0, 0)
+    table.insert(labels, tyLabel)
 
-    ddLabel = createLabel()
+    local ddLabel = createLabel('大地侵攻钻石')
     ddLabel:SetPoint('TOPLEFT', bpLabel, 'BOTTOMLEFT', 0, 0)
+    table.insert(labels, ddLabel)
 
     refreshUI()
 end
@@ -88,54 +116,9 @@ refreshUI = function()
     if not mainFrame then return end
     XInfo.reloadBag()
 
-    if not prLabel then return end
-    prLabel:SetText(getItemInfo('赤玉石'))
-    if not poLabel then return end
-    poLabel:SetText(getItemInfo('紫黄晶'))
-    if not pyLabel then return end
-    pyLabel:SetText(getItemInfo('王者琥珀'))
-    if not pgLabel then return end
-    pgLabel:SetText(getItemInfo('祖尔之眼'))
-    if not pbLabel then return end
-    pbLabel:SetText(getItemInfo('巨锆石'))
-    if not ppLabel then return end
-    ppLabel:SetText(getItemInfo('恐惧石'))
-
-    if not brLabel then return end
-    brLabel:SetText(getItemInfo('血玉石'))
-    if not boLabel then return end
-    boLabel:SetText(getItemInfo('帝黄晶'))
-    if not byLabel then return end
-    byLabel:SetText(getItemInfo('秋色石'))
-    if not bgLabel then return end
-    bgLabel:SetText(getItemInfo('森林翡翠'))
-    if not bbLabel then return end
-    bbLabel:SetText(getItemInfo('天蓝石'))
-    if not bpLabel then return end
-    bpLabel:SetText(getItemInfo('曙光猫眼石'))
-    
-    if not tyLabel then return end
-    tyLabel:SetText(getItemInfo('天焰钻石'))
-    if not ddLabel then return end
-    ddLabel:SetText(getItemInfo('大地侵攻钻石'))
-end
-
-getItemInfo = function(itemName)
-    local bagCount = 0
-    local totalCount = 0
-    local item = XInfo.getBagItem(itemName)
-    if item then
-        bagCount = item['count']
-        totalCount = item['totalcount']
+    for _, label in ipairs(labels) do
+        label:Refresh()
     end
-
-    itemName = string.sub(itemName, 1, 3)
-
-    local bagCountStr = XUI.getColor_BagCount(bagCount) .. bagCount
-
-    local totalCountStr = XUI.getColor_BagBankCount(totalCount) .. totalCount
-
-    return itemName .. '： ' .. bagCountStr .. XUI.White .. ' / ' .. totalCountStr
 end
 
 -- Events

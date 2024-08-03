@@ -14,6 +14,7 @@ local dft_filterList = { '全部', '可售', '优质', '价低', '有效', '无�
 local dft_deltaPrice = 10
 local dft_postdelay = 2
 local dft_autoCleanInterval = 60
+local dft_dealFailedMoney = 13500
 
 local dft_buttonWidth = 45
 local dft_buttonGap = 1
@@ -21,7 +22,7 @@ local dft_sectionGap = 10
 
 local fastAuction = true
 local autoAuction = true
-local autoClean = true
+local autoClean = false
 local multiAuction = 0
 
 local displayPageNo = 0
@@ -342,19 +343,31 @@ initUI = function()
         XUIInputDialog.show(moduleName, function(data)
             local itemName = nil
             local lowestPrice = nil
-            local defaultPrice = nil
+            local profitRate = nil
+            local isDealRate = nil
             for _, item in ipairs(data) do
                 if item.Name == '宝石名称' then itemName = item.Value end
                 if item.Name == '最低售价' then lowestPrice = tonumber(item.Value) end
-                if item.Name == '默认价格' then defaultPrice = tonumber(item.Value) end
+                if item.Name == '利润率' then profitRate = tonumber(item.Value) end
+                if item.Name == '手续费' then isDealRate = tonumber(item.Value) end
             end
-            setPriceByName(itemName, lowestPrice, defaultPrice)
+            setPriceByName(itemName, lowestPrice, profitRate, isDealRate == 1, true)
         end, { {
             Name = '宝石名称',
-            OnEnterPressed = function(tname)
-                printItemsByName(tname)
+            OnEnterPressed = function(_, data)
+                local itemName = nil
+                local lowestPrice = nil
+                local profitRate = nil
+                local isDealRate = nil
+                for _, item in ipairs(data) do
+                    if item.Name == '宝石名称' then itemName = item.Value end
+                    if item.Name == '最低售价' then lowestPrice = tonumber(item.Value) end
+                    if item.Name == '利润率' then profitRate = tonumber(item.Value) end
+                    if item.Name == '手续费' then isDealRate = tonumber(item.Value) end
+                end
+                setPriceByName(itemName, lowestPrice, profitRate, isDealRate == 1, false)
             end
-        }, { Name = '最低售价' }, { Name = '默认价格' } }, '调价')
+        }, { Name = '最低售价' }, { Name = '利润率', Value = 0.2 }, { Name = '手续费', Value = 1 } }, '调价')
     end)
 
     local autoCleanButton = XUI.createButton(mainFrame, dft_buttonWidth, '清理')
@@ -703,9 +716,11 @@ refreshUI = function()
     end
 
     mainFrame.title:SetText('自动拍卖 (' .. (displayPageNo + 1) .. '/'
-        .. (math.ceil(#dataList / displayPageSize)) .. ')    Querying: '
-        .. queryIndex .. '    StarQuerying: ' .. starQueryIndex .. '    Round: ' .. queryRound
-        .. '    EmptyBag: ' .. XInfo.emptyBagCount)
+        .. (math.ceil(#dataList / displayPageSize)) .. ')    QIdx: '
+        .. queryIndex .. '    SQIdx: ' .. starQueryIndex .. '    Rd: ' .. queryRound
+        .. '    EBag: ' .. XInfo.emptyBagCount
+        .. '    AucCnt: ' .. XInfo.auctioningCount
+        .. '/' .. XInfo.auctionedCount .. '(' .. (XUtils.round(XInfo.auctionedMoney / 10000)) .. ')')
 
     for i = 1, displayPageSize do
         local frame = displayFrameList[i]
@@ -1251,17 +1266,18 @@ printItemsByName = function(key)
         if XUtils.stringContains(item['itemname'], key) then
             if item['enabled'] ~= nil and item['enabled'] then
                 if all or (not item['star']) then
-                    xdebug.info(item['itemname'] .. ':  '
-                        .. XUtils.priceToMoneyString(item['lowestprice']) .. ' / '
-                        .. XUtils.priceToMoneyString(item['defaultprice']))
+                    xdebug.info(item['itemname'] .. ':  ' .. XUtils.priceToMoneyString(item['lowestprice']))
                 end
             end
         end
     end
 end
 
-setPriceByName = function(itemName, lowestPrice, defaultPrice)
-    if itemName and lowestPrice and defaultPrice then
+setPriceByName = function(itemName, lowestPrice, profitRate, isDealRate, confirm)
+    if profitRate == nil then profitRate = 0.2 end
+    if isDealRate == nil then isDealRate = false end
+    if confirm == nil then confirm = false end
+    if itemName and lowestPrice then
         local all = false
         if XUtils.stringStartsWith(itemName, '*') then
             all = true
@@ -1272,11 +1288,16 @@ setPriceByName = function(itemName, lowestPrice, defaultPrice)
             if XUtils.stringContains(item['itemname'], itemName) then
                 if item['enabled'] ~= nil and item['enabled'] then
                     if all or (not item['star']) then
-                        item['lowestprice'] = lowestPrice
-                        item['defaultprice'] = defaultPrice
-                        xdebug.info(item['itemname'] .. ':  '
-                            .. XUtils.priceToMoneyString(item['lowestprice']) .. ' / '
-                            .. XUtils.priceToMoneyString(item['defaultprice']))
+                        local dealRate = XInfo.getAuctionInfoField(item['itemname'], 'dealrate', 99, 1)
+                        local price = lowestPrice / (1 - profitRate)
+                        if isDealRate then
+                            price = price + dealRate * dft_dealFailedMoney
+                        end
+                        if confirm then
+                            item['lowestprice'] = price
+                            item['defaultprice'] = price * 2
+                        end
+                        xdebug.info(item['itemname'] .. ':  ' .. XUtils.priceToMoneyString(price))
                     end
                 end
             end
@@ -1726,7 +1747,6 @@ local function onUpdate()
             queryRound = queryRound + 1
             queryRoundFinishTime = time()
             autoAuction = true
-            fastAuction = false
 
             refreshUI()
             return

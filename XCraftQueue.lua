@@ -6,6 +6,7 @@ local mainFrame
 
 local dft_smalltime = 5
 local dft_largetime = 1.5
+local dft_taskInterval = 1
 
 local craftQueue = {}
 local displayPageNo = 0
@@ -15,6 +16,7 @@ local isRunning = false
 local curTask = nil
 local taskExpires = 0
 local lastFailTime = 0
+local lastTaskFinishTime = 0
 
 -- Function definition
 local initUI
@@ -27,7 +29,7 @@ local reset
 
 -- Function implemention
 initUI = function()
-    mainFrame = XUI.createFrame('XCraftQueueMainFrame', 265, 430)
+    mainFrame = XUI.createFrame('XCraftQueueMainFrame', 290, 430)
     mainFrame.title:SetText('制造队列')
     mainFrame:SetPoint('LEFT', UIParent, 'LEFT', 0, 0)
     mainFrame:Hide()
@@ -60,11 +62,8 @@ initUI = function()
     local cleanButton = XUI.createButton(mainFrame, 35, '清')
     cleanButton:SetPoint('LEFT', nextButton, 'RIGHT', 5, 0)
     cleanButton:SetScript('OnClick', function()
-        XUIConfirmDialog.show(moduleName, '确认', '是否确认清除制造列表', function()
-            craftQueue = {}
-            isRunning = false
-            refreshUI()
-        end)
+        craftQueue = {}
+        refreshUI()
     end)
 
     local refreshButton = XUI.createButton(mainFrame, 35, '刷')
@@ -170,6 +169,20 @@ initUI = function()
             end
         end)
 
+        local craftButton = XUI.createButton(frame, 20, 'C')
+        craftButton:SetPoint('LEFT', auctionButton, 'RIGHT', 1, 0)
+        craftButton:SetScript('OnClick', function()
+            local idx = displayPageNo * displayPageSize + i
+            if idx <= #craftQueue then
+                local item = craftQueue[idx]
+                local tradeSkillItem = XInfo.getTradeSkillItem(item['itemname'])
+                if not tradeSkillItem then
+                    return
+                end
+                XAPI.DoTradeSkill(tradeSkillItem['index'], item['count'])
+            end
+        end)
+
         table.insert(displayFrameList, frame)
         lastWidget = frame
     end
@@ -271,6 +284,7 @@ end
 finishCurTask = function()
     curTask = nil
     taskExpires = 0
+    lastTaskFinishTime = time()
 end
 
 start = function()
@@ -313,6 +327,7 @@ local function onUpdate()
         return
     end
 
+    if time() < lastTaskFinishTime + dft_taskInterval then return end
     curTask = craftQueue[1];
     table.remove(craftQueue, 1)
 

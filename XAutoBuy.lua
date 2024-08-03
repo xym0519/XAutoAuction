@@ -25,6 +25,7 @@ local queryPage = 0
 local queryFound = nil
 local queryResultProcessed = true
 local queryRound = 1
+local checkOnly = true
 
 -- Function definition
 local initUI
@@ -106,8 +107,16 @@ initUI = function()
         end, { { Name = '物品' }, { Name = '价格' } }, '自动购买设置')
     end)
 
+    local checkOnlyButton = XUI.createButton(mainFrame, dft_buttonWidth, '')
+    checkOnlyButton:SetPoint('LEFT', settingButton, 'RIGHT', dft_buttonGap, 0)
+    checkOnlyButton:SetScript('OnClick', function()
+        checkOnly = not checkOnly
+        refreshUI()
+    end)
+    mainFrame.checkOnlyButton = checkOnlyButton
+
     local hintLabel = XUI.createLabel(mainFrame, 170, '')
-    hintLabel:SetPoint('LEFT', settingButton, 'RIGHT', 10, 0)
+    hintLabel:SetPoint('LEFT', checkOnlyButton, 'RIGHT', 10, 0)
     mainFrame.hintLabel = hintLabel
 
     local lastWidget = preButton
@@ -207,19 +216,35 @@ initUI = function()
             local item = XAutoBuyList[idx]
             if not item then return end
             XAuctionCenter.printItemsByName('*' .. item['itemname'])
-            local price = item['minbuyoutprice'] / 0.80;
-            price = math.floor(price / 100) * 100
-            local defaultPrice = price * 2
+            local price = item['minbuyoutprice'];
             XUIInputDialog.show(moduleName, function(data)
                     local lowestPrice = nil
-                    local defaultPrice = nil
-                    for _, item in ipairs(data) do
-                        if item.Name == '最低售价' then lowestPrice = tonumber(item.Value) end
-                        if item.Name == '默认价格' then defaultPrice = tonumber(item.Value) end
+                    local profitRate = nil
+                    local isDealRate = nil
+                    for _, titem in ipairs(data) do
+                        if titem.Name == '最低售价' then lowestPrice = tonumber(titem.Value) end
+                        if titem.Name == '利润率' then profitRate = tonumber(titem.Value) end
+                        if titem.Name == '手续费' then isDealRate = tonumber(titem.Value) end
                     end
-                    XAuctionCenter.setPriceByName('*' .. item['itemname'], lowestPrice, defaultPrice)
+                    XAuctionCenter.setPriceByName('*' .. item['itemname'], lowestPrice, profitRate, isDealRate == 1, true)
                 end,
-                { { Name = '最低售价', Value = price }, { Name = '默认价格', Value = defaultPrice } },
+                { {
+                    Name = '最低售价',
+                    Value = price,
+                    OnEnterPressed = function(_, data)
+                        local lowestPrice = nil
+                        local profitRate = nil
+                        local isDealRate = nil
+                        for _, titem in ipairs(data) do
+                            if titem.Name == '最低售价' then lowestPrice = tonumber(titem.Value) end
+                            if titem.Name == '利润率' then profitRate = tonumber(titem.Value) end
+                            if titem.Name == '手续费' then isDealRate = tonumber(titem.Value) end
+                        end
+                        XAuctionCenter.setPriceByName('*' .. item['itemname'], lowestPrice, profitRate, isDealRate == 1,
+                            false)
+                    end
+                }, { Name = '利润率', Value = 0.2 },
+                    { Name = '手续费', Value = 1 } },
                 item['itemname'])
 
             refreshUI()
@@ -248,6 +273,12 @@ refreshUI = function()
     else
         mainFrame.startButton:SetText('起')
         mainFrame.hintLabel:SetText('等待')
+    end
+
+    if checkOnly then
+        mainFrame.checkOnlyButton:SetText('查')
+    else
+        mainFrame.checkOnlyButton:SetText('买')
     end
 
     for i = 1, displayPageSize do
@@ -465,19 +496,21 @@ local function onUpdate()
                     lowerPriceFound = true
                 end
 
-                if (not XInfo.isMe(seller)) and (not isMine) then
-                    if buyoutPrice / stackCount <= item['price'] and itemName == item['itemname'] and buyoutPrice > 0 then
-                        xdebug.info('Buyout: ' .. itemName .. ' (' .. stackCount .. ')'
-                            .. '    ' .. XUtils.priceToMoneyString(buyoutPrice / stackCount))
-                        XAPI.PlaceAuctionBid('list', index, buyoutPrice)
-                        bought = true
-                        break
-                    elseif nextBidPrice / stackCount <= XAutoBuyList[queryIndex]['price'] and itemName == item['itemname'] then
-                        xdebug.info('Bid: ' .. itemName .. ' (' .. stackCount .. ')'
-                            .. '    ' .. XUtils.priceToMoneyString(nextBidPrice / stackCount))
-                        XAPI.PlaceAuctionBid('list', index, nextBidPrice)
-                        bought = true
-                        break
+                if not checkOnly then
+                    if (not XInfo.isMe(seller)) and (not isMine) then
+                        if buyoutPrice / stackCount <= item['price'] and itemName == item['itemname'] and buyoutPrice > 0 then
+                            xdebug.info('Buyout: ' .. itemName .. ' (' .. stackCount .. ')'
+                                .. '    ' .. XUtils.priceToMoneyString(buyoutPrice / stackCount))
+                            XAPI.PlaceAuctionBid('list', index, buyoutPrice)
+                            bought = true
+                            break
+                        elseif nextBidPrice / stackCount <= XAutoBuyList[queryIndex]['price'] and itemName == item['itemname'] then
+                            xdebug.info('Bid: ' .. itemName .. ' (' .. stackCount .. ')'
+                                .. '    ' .. XUtils.priceToMoneyString(nextBidPrice / stackCount))
+                            XAPI.PlaceAuctionBid('list', index, nextBidPrice)
+                            bought = true
+                            break
+                        end
                     end
                 end
                 index = index + 1
@@ -488,6 +521,11 @@ local function onUpdate()
             end
 
             if not lowerPriceFound then
+                finishCurTask()
+                return
+            end
+
+            if checkOnly then
                 finishCurTask()
                 return
             end

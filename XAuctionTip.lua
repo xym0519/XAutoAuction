@@ -62,6 +62,8 @@ GameTooltip:HookScript('OnTooltipSetItem', function(self)
     self:AddDoubleLine(dealCountColor .. '成交次数:', dealCountColor .. dealCount .. '次')
     self:AddDoubleLine(XUI.Red .. '保本价:',
         XUI.White .. XUtils.priceToMoneyString(XInfo.getAuctionInfoField(itemName, 'lowestprice', 0)))
+    self:AddDoubleLine('制造价:',
+        XUI.White .. XUtils.priceToMoneyString(XInfo.getAuctionInfoField(itemName, 'makeprice', 0)))
     self:AddDoubleLine('成本价:',
         XUI.White .. XUtils.priceToMoneyString(XInfo.getAuctionInfoField(itemName, 'costprice', 0)))
     self:AddDoubleLine('平均价:',

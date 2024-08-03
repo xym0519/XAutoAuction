@@ -81,12 +81,18 @@ XInfo.getAuctionItem = function(itemName)
 end
 
 local lastAuctionUpdateTime = 0
+XInfo.auctioningCount = 0
+XInfo.auctionedCount = 0
+XInfo.auctionedMoney = 0
 XInfo.reloadAuction = function()
     if time() - lastAuctionUpdateTime < 1 then return end
     if not XAPI.IsAuctionFrameOpen() then return end
 
     local list = {}
     local numItems = XAPI.GetNumAuctionItems('owner')
+    local tAuctioningCount = 0
+    local tAuctionedCount = 0
+    local tAuctionedMoney = 0
     if numItems <= 0 then
         XInfo.auctionList = {}
         return
@@ -108,9 +114,16 @@ XInfo.reloadAuction = function()
             else
                 list[itemName] = { count = stackCount, minprice = buyoutPrice / stackCount, items = { { index = i, count = stackCount, price = buyoutPrice / stackCount } } }
             end
+            tAuctioningCount = tAuctioningCount + 1
+        else
+            tAuctionedCount = tAuctionedCount + 1
+            tAuctionedMoney = tAuctionedMoney + buyoutPrice
         end
     end
     XInfo.auctionList = list
+    XInfo.auctioningCount = tAuctioningCount
+    XInfo.auctionedCount = tAuctionedCount
+    XInfo.auctionedMoney = tAuctionedMoney
 
     lastAuctionUpdateTime = time()
 end
