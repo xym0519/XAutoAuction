@@ -88,13 +88,14 @@ GameTooltip:HookScript('OnTooltipSetItem', function(self)
         end
     end
     if auctionItem then
-        self:AddDoubleLine('他最低价:', XUtils.priceToMoneyString(auctionItem['minpriceother']))
-        self:AddDoubleLine('我最低数:', #auctionItem['myvalidlist'])
+        self:AddDoubleLine('他最低价:', XUI.White .. XUtils.priceToMoneyString(auctionItem['minpriceother']))
+        self:AddDoubleLine('我最低数:', XUI.White .. #auctionItem['myvalidlist'])
         local materialName = XInfo.getMaterialName(itemName)
         if materialName then
             local materialBagItem = XInfo.getBagItem(materialName)
             if materialBagItem then
-                self:AddDoubleLine('原料数量:', materialBagItem['count'] .. ' / ' .. materialBagItem['bankcount'])
+                self:AddDoubleLine('原料数量:', XUI.White ..
+                materialBagItem['count'] .. ' / ' .. materialBagItem['bankcount'])
             end
             local buyItem = nil
             for _, titem in ipairs(XAutoBuyList) do

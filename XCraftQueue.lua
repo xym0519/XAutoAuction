@@ -110,7 +110,7 @@ initUI = function()
         end)
         frame.countLabel = countLabel
 
-        local deleteButton = XUI.createButton(frame, 20, 'D')
+        local deleteButton = XUI.createButton(frame, 25, 'D')
         deleteButton:SetPoint('LEFT', countLabel, 'RIGHT', 1, 0)
         deleteButton:SetScript('OnClick', function()
             local idx = displayPageNo * displayPageSize + i
@@ -120,7 +120,7 @@ initUI = function()
             end
         end)
 
-        local subButton = XUI.createButton(frame, 20, '-')
+        local subButton = XUI.createButton(frame, 25, '-')
         subButton:SetPoint('LEFT', deleteButton, 'RIGHT', 1, 0)
         subButton:SetScript('OnClick', function()
             local idx = displayPageNo * displayPageSize + i
@@ -135,7 +135,7 @@ initUI = function()
             end
         end)
 
-        local addButton = XUI.createButton(frame, 20, '+')
+        local addButton = XUI.createButton(frame, 25, '+')
         addButton:SetPoint('LEFT', subButton, 'RIGHT', 1, 0)
         addButton:SetScript('OnClick', function()
             local idx = displayPageNo * displayPageSize + i
@@ -146,22 +146,8 @@ initUI = function()
             end
         end)
 
-        local priceButton = XUI.createButton(frame, 20, 'E')
-        priceButton:SetPoint('LEFT', addButton, 'RIGHT', 1, 0)
-        priceButton:SetScript('OnClick', function()
-            local idx = displayPageNo * displayPageSize + i
-            if idx <= #craftQueue then
-                local item = craftQueue[idx]
-                local autoAuctionItem = XAuctionCenter.getAuctionItem(item['itemname'])
-
-                if autoAuctionItem then
-                    xdebug.info(item['itemname'] .. ': ' .. XUtils.priceToMoneyString(autoAuctionItem['minprice']))
-                end
-            end
-        end)
-
-        local auctionButton = XUI.createButton(frame, 20, 'A')
-        auctionButton:SetPoint('LEFT', priceButton, 'RIGHT', 1, 0)
+        local auctionButton = XUI.createButton(frame, 25, 'A')
+        auctionButton:SetPoint('LEFT', addButton, 'RIGHT', 1, 0)
         auctionButton:SetScript('OnClick', function()
             local idx = displayPageNo * displayPageSize + i
             if idx <= #craftQueue then
@@ -169,7 +155,7 @@ initUI = function()
             end
         end)
 
-        local craftButton = XUI.createButton(frame, 20, 'C')
+        local craftButton = XUI.createButton(frame, 25, 'C')
         craftButton:SetPoint('LEFT', auctionButton, 'RIGHT', 1, 0)
         craftButton:SetScript('OnClick', function()
             local idx = displayPageNo * displayPageSize + i
