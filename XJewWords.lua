@@ -290,7 +290,6 @@ end
 
 refreshUI = function()
     if not mainFrame then return end
-    if not mainFrame:IsVisible() then return end
 
     mainFrame.title:SetText('珠宝文案 (' .. (displayPageNo + 1) .. '/'
         .. (math.ceil(#XJewWordList / displayPageSize)) .. ')')
@@ -418,8 +417,6 @@ XAutoAuction.registerEventCallback(moduleName, 'ADDON_LOADED', function()
     initUI()
     refreshUI()
 end)
-
-XAutoAuction.registerRefreshCallback(moduleName, refreshUI)
 
 -- Commands
 SlashCmdList['XJEWWORDS'] = function()

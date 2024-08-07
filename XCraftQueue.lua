@@ -211,7 +211,7 @@ refreshUI = function()
                 bagTotalCount = itemBag['totalcount']
             end
 
-            local auctionCount = XInfo.getAuctionItemCount(item['itemname'])
+            local auctionCount = XAuctionCenter.getMyCount(item['itemname'])
             local bagAuctionCount = bagTotalCount + auctionCount
 
             local name1 = string.sub(item['itemname'], 1, 6)

@@ -80,33 +80,6 @@ XInfo.getAuctionItem = function(itemName)
     return nil
 end
 
-XInfo.getAuctionItemCount = function(itemName)
-    local item = XInfo.getAuctionItem(itemName)
-    if item then
-        return item['count']
-    else
-        return 0
-    end
-end
-
-XInfo.getAuctionItemValidCount = function(itemName)
-    local item = XInfo.getAuctionItem(itemName)
-    if item then
-        local auctionItem = XAuctionCenter.getItem(itemName)
-        if not auctionItem then return 0 end
-        if auctionItem['minpriceother'] == 9999999 then return 0 end
-        local count = 0
-        for _, record in ipairs(item['items']) do
-            if record['price'] <= auctionItem['minpriceother'] then
-                count = count + 1
-            end
-        end
-        return count
-    else
-        return 0
-    end
-end
-
 local lastAuctionUpdateTime = 0
 XInfo.auctioningCount = 0
 XInfo.auctionedCount = 0

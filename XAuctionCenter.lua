@@ -74,6 +74,8 @@ local puton
 local printList
 local printItemsByName
 local setPriceByName
+local getMyCount
+local getMyValidCount
 
 -- Function implemention
 initData = function()
@@ -747,8 +749,8 @@ refreshUI = function()
                 bagTotalCount = itemBag['totalcount']
             end
 
-            local auctionCount = XInfo.getAuctionItemCount(itemName)
-            local validCount = XInfo.getAuctionItemValidCount(itemName)
+            local auctionCount = getMyCount(itemName)
+            local validCount = getMyValidCount(itemName)
             local bagAuctionCount = bagTotalCount + auctionCount
 
             local dealRate = XInfo.getAuctionInfoField(itemName, 'dealrate', 99)
@@ -905,6 +907,8 @@ addItem = function(itemName, basePrice, defaultPrice, stackCount)
 end
 
 resetItem = function(item, keepUpdateTime)
+    item['mylist'] = {}
+    item['myvalidlist'] = {}
     item['lowercount'] = 0
     item['minpriceother'] = dft_minPrice
     if not keepUpdateTime then
@@ -1031,10 +1035,15 @@ addCraftQueue = function(printCount, manualAdd)
     for idx, item in ipairs(XAutoAuctionList) do
         if item['enabled'] then
             local inQuery = false
-            for _, task in ipairs(taskList) do
-                if task['action'] == 'query' and task['index'] == idx then
-                    inQuery = true
-                    break
+            if curTask and curTask['action'] == 'query' and curTask['index'] == idx then
+                inQuery = true
+            end
+            if not inQuery then
+                for _, task in ipairs(taskList) do
+                    if task['action'] == 'query' and task['index'] == idx then
+                        inQuery = true
+                        break
+                    end
                 end
             end
             if not inQuery then
@@ -1044,7 +1053,7 @@ addCraftQueue = function(printCount, manualAdd)
                     if bagItem ~= nil then
                         bagCount = bagItem['count']
                     end
-                    local auctionCount = XInfo.getAuctionItemCount(item['itemname'])
+                    local auctionCount = getMyCount(item['itemname'])
                     local stackCount = item['stackcount']
                     local materialCount = getMaterialCount(item['itemname'])
 
@@ -1175,7 +1184,7 @@ puton = function(printCount)
             local bagCount = 0
             local bagItem = XInfo.getBagItem(item['itemname'])
             if bagItem then bagCount = bagItem['count'] end
-            local validCount = XInfo.getAuctionItemValidCount(item['itemname'])
+            local validCount = getMyValidCount(item['itemname'])
             local stackCount = item['stackcount']
             if multiAuction == 2 then
                 stackCount = 999
@@ -1296,6 +1305,28 @@ setPriceByName = function(itemName, basePrice, profitRate, isDealRate, confirm)
     end
 end
 
+getMyCount = function(itemName)
+    local count = 0
+    for _, item in ipairs(XAutoAuctionList) do
+        if item['itemname'] == itemName then
+            count = #item['mylist']
+            break
+        end
+    end
+    return count
+end
+
+getMyValidCount = function(itemName)
+    local count = 0
+    for _, item in ipairs(XAutoAuctionList) do
+        if item['itemname'] == itemName then
+            count = #item['myvalidlist']
+            break
+        end
+    end
+    return count
+end
+
 -- Event callback
 local function onQueryItemListUpdate(...)
     if not curTask then return end
@@ -1360,7 +1391,7 @@ local function processQueryTask_Auction(task)
         return
     end
 
-    local validCount = XInfo.getAuctionItemValidCount(item['itemname'])
+    local validCount = getMyValidCount(item['itemname'])
 
     local targetCount = item['stackcount']
     if multiAuction == 2 then
@@ -1427,8 +1458,22 @@ local function processQueryTask(task)
                         end
 
                         if buyoutPrice <= item['minpriceother'] then
-                            if not XInfo.isMe(seller) then
+                            if XInfo.isMe(seller) then
+                                table.insert(item['mylist'], buyoutPrice)
+                                table.insert(item['myvalidlist'], buyoutPrice)
+                            else
+                                local newPriceList = {}
+                                for _, tprice in ipairs(item['myvalidlist']) do
+                                    if tprice <= buyoutPrice then
+                                        table.insert(newPriceList, tprice)
+                                    end
+                                end
+                                item['myvalidlist'] = newPriceList
                                 item['minpriceother'] = buyoutPrice
+                            end
+                        else
+                            if XInfo.isMe(seller) then
+                                table.insert(item['mylist'], buyoutPrice)
                             end
                         end
                         if buyoutPrice > task['recentmaxpriceother'] then
@@ -1541,6 +1586,12 @@ local function processAuctionTask(task)
     elseif task['status'] == 'posted' then
         return
     elseif task['status'] == 'finished' then
+        local price = task['price']
+        local count = task['count']
+        for _ = 1, count do
+            table.insert(item['mylist'], price)
+            table.insert(item['myvalidlist'], price)
+        end
         finishTask()
         return
     else
@@ -1849,3 +1900,5 @@ XAuctionCenter.addQueryTaskByItemName = addQueryTaskByItemName
 XAuctionCenter.getItem = getItem
 XAuctionCenter.printItemsByName = printItemsByName
 XAuctionCenter.setPriceByName = setPriceByName
+XAuctionCenter.getMyCount = getMyCount
+XAuctionCenter.getMyValidCount = getMyValidCount
