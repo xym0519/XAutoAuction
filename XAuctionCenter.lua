@@ -69,6 +69,7 @@ local addCraftQueue
 local cleanLower
 local cleanShort
 local puton
+local putonNoPrice
 local printList
 local printItemsByName
 local setPriceByName
@@ -101,7 +102,7 @@ resetData = function()
 end
 
 initUI = function()
-    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 905, 430)
+    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 965, 430)
     mainFrame:SetFrameStrata('HIGH')
     mainFrame.title:SetText('自动拍卖')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
@@ -167,8 +168,14 @@ initUI = function()
         puton(true)
     end)
 
+    local putonNoPriceButton = XUI.createButton(mainFrame, dft_buttonWidth, '无价')
+    putonNoPriceButton:SetPoint('LEFT', putonButton, 'RIGHT', dft_buttonGap, 0)
+    putonNoPriceButton:SetScript('OnClick', function()
+        putonNoPrice()
+    end)
+
     local craftAllButton = XUI.createButton(mainFrame, dft_buttonWidth, '制造')
-    craftAllButton:SetPoint('LEFT', putonButton, 'RIGHT', dft_buttonGap, 0)
+    craftAllButton:SetPoint('LEFT', putonNoPriceButton, 'RIGHT', dft_buttonGap, 0)
     craftAllButton:SetScript('OnClick', function()
         addCraftQueue(true, true)
     end)
@@ -484,7 +491,7 @@ initUI = function()
         frame.labelDeal = labelDeal
         labelDeal.frame = frame
 
-        local labelPrice = XUI.createLabel(frame, 100, '')
+        local labelPrice = XUI.createLabel(frame, 160, '')
         labelPrice:SetPoint('LEFT', labelDeal, 'RIGHT', 3, 0)
         labelPrice:SetScript("OnEnter", function(self)
             local idx = self.frame.index
@@ -774,6 +781,7 @@ refreshUI = function()
             if star == nil then star = false end
             local basePrice = item['baseprice']
             local minPriceOther = item['minpriceother']
+            local lastPriceOther = item['lastpriceother']
             local stackCount = item['stackcount']
             local lowerCount = item['lowercount']
             local materialCount = XInfo.getMaterialCount(itemName)
@@ -860,6 +868,7 @@ refreshUI = function()
             end
 
             local basePriceStr = XUI.White .. XUtils.priceToString(basePrice)
+            local lastPriceOtherStr = XUI.White .. XUtils.priceToString(lastPriceOther)
 
             local dealRateStr = XUI.getColor_DealRate(dealRate) .. 'R' .. XUtils.formatCount(XUtils.round(dealRate))
             local dealCountStr = XUI.getColor_DealCount(dealCount) .. 'D' .. XUtils.formatCount(dealCount)
@@ -873,7 +882,7 @@ refreshUI = function()
             frame.labelAuction:SetText(auctionCountStr .. XUI.White .. '/' .. validCountStr
                 .. XUI.White .. '/' .. lowerCountStr .. XUI.White)
             frame.labelDeal:SetText(dealRateStr .. XUI.White .. '/' .. dealCountStr)
-            frame.labelPrice:SetText(minPriceOtherStr .. XUI.White .. '/' .. basePriceStr)
+            frame.labelPrice:SetText(minPriceOtherStr .. XUI.White .. ' / ' .. lastPriceOtherStr .. ' / ' .. basePriceStr)
 
             if enabled then
                 frame.enableButton:SetText(XUI.Green .. '起')
@@ -947,6 +956,9 @@ resetItem = function(item, keepUpdateTime)
     item['mylist'] = {}
     item['myvalidlist'] = {}
     item['lowercount'] = 0
+    if item['minpriceother'] ~= dft_minPrice then
+        item['lastpriceother'] = item['minpriceother']
+    end
     item['minpriceother'] = dft_minPrice
     if not keepUpdateTime then
         item['updatetime'] = 0
@@ -1236,6 +1248,32 @@ puton = function(printCount)
     if printCount then
         xdebug.info('Up: ' .. count)
     end
+    refreshUI()
+end
+
+putonNoPrice = function()
+    local count = 0
+    local starQueue = {}
+    local unStarQueue = {}
+    for i, item in ipairs(XAutoAuctionList) do
+        if item['enabled'] then
+            if item['minpriceother'] == dft_minPrice then
+                if item['star'] then
+                    table.insert(starQueue, i)
+                else
+                    table.insert(unStarQueue, i)
+                end
+                count = count + 1
+            end
+        end
+    end
+    for _, idx in ipairs(starQueue) do
+        addQueryTaskByIndex(idx)
+    end
+    for _, idx in ipairs(unStarQueue) do
+        addQueryTaskByIndex(idx)
+    end
+    xdebug.info('Up: ' .. count)
     refreshUI()
 end
 
