@@ -25,3 +25,5 @@ XAuctionCenter.lua
 XAutoBuy.lua
 XJewWords.lua
 XJewCount.lua
+
+XAuctionItemToolTip.lua

@@ -63,8 +63,6 @@ local addQueryTaskByItemName
 local insertAuctionTaskByIndex
 local insertCleanLowerTask
 
-local getMaterialCount
-local getMaterialPrice
 local checkImportant
 
 local addCraftQueue
@@ -103,7 +101,7 @@ resetData = function()
 end
 
 initUI = function()
-    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 875, 430)
+    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 905, 430)
     mainFrame:SetFrameStrata('HIGH')
     mainFrame.title:SetText('自动拍卖')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
@@ -446,31 +444,59 @@ initUI = function()
 
         local labelBag = XUI.createLabel(frame, 110, '')
         labelBag:SetPoint('LEFT', labelTime, 'RIGHT', 3, 0)
-        labelBag:SetScript('OnMouseDown', function(self)
-            xdebug.info('背包数量 / 全部数量 / 材料数量 / 出售数量')
+        labelBag:SetScript("OnEnter", function(self)
+            local idx = self.frame.index
+            local item = XAutoAuctionList[idx];
+            if not item then return end
+            XAuctionItemToolTip.Show(item['itemname'], self, 'ANCHOR_RIGHT', { 1 })
+        end)
+        labelBag:SetScript("OnLeave", function(self)
+            GameTooltip:Hide()
         end)
         frame.labelBag = labelBag
+        labelBag.frame = frame
 
         local labelAuction = XUI.createLabel(frame, 125, '')
         labelAuction:SetPoint('LEFT', labelBag, 'RIGHT', 3, 0)
-        labelAuction:SetScript('OnMouseDown', function(self)
-            xdebug.info('拍卖数量 / 有效价数量 / 低于基准价数量')
+        labelAuction:SetScript("OnEnter", function(self)
+            local idx = self.frame.index
+            local item = XAutoAuctionList[idx];
+            if not item then return end
+            XAuctionItemToolTip.Show(item['itemname'], self, 'ANCHOR_RIGHT', { 2 })
+        end)
+        labelAuction:SetScript("OnLeave", function(self)
+            GameTooltip:Hide()
         end)
         frame.labelAuction = labelAuction
+        labelAuction.frame = frame
 
         local labelDeal = XUI.createLabel(frame, 70, '')
         labelDeal:SetPoint('LEFT', labelAuction, 'RIGHT', 3, 0)
-        labelDeal:SetScript('OnMouseDown', function(self)
-            xdebug.info('每几次成交一次 / 成交次数')
+        labelDeal:SetScript("OnEnter", function(self)
+            local idx = self.frame.index
+            local item = XAutoAuctionList[idx];
+            if not item then return end
+            XAuctionItemToolTip.Show(item['itemname'], self, 'ANCHOR_RIGHT', { 3 })
+        end)
+        labelDeal:SetScript("OnLeave", function(self)
+            GameTooltip:Hide()
         end)
         frame.labelDeal = labelDeal
+        labelDeal.frame = frame
 
         local labelPrice = XUI.createLabel(frame, 100, '')
         labelPrice:SetPoint('LEFT', labelDeal, 'RIGHT', 3, 0)
-        labelPrice:SetScript('OnMouseDown', function(self)
-            xdebug.info('当前价格 / 低价')
+        labelPrice:SetScript("OnEnter", function(self)
+            local idx = self.frame.index
+            local item = XAutoAuctionList[idx];
+            if not item then return end
+            XAuctionItemToolTip.Show(item['itemname'], self, 'ANCHOR_RIGHT', { 4 })
+        end)
+        labelPrice:SetScript("OnLeave", function(self)
+            GameTooltip:Hide()
         end)
         frame.labelPrice = labelPrice
+        labelPrice.frame = frame
 
         local deleteButton = XUI.createButton(frame, 30, '删')
         deleteButton:SetPoint('LEFT', labelPrice, 'RIGHT', 0, 0)
@@ -580,6 +606,17 @@ initUI = function()
         end)
         itemRefreshButton.frame = frame
 
+        local itemCleanButton = XUI.createButton(frame, 30, '清')
+        itemCleanButton:SetPoint('LEFT', itemRefreshButton, 'RIGHT', 0, 0)
+        itemCleanButton:SetScript('OnClick', function(self)
+            local idx = self.frame.index
+            local item = XAutoAuctionList[idx];
+            if not item then return end
+
+            cleanLower(item['itemname'])
+        end)
+        itemCleanButton.frame = frame
+
         table.insert(displayFrameList, frame)
         lastWidget = frame
     end
@@ -669,7 +706,7 @@ refreshUI = function()
         if star == nil then star = false end
         local minPriceOther = item['minpriceother']
         local basePrice = item['baseprice']
-        local materialPrice = getMaterialPrice(itemName)
+        local materialPrice = XInfo.getMaterialPrice(itemName)
 
         local dealCount = XInfo.getAuctionInfoField(itemName, 'dealcount', 0)
 
@@ -739,7 +776,7 @@ refreshUI = function()
             local minPriceOther = item['minpriceother']
             local stackCount = item['stackcount']
             local lowerCount = item['lowercount']
-            local materialCount = getMaterialCount(itemName)
+            local materialCount = XInfo.getMaterialCount(itemName)
 
             local itemBag = XInfo.getBagItem(itemName)
             local bagCount = 0
@@ -1001,23 +1038,6 @@ insertCleanLowerTask = function()
     craftRunning = XCraftQueue.isRunning()
 end
 
-getMaterialCount = function(itemName, type)
-    if type == nil then type = 'totalcount' end
-    local materialBagItem = XInfo.getMaterialBagItem(itemName)
-    if not materialBagItem then return 0 end
-    return materialBagItem[type]
-end
-
-getMaterialPrice = function(itemName)
-    local price = 0
-    local materialName = XInfo.getMaterialName(itemName)
-    if materialName then
-        local autoBuyItem = XAutoBuy.getItem(materialName)
-        if autoBuyItem then price = autoBuyItem['price'] end
-    end
-    return price
-end
-
 checkImportant = function(item)
     local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0)
     if item['star'] or dealCount >= 50 then
@@ -1054,8 +1074,10 @@ addCraftQueue = function(printCount, manualAdd)
                         bagCount = bagItem['count']
                     end
                     local auctionCount = getMyCount(item['itemname'])
+                    local auctionItem = XInfo.getAuctionItem(item['itemname'])
+                    if auctionItem then auctionCount = auctionItem['count'] end
                     local stackCount = item['stackcount']
-                    local materialCount = getMaterialCount(item['itemname'])
+                    local materialCount = XInfo.getMaterialCount(item['itemname'])
 
                     local subCount = stackCount - auctionCount - bagCount
                     if queryRound > 1 or manualAdd then
@@ -1090,7 +1112,7 @@ addCraftQueue = function(printCount, manualAdd)
     refreshUI()
 end
 
-cleanLower = function()
+cleanLower = function(targetItemName)
     if not XAPI.IsAuctionFrameOpen() then
         cleaningItems = {}
         xdebug.warn('拍卖行未打开')
@@ -1104,25 +1126,27 @@ cleanLower = function()
     for i = numItems, 1, -1 do
         local res = { XAPI.GetAuctionItemInfo('owner', i) }
         local itemName = res[1]
-        local stackCount = res[3]
-        local buyoutPrice = res[10]
-        local saleStatus = res[16]
+        if (targetItemName and targetItemName == itemName) or (not targetItemName) then
+            local stackCount = res[3]
+            local buyoutPrice = res[10]
+            local saleStatus = res[16]
 
-        if saleStatus ~= 1 then
-            for _, item in ipairs(XAutoAuctionList) do
-                if item['itemname'] == itemName then
-                    if buyoutPrice / stackCount > item['minpriceother'] then
-                        xdebug.info('清理低价：' .. item['itemname']
-                            .. '(' .. XUtils.priceToMoneyString(buyoutPrice / stackCount)
-                            .. '/' .. XUtils.priceToMoneyString(item['minpriceother']) .. ')')
-                        XAPI.CancelAuction(i)
+            if saleStatus ~= 1 then
+                for _, item in ipairs(XAutoAuctionList) do
+                    if item['itemname'] == itemName then
+                        if buyoutPrice / stackCount > item['minpriceother'] then
+                            xdebug.info('清理低价：' .. item['itemname']
+                                .. '(' .. XUtils.priceToMoneyString(buyoutPrice / stackCount)
+                                .. '/' .. XUtils.priceToMoneyString(item['minpriceother']) .. ')')
+                            XAPI.CancelAuction(i)
 
-                        if not XUtils.inArray(item['itemname'], cleaningItems) then
-                            table.insert(cleaningItems, item['itemname'])
+                            if not XUtils.inArray(item['itemname'], cleaningItems) then
+                                table.insert(cleaningItems, item['itemname'])
+                            end
+                            return
                         end
-                        return
+                        break
                     end
-                    break
                 end
             end
         end

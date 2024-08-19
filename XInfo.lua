@@ -230,6 +230,23 @@ XInfo.getMaterialBagItem = function(itemName)
     end
 end
 
+XInfo.getMaterialCount = function(itemName, type)
+    if type == nil then type = 'totalcount' end
+    local materialBagItem = XInfo.getMaterialBagItem(itemName)
+    if not materialBagItem then return 0 end
+    return materialBagItem[type]
+end
+
+XInfo.getMaterialPrice = function(itemName)
+    local price = 0
+    local materialName = XInfo.getMaterialName(itemName)
+    if materialName then
+        local autoBuyItem = XAutoBuy.getItem(materialName)
+        if autoBuyItem then price = autoBuyItem['price'] end
+    end
+    return price
+end
+
 -- Character
 XInfo.characterList = { '暗影肌', '阿肌' }
 XInfo.myName = XAPI.UnitName('player')

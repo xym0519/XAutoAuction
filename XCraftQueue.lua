@@ -105,8 +105,15 @@ initUI = function()
 
         local countLabel = XUI.createLabel(frame, 60, '')
         countLabel:SetPoint('LEFT', nameLabel, 'RIGHT', 5, 0)
-        countLabel:SetScript('OnMouseDown', function()
-            xdebug.info('制造数量 / 拥有数量 / 材料数量')
+        countLabel:SetScript("OnEnter", function(self)
+            local idx = displayPageNo * displayPageSize + i
+            local item = craftQueue[idx]
+
+            if not item then return end
+            XAuctionItemToolTip.Show(item['itemname'], self, 'ANCHOR_RIGHT')
+        end)
+        countLabel:SetScript("OnLeave", function(self)
+            GameTooltip:Hide()
         end)
         frame.countLabel = countLabel
 
@@ -179,6 +186,7 @@ refreshUI = function()
     if not mainFrame:IsVisible() then return end
 
     XInfo.reloadBag()
+    XInfo.reloadAuction()
 
     if curTask then
         mainFrame.title:SetText(curTask['itemname'] .. '/' .. curTask['count'] .. '  (' .. #craftQueue .. ')')
@@ -214,11 +222,15 @@ refreshUI = function()
             local auctionCount = XAuctionCenter.getMyCount(item['itemname'])
             local bagAuctionCount = bagTotalCount + auctionCount
 
+            local auctionItem = XInfo.getAuctionItem(item['itemname'])
+            local auctionCount = 0
+            if auctionItem then auctionCount = auctionItem['count'] end
+
             local name1 = string.sub(item['itemname'], 1, 6)
             local name2 = string.sub(string.sub(item['itemname'], -9), 1, 6)
             frame.nameLabel:SetText(name1 .. name2, 1, 12)
             frame.countLabel:SetText(XUtils.formatCount(item['count'], 1) ..
-                XUI.White .. '/' .. bagAuctionCount .. XUI.White .. '/' .. materialCount)
+                XUI.White .. '/' .. auctionCount .. '/' .. bagAuctionCount .. XUI.White .. '/' .. materialCount)
             frame:Show()
         else
             frame:Hide()
