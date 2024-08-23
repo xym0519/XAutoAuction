@@ -799,6 +799,7 @@ refreshUI = function()
             local lastPriceOther = item['lastpriceother']
             local stackCount = item['stackcount']
             local lowerCount = item['lowercount']
+            local priceLowerCount = item['pricelowercount']
             local materialCount = XInfo.getMaterialCount(itemName)
 
             local itemBag = XInfo.getBagItem(itemName)
@@ -825,10 +826,12 @@ refreshUI = function()
                 itemNameStr = XUI.Red .. itemNameStr
             elseif validCount <= 0 then
                 itemNameStr = XUI.Purple .. itemNameStr
-            elseif validCount ~= auctionCount or validCount ~= stackCount then
+            elseif validCount < stackCount then
                 itemNameStr = XUI.Yellow .. itemNameStr
-            else
+            elseif validCount == stackCount then
                 itemNameStr = XUI.Green .. itemNameStr
+            else
+                itemNameStr = XUI.Cyan .. itemNameStr
             end
 
             if star then
@@ -849,8 +852,16 @@ refreshUI = function()
             local auctionCountStr = XUI.getColor_AuctionStackCount(auctionCount, stackCount) ..
                 'A' .. XUtils.formatCount(auctionCount, 1)
 
-            local validCountStr = XUI.getColor_AuctionStackCount(validCount, stackCount) ..
-                'M' .. XUtils.formatCount(validCount, 1)
+            local validCountStr = 'M' .. XUtils.formatCount(validCount, 1)
+            if validCount > stackCount then
+                validCountStr = XUI.Cyan .. validCountStr
+            elseif validCount == stackCount then
+                validCountStr = XUI.Green .. validCountStr
+            elseif validCount > 0 then
+                validCountStr = XUI.Yellow .. validCountStr
+            else
+                validCountStr = XUI.Red .. validCountStr
+            end
 
             local bagAuctionCountStr = XUI.getColor_BagStackCount(bagAuctionCount, stackCount) ..
                 'T' .. XUtils.formatCount(bagAuctionCount, 2)
@@ -862,6 +873,15 @@ refreshUI = function()
                 lowerCountStr = XUI.Yellow .. lowerCountStr
             else
                 lowerCountStr = XUI.White .. lowerCountStr
+            end
+
+            local priceLowerCountStr = 'P' .. XUtils.formatCount(priceLowerCount)
+            if priceLowerCount > 10 then
+                priceLowerCountStr = XUI.Red .. priceLowerCountStr
+            elseif priceLowerCount > 0 then
+                priceLowerCountStr = XUI.Yellow .. priceLowerCountStr
+            else
+                priceLowerCountStr = XUI.White .. priceLowerCountStr
             end
 
             local stackCountStr = 'S' .. XUtils.formatCount(stackCount, 1)
@@ -886,7 +906,7 @@ refreshUI = function()
             local lastPriceOtherStr = XUI.White .. XUtils.priceToString(lastPriceOther)
 
             local dealRateStr = XUI.getColor_DealRate(dealRate) .. 'R' .. XUtils.formatCount(XUtils.round(dealRate))
-            local dealCountStr = XUI.getColor_DealCount(dealCount) .. 'D' .. XUtils.formatCount(dealCount)
+            local dealCountStr = XUI.getColor_DealCount(dealCount) .. 'D' .. XUtils.formatCount(dealCount, 3)
 
             frame.itemIndexButton:SetText(idx)
             frame.itemNameButton:SetText(itemNameStr)
@@ -895,7 +915,7 @@ refreshUI = function()
             frame.labelBag:SetText(bagCountStr .. XUI.White .. '/' .. bagAuctionCountStr
                 .. XUI.White .. '/' .. materialCountStr .. XUI.White .. '/' .. stackCountStr)
             frame.labelAuction:SetText(auctionCountStr .. XUI.White .. '/' .. validCountStr
-                .. XUI.White .. '/' .. lowerCountStr .. XUI.White)
+                .. XUI.White .. '/' .. priceLowerCountStr .. '/' .. lowerCountStr .. XUI.White)
             frame.labelDeal:SetText(dealRateStr .. XUI.White .. '/' .. dealCountStr)
             frame.labelPrice:SetText(minPriceOtherStr .. XUI.White .. ' / ' .. lastPriceOtherStr .. ' / ' .. basePriceStr)
 
@@ -971,6 +991,7 @@ resetItem = function(item, keepUpdateTime)
     item['mylist'] = {}
     item['myvalidlist'] = {}
     item['lowercount'] = 0
+    item['pricelowercount'] = 0
     if item['minpriceother'] ~= dft_minPrice then
         item['lastpriceother'] = item['minpriceother']
     end
@@ -1012,7 +1033,7 @@ addQueryTaskByIndex = function(index)
     resetItem(item)
     local task = { action = 'query', index = index, page = 1, timeout = dft_taskTimeout }
     local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0, 1)
-    if item['star'] or dealCount > 50 then
+    if checkImportant(item) then
         table.insert(taskList, 1, task)
     else
         table.insert(taskList, task)
@@ -1066,7 +1087,7 @@ insertCleanLowerTask = function()
 end
 
 checkImportant = function(item)
-    local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0)
+    local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0, 1)
     if item['star'] or dealCount >= 50 then
         return true
     end
@@ -1102,7 +1123,11 @@ addCraftQueue = function(printCount, _craftAll)
                     end
                     local auctionCount = getMyCount(item['itemname'])
                     local auctionItem = XInfo.getAuctionItem(item['itemname'])
-                    if auctionItem then auctionCount = auctionItem['count'] end
+                    if auctionItem then
+                        if auctionItem['count'] > auctionCount then
+                            auctionCount = auctionItem['count']
+                        end
+                    end
                     local stackCount = item['stackcount']
                     local materialCount = XInfo.getMaterialCount(item['itemname'])
 
@@ -1471,10 +1496,10 @@ local function processQueryTask_Auction(task)
     local validCount = getMyValidCount(item['itemname'])
 
     local targetCount = item['stackcount']
-    if multiAuction == 2 then
-        targetCount = 999
-    elseif multiAuction == 1 then
-        if checkImportant(item) then
+    if checkImportant(item) then
+        if multiAuction == 2 then
+            targetCount = 999
+        elseif multiAuction == 1 then
             targetCount = targetCount * 2
         end
     end
@@ -1492,8 +1517,13 @@ local function processQueryTask_Auction(task)
 end
 
 local function processQueryTask(task)
+    XInfo.reloadAuction()
     local index = task['index']
     local item = XAutoAuctionList[index]
+    local auctionItem = XInfo.getAuctionItem(item['itemname'])
+    local myMaxPrice = 0
+    if auctionItem then myMaxPrice = auctionItem['maxprice'] end
+
     if not item then
         finishTask()
         return
@@ -1532,6 +1562,9 @@ local function processQueryTask(task)
                     if buyoutPrice ~= nil and buyoutPrice > 0 then
                         if buyoutPrice < item['baseprice'] then
                             item['lowercount'] = item['lowercount'] + 1
+                        end
+                        if buyoutPrice < myMaxPrice then
+                            item['pricelowercount'] = item['pricelowercount'] + 1
                         end
 
                         if buyoutPrice <= item['minpriceother'] then

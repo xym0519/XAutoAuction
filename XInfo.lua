@@ -112,10 +112,14 @@ XInfo.reloadAuction = function()
                 if item['minprice'] > buyoutPrice / stackCount then
                     item['minprice'] = buyoutPrice / stackCount
                 end
+                if item['maxprice'] < buyoutPrice / stackCount then
+                    item['maxprice'] = buyoutPrice / stackCount
+                end
             else
                 list[itemName] = {
                     count = stackCount,
                     minprice = buyoutPrice / stackCount,
+                    maxprice = buyoutPrice / stackCount,
                     items = { record }
                 }
             end

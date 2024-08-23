@@ -43,8 +43,9 @@ XUI.createFrame = function(name, width, height, strata)
     frame.title:SetText(name)
     frame:SetFrameStrata(strata)
     frame:SetFrameLevel(XFrameLevel)
-    XFrameLevel = XFrameLevel + 10
     frame:Hide()
+
+    XFrameLevel = XFrameLevel + 10
 
     frame:HookScript('OnMouseDown', handleMouseClick)
     table.insert(XUI.frames, frame)
@@ -253,11 +254,11 @@ XUI.getColor_DealCount = function(dealCount)
         multiRate = 1
     end
     local res = XUI.White
-    if dealCount > 20 * multiRate then
+    if dealCount > 100 * multiRate then
         res = XUI.Cyan
-    elseif dealCount > 10 * multiRate then
+    elseif dealCount > 50 * multiRate then
         res = XUI.Green
-    elseif dealCount > 3 * multiRate then
+    elseif dealCount > 20 * multiRate then
         res = XUI.Yellow
     else
         res = XUI.Red
