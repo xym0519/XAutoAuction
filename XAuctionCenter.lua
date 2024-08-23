@@ -23,6 +23,7 @@ local fastAuction = true
 local autoAuction = true
 local autoClean = false
 local multiAuction = 0
+local craftAll = true
 
 local displayPageNo = 0
 local displayFrameList = {}
@@ -162,8 +163,16 @@ initUI = function()
     end)
     mainFrame.fastAuctionButton = fastAuctionButton
 
+    local craftAllSetButton = XUI.createButton(mainFrame, dft_buttonWidth, '全做')
+    craftAllSetButton:SetPoint('LEFT', fastAuctionButton, 'RIGHT', dft_buttonGap, 0)
+    craftAllSetButton:SetScript('OnClick', function()
+        craftAll = not craftAll
+        refreshUI()
+    end)
+    mainFrame.craftAllSetButton = craftAllSetButton
+
     local putonButton = XUI.createButton(mainFrame, dft_buttonWidth, '上架')
-    putonButton:SetPoint('LEFT', fastAuctionButton, 'RIGHT', dft_sectionGap, 0)
+    putonButton:SetPoint('LEFT', craftAllSetButton, 'RIGHT', dft_sectionGap, 0)
     putonButton:SetScript('OnClick', function()
         puton(true)
     end)
@@ -177,7 +186,7 @@ initUI = function()
     local craftAllButton = XUI.createButton(mainFrame, dft_buttonWidth, '制造')
     craftAllButton:SetPoint('LEFT', putonNoPriceButton, 'RIGHT', dft_buttonGap, 0)
     craftAllButton:SetScript('OnClick', function()
-        addCraftQueue(true, true)
+        addCraftQueue(true, craftAll)
     end)
 
     local cleanLowerButton = XUI.createButton(mainFrame, dft_buttonWidth, '清理')
@@ -650,6 +659,12 @@ refreshUI = function()
         mainFrame.autoAuctionButton:SetText('手动')
     end
 
+    if craftAll then
+        mainFrame.craftAllSetButton:SetText('全做')
+    else
+        mainFrame.craftAllSetButton:SetText('只做')
+    end
+
     if autoClean then
         mainFrame.autoCleanButton:SetText('清理')
     else
@@ -1058,7 +1073,7 @@ checkImportant = function(item)
     return false
 end
 
-addCraftQueue = function(printCount, manualAdd)
+addCraftQueue = function(printCount, _craftAll)
     XInfo.reloadBag()
     XInfo.reloadAuction()
     local count = 0
@@ -1092,7 +1107,7 @@ addCraftQueue = function(printCount, manualAdd)
                     local materialCount = XInfo.getMaterialCount(item['itemname'])
 
                     local subCount = stackCount - auctionCount - bagCount
-                    if queryRound > 1 or manualAdd then
+                    if _craftAll then
                         if checkImportant(item) then
                             if auctionCount + bagCount < stackCount * 2 then
                                 subCount = stackCount * 2 - auctionCount - bagCount
@@ -1734,7 +1749,7 @@ local function onUpdate()
 
 
     if autoAuction then
-        addCraftQueue(false, false)
+        addCraftQueue(false, craftAll)
     end
 
     if curTask then
@@ -1938,7 +1953,7 @@ end
 SLASH_XAUCTIONCENTERCLOSE1 = '/xauctioncenter_close'
 
 SlashCmdList['XAUCTIONCENTERADDCRAFTQUEUE'] = function()
-    addCraftQueue(true, true)
+    addCraftQueue(true, craftAll)
 end
 SLASH_XAUCTIONCENTERADDCRAFTQUEUE1 = '/xauctioncenter_addcreaftqueue'
 

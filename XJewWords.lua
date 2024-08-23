@@ -17,7 +17,7 @@ local addItem
 
 -- Function implemention
 initUI = function()
-    mainFrame = XUI.createFrame('XJewWordsMainFrame', 880, 495)
+    mainFrame = XUI.createFrame('XJewWordsMainFrame', 1050, 495)
     mainFrame.title:SetText('珠宝文案')
     mainFrame:SetPoint('RIGHT', UIParent, 'RIGHT', -80, 0)
     mainFrame:Hide()
@@ -85,7 +85,7 @@ initUI = function()
     local lastWidget = preButton
     for i = 1, displayPageSize do
         local frame = XAPI.CreateFrame('Frame', nil, mainFrame)
-        frame:SetSize(580, 30)
+        frame:SetSize(mainFrame:GetWidth() - 300, 30)
 
         if i == 1 then
             frame:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 0, -65)
@@ -171,11 +171,19 @@ initUI = function()
         price2Label:SetPoint('LEFT', price1Label, 'RIGHT', 0, 0)
         frame.price2Label = price2Label
 
+        local price3Label = XUI.createLabel(frame, 70, '')
+        price3Label:SetPoint('LEFT', price2Label, 'RIGHT', 0, 0)
+        frame.price3Label = price3Label
+
+        local price4Label = XUI.createLabel(frame, 70, '')
+        price4Label:SetPoint('LEFT', price3Label, 'RIGHT', 0, 0)
+        frame.price4Label = price4Label
+
         local unitLabel = XUI.createLabel(frame, 50, '')
-        unitLabel:SetPoint('LEFT', price2Label, 'RIGHT', 0, 0)
+        unitLabel:SetPoint('LEFT', price4Label, 'RIGHT', 0, 0)
         frame.unitLabel = unitLabel
 
-        local setAutoBuyButton = XUI.createButton(frame, 30, '=')
+        local setAutoBuyButton = XUI.createButton(frame, 30, '>')
         setAutoBuyButton:SetPoint('LEFT', unitLabel, 'RIGHT', 0, 0)
         setAutoBuyButton:SetScript('OnClick', function()
             local idx = displayPageNo * displayPageSize + i
@@ -184,11 +192,25 @@ initUI = function()
             if autoBuyItem then
                 autoBuyItem['price'] = item['price1'] * 10000
             end
-            XAutoAuction.refreshUI()
+            refreshUI()
+        end)
+
+        local setPriceButton = XUI.createButton(frame, 30, '<')
+        setPriceButton:SetPoint('LEFT', setAutoBuyButton, 'RIGHT', 0, 0)
+        setPriceButton:SetScript('OnClick', function()
+            local idx = displayPageNo * displayPageSize + i
+            local item = XJewWordList[idx]
+            local autoBuyItem = XAutoBuy.getItem(item['itemname'])
+            if autoBuyItem then
+                local price = autoBuyItem['minbuyoutprice'];
+                price = math.floor(price * 0.9 / 10000)
+                item['price1'] = price
+            end
+            refreshUI()
         end)
 
         local deleteButton = XUI.createButton(frame, 30, '删')
-        deleteButton:SetPoint('LEFT', setAutoBuyButton, 'RIGHT', 0, 0)
+        deleteButton:SetPoint('LEFT', setPriceButton, 'RIGHT', 0, 0)
         deleteButton:SetScript('OnClick', function()
             local idx = displayPageNo * displayPageSize + i
             if idx <= #XJewWordList then
@@ -274,7 +296,7 @@ initUI = function()
     mainFrame.prefixEdit = prefixEdit
 
     local price1Editbox = XUI.createEditboxMultiline(mainFrame, 305, 85)
-    price1Editbox:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 560, -65)
+    price1Editbox:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', mainFrame:GetWidth() - 320, -65)
     mainFrame.price1Editbox = price1Editbox.editBox
 
     local price2Editbox = XUI.createEditboxMultiline(mainFrame, 305, 240)
@@ -310,8 +332,14 @@ refreshUI = function()
             local itemName = item['itemname']
             local price1 = item['price1']
             local price2 = 0;
+            local auctionMinPrice = 0
+            local auctionMinBuyoutPrice = 0
             local autoBuyItem = XAutoBuy.getItem(itemName)
-            if autoBuyItem then price2 = autoBuyItem['price'] / 10000 end
+            if autoBuyItem then
+                price2 = autoBuyItem['price'] / 10000
+                auctionMinPrice = XUtils.round(autoBuyItem['minprice'] / 100) / 100
+                auctionMinBuyoutPrice = XUtils.round(autoBuyItem['minbuyoutprice'] / 100) / 100
+            end
             local unit = item['unit']
             local ccount = item['ccount']
             local totalCount = 0
@@ -346,6 +374,8 @@ refreshUI = function()
             frame.countLabel:SetText(totalCountStr)
             frame.price1Label:SetText(price1Str)
             frame.price2Label:SetText(price2Str)
+            frame.price3Label:SetText(auctionMinPrice)
+            frame.price4Label:SetText(auctionMinBuyoutPrice)
             frame.unitLabel:SetText(unit)
 
             if item['enabled'] ~= true then

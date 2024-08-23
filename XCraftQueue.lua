@@ -10,7 +10,7 @@ local dft_taskInterval = 1
 
 local craftQueue = {}
 local displayPageNo = 0
-local displayPageSize = 10
+local displayPageSize = 3
 local displayFrameList = {}
 local isRunning = false
 local curTask = nil
@@ -29,7 +29,7 @@ local reset
 
 -- Function implemention
 initUI = function()
-    mainFrame = XUI.createFrame('XCraftQueueMainFrame', 290, 430)
+    mainFrame = XUI.createFrame('XCraftQueueMainFrame', 290, 180)
     mainFrame.title:SetText('制造队列')
     mainFrame:SetPoint('LEFT', UIParent, 'LEFT', 0, 0)
     mainFrame:Hide()
