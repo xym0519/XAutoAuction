@@ -14,6 +14,7 @@ local dft_filterList = { '全部', '可售', '优质', '价低', '有效', '无�
 local dft_deltaPrice = 10
 local dft_postdelay = 2
 local dft_autoCleanInterval = 60
+local dft_oldInterval = 1800
 
 local dft_buttonWidth = 45
 local dft_buttonGap = 1
@@ -71,6 +72,7 @@ local cleanLower
 local cleanShort
 local puton
 local putonNoPrice
+local putonOld
 local printList
 local printItemsByName
 local setPriceByName
@@ -183,8 +185,14 @@ initUI = function()
         putonNoPrice()
     end)
 
+    local putonOldButton = XUI.createButton(mainFrame, dft_buttonWidth, '未刷')
+    putonOldButton:SetPoint('LEFT', putonNoPriceButton, 'RIGHT', dft_buttonGap, 0)
+    putonOldButton:SetScript('OnClick', function()
+        putonOld()
+    end)
+
     local craftAllButton = XUI.createButton(mainFrame, dft_buttonWidth, '制造')
-    craftAllButton:SetPoint('LEFT', putonNoPriceButton, 'RIGHT', dft_buttonGap, 0)
+    craftAllButton:SetPoint('LEFT', putonOldButton, 'RIGHT', dft_buttonGap, 0)
     craftAllButton:SetScript('OnClick', function()
         addCraftQueue(true, craftAll)
     end)
@@ -247,7 +255,7 @@ initUI = function()
         refreshUI()
     end)
 
-    local filterDropDown = XUI.createDropDown(mainFrame, 80, dft_filterList, '有效',
+    local filterDropDown = XUI.createDropDown(mainFrame, 80, dft_filterList, '可售',
         function(value) refreshUI() end)
     filterDropDown:SetPoint('LEFT', filterResetButton, 'RIGHT', -15, 0)
     mainFrame.filterDropDown = filterDropDown
@@ -382,7 +390,7 @@ initUI = function()
                 end
                 setPriceByName(itemName, basePrice, profitRate, isDealRate == 1, false)
             end
-        }, { Name = '基准价格' }, { Name = '利润率', Value = 0.2 }, { Name = '手续费', Value = 1 } }, '调价')
+        }, { Name = '基准价格' }, { Name = '利润率', Value = 0 }, { Name = '手续费', Value = 0 } }, '调价')
     end)
 
     local autoCleanButton = XUI.createButton(mainFrame, dft_buttonWidth, '清理')
@@ -992,6 +1000,9 @@ resetItem = function(item, keepUpdateTime)
     item['myvalidlist'] = {}
     item['lowercount'] = 0
     item['pricelowercount'] = 0
+    if item['lastpriceother'] == nil then
+        item['lastpriceother'] = 0
+    end
     if item['minpriceother'] ~= dft_minPrice then
         item['lastpriceother'] = item['minpriceother']
     end
@@ -1032,8 +1043,14 @@ addQueryTaskByIndex = function(index)
 
     resetItem(item)
     local task = { action = 'query', index = index, page = 1, timeout = dft_taskTimeout }
-    local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0, 1)
     if checkImportant(item) then
+        local idx = 0
+        for tidx, ttask in ipairs(taskList) do
+            if ttask['action'] == 'query' then
+                idx = tidx
+            end
+        end
+        idx = idx + 1
         table.insert(taskList, 1, task)
     else
         table.insert(taskList, task)
@@ -1088,7 +1105,7 @@ end
 
 checkImportant = function(item)
     local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0, 1)
-    if item['star'] or dealCount >= 50 then
+    if item['star'] or dealCount >= 100 then
         return true
     end
     return false
@@ -1187,15 +1204,17 @@ cleanLower = function(targetItemName)
                 for _, item in ipairs(XAutoAuctionList) do
                     if item['itemname'] == itemName then
                         if buyoutPrice / stackCount > item['minpriceother'] then
-                            xdebug.info('清理低价：' .. item['itemname']
-                                .. '(' .. XUtils.priceToMoneyString(buyoutPrice / stackCount)
-                                .. '/' .. XUtils.priceToMoneyString(item['minpriceother']) .. ')')
-                            XAPI.CancelAuction(i)
+                            if checkImportant(item) or IsShiftKeyDown() then
+                                xdebug.info('清理低价：' .. item['itemname']
+                                    .. '(' .. XUtils.priceToMoneyString(buyoutPrice / stackCount)
+                                    .. '/' .. XUtils.priceToMoneyString(item['minpriceother']) .. ')')
+                                XAPI.CancelAuction(i)
 
-                            if not XUtils.inArray(item['itemname'], cleaningItems) then
-                                table.insert(cleaningItems, item['itemname'])
+                                if not XUtils.inArray(item['itemname'], cleaningItems) then
+                                    table.insert(cleaningItems, item['itemname'])
+                                end
+                                return
                             end
-                            return
                         end
                         break
                     end
@@ -1298,6 +1317,32 @@ putonNoPrice = function()
     for i, item in ipairs(XAutoAuctionList) do
         if item['enabled'] then
             if item['minpriceother'] == dft_minPrice then
+                if item['star'] then
+                    table.insert(starQueue, i)
+                else
+                    table.insert(unStarQueue, i)
+                end
+                count = count + 1
+            end
+        end
+    end
+    for _, idx in ipairs(starQueue) do
+        addQueryTaskByIndex(idx)
+    end
+    for _, idx in ipairs(unStarQueue) do
+        addQueryTaskByIndex(idx)
+    end
+    xdebug.info('Up: ' .. count)
+    refreshUI()
+end
+
+putonOld = function()
+    local count = 0
+    local starQueue = {}
+    local unStarQueue = {}
+    for i, item in ipairs(XAutoAuctionList) do
+        if item['enabled'] then
+            if time() - item['updatetime'] > dft_oldInterval then
                 if item['star'] then
                     table.insert(starQueue, i)
                 else

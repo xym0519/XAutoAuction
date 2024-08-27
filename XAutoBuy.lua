@@ -243,8 +243,8 @@ initUI = function()
                         XAuctionCenter.setPriceByName('*' .. item['itemname'], basePrice, profitRate, isDealRate == 1,
                             false)
                     end
-                }, { Name = '利润率', Value = 0.2 },
-                    { Name = '手续费', Value = 1 } },
+                }, { Name = '利润率', Value = 0 },
+                    { Name = '手续费', Value = 0 } },
                 item['itemname'])
 
             refreshUI()
