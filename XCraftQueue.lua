@@ -62,6 +62,8 @@ initUI = function()
     local cleanButton = XUI.createButton(mainFrame, 35, '清')
     cleanButton:SetPoint('LEFT', nextButton, 'RIGHT', 5, 0)
     cleanButton:SetScript('OnClick', function()
+        stop()
+        finishCurTask()
         craftQueue = {}
         refreshUI()
     end)

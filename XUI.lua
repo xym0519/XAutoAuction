@@ -268,11 +268,11 @@ end
 
 XUI.getColor_BagCount = function(bagCount)
     local res = XUI.White
-    if bagCount >= 40 then
+    if bagCount >= 60 then
         res = XUI.Cyan
-    elseif bagCount >= 20 then
+    elseif bagCount >= 40 then
         res = XUI.Green
-    elseif bagCount >= 10 then
+    elseif bagCount >= 20 then
         res = XUI.Yellow
     else
         res = XUI.Red
@@ -282,9 +282,9 @@ end
 
 XUI.getColor_BagBankCount = function(totalCount)
     local res = XUI.White
-    if totalCount >= 100 then
+    if totalCount >= 200 then
         res = XUI.Cyan
-    elseif totalCount >= 60 then
+    elseif totalCount >= 100 then
         res = XUI.Green
     elseif totalCount >= 40 then
         res = XUI.Yellow

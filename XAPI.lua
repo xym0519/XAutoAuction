@@ -218,6 +218,16 @@ XAPI.C_Container_PickupContainerItem = function(...)
     C_Container.PickupContainerItem(...)
 end
 
+-- 分割物品
+-- https://wowpedia.fandom.com/wiki/API_C_Container.SplitContainerItem
+-- Arguments: (bagId, slotIndex, amount)
+--   bagId: number
+--   slotIndex: number
+--   amount: number
+XAPI.C_Container_SplitContainerItem = function(...)
+    C_Container.SplitContainerItem(...)
+end
+
 -- 获取容器内槽位数量
 -- https://wowpedia.fandom.com/wiki/API_C_Container.GetContainerNumSlots
 -- Arguments: (containerIndex)

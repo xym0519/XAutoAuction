@@ -440,11 +440,19 @@ initUI = function()
             local item = XAutoAuctionList[idx];
             if not item then return end
 
-            XUIInputDialog.show(moduleName, function(input)
-                local itemName = item['itemname']
-                local count = input[1].Value
-                XCraftQueue.addItem(itemName, count, 'fulfil')
-            end, { { Name = '数量', Value = item['stackcount'] } }, item['itemname'])
+            if IsShiftKeyDown() then
+                if Auctionator then
+                    if Auctionator.API.v1.MultiSearchExact then
+                        Auctionator.API.v1.MultiSearchExact('XAutoAuction', { item['itemname'] })
+                    end
+                end
+            else
+                XUIInputDialog.show(moduleName, function(input)
+                    local itemName = item['itemname']
+                    local count = input[1].Value
+                    XCraftQueue.addItem(itemName, count, 'fulfil')
+                end, { { Name = '数量', Value = item['stackcount'] } }, item['itemname'])
+            end
         end)
         itemNameButton:SetScript("OnEnter", function(self)
             local idx = self.frame.index
@@ -701,7 +709,7 @@ refreshUI = function()
         mainFrame.multiAuctionButton:SetText('单倍')
     end
 
-    local labelText = format('(%s) ', #taskList)
+    local labelText = format('%s) ', #taskList)
     if not curTask then
         labelText = labelText .. '等待'
     else
@@ -710,9 +718,7 @@ refreshUI = function()
             if item == nil then
                 labelText = labelText .. '查询: 无'
             else
-                local page = curTask['page']
-                if page == nil then page = 0 end
-                labelText = labelText .. format('查询: [%s]%s(%s)', curTask['index'], item['itemname'], page)
+                labelText = labelText .. format('查询: [%s]%s', curTask['index'], item['itemname'])
             end
         elseif curTask['action'] == 'auction' then
             labelText = labelText .. '拍卖: ' .. curTask['itemname']
@@ -751,10 +757,8 @@ refreshUI = function()
             end
         elseif displayFilter == '优质' then
             if enabled then
-                if star or minPriceOther >= basePrice then
-                    if dealCount > 20 then
-                        disFlag = true
-                    end
+                if star or checkImportant(item) then
+                    disFlag = true
                 end
             end
         elseif displayFilter == '价低' then

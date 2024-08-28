@@ -52,7 +52,7 @@ XInfo.reloadBag = function()
     end
 
     -- 银行未打开，从之前的数据中获取bankcount
-    if XAPI.C_Container_GetContainerNumSlots(5) <= 0 then
+    if XAPI.C_Container_GetContainerNumSlots(XAPI.NUM_BAG_SLOTS + 1) <= 0 then
         for itemName, item in pairs(XInfoBagList) do
             local newItem = list[itemName]
             if not newItem then
