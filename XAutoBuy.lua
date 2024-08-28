@@ -446,6 +446,7 @@ confirmBuy = function()
     local bought = false
     while true do
         local res = { XAPI.GetAuctionItemInfo('list', index) }
+        local timeLeft = XAPI.GetAuctionItemTimeLeft('list', index)
         local itemName = res[1]
         local stackCount = res[3]
         local bidStart = res[8]
@@ -454,7 +455,6 @@ confirmBuy = function()
         local bidPrice = res[11]
         local isMine = res[12]
         local seller = res[14]
-        local itemId = res[17]
 
         if not itemName then break end
 
@@ -490,7 +490,8 @@ confirmBuy = function()
                 buyingItem.minprice = price
             end
 
-            if nextBidPrice / stackCount <= buyingItem['price'] then
+            if (timeLeft < 3 and nextBidPrice / stackCount <= buyingItem['price'])
+                or (buyoutPrice > 0 and buyoutPrice / stackCount <= buyingItem['price']) then
                 found = true
             end
 
@@ -500,7 +501,7 @@ confirmBuy = function()
                         .. '    ' .. XUtils.priceToMoneyString(buyoutPrice / stackCount))
                     XAPI.PlaceAuctionBid('list', index, buyoutPrice)
                     break
-                elseif nextBidPrice / stackCount <= buyingItem['price'] then
+                elseif timeLeft < 3 and nextBidPrice / stackCount <= buyingItem['price'] then
                     xdebug.info('Bid: ' .. itemName .. ' (' .. stackCount .. ')'
                         .. '    ' .. XUtils.priceToMoneyString(nextBidPrice / stackCount))
                     XAPI.PlaceAuctionBid('list', index, nextBidPrice)
@@ -571,6 +572,7 @@ local function onUpdate()
             local lowerPriceFound = false
             while true do
                 local res = { XAPI.GetAuctionItemInfo('list', index) }
+                local timeLeft = XAPI.GetAuctionItemTimeLeft('list', index)
                 local itemName = res[1]
                 local stackCount = res[3]
                 local bidStart = res[8]
@@ -617,7 +619,8 @@ local function onUpdate()
                     item.minprice = price
                 end
 
-                if nextBidPrice / stackCount <= item['price'] then
+                if (timeLeft < 3 and nextBidPrice / stackCount <= item['price'])
+                    or (buyoutPrice > 0 and buyoutPrice / stackCount <= item['price']) then
                     lowerPriceFound = true
                 end
 
@@ -628,7 +631,7 @@ local function onUpdate()
                                 .. '    ' .. XUtils.priceToMoneyString(buyoutPrice / stackCount))
                             XAPI.PlaceAuctionBid('list', index, buyoutPrice)
                             break
-                        elseif nextBidPrice / stackCount <= item['price'] and itemName == item['itemname'] then
+                        elseif timeLeft < 3 and nextBidPrice / stackCount <= item['price'] and itemName == item['itemname'] then
                             xdebug.info('Bid: ' .. itemName .. ' (' .. stackCount .. ')'
                                 .. '    ' .. XUtils.priceToMoneyString(nextBidPrice / stackCount))
                             XAPI.PlaceAuctionBid('list', index, nextBidPrice)

@@ -20,11 +20,7 @@ local dft_buttonWidth = 45
 local dft_buttonGap = 1
 local dft_sectionGap = 10
 
-local fastAuction = true
-local autoAuction = true
 local autoClean = false
-local multiAuction = 0
-local craftAll = true
 
 local displayPageNo = 0
 local displayFrameList = {}
@@ -105,7 +101,7 @@ resetData = function()
 end
 
 initUI = function()
-    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 965, 430)
+    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 995, 430)
     mainFrame:SetFrameStrata('HIGH')
     mainFrame.title:SetText('自动拍卖')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
@@ -149,32 +145,8 @@ initUI = function()
         end)
     end)
 
-    local autoAuctionButton = XUI.createButton(mainFrame, dft_buttonWidth, '自动')
-    autoAuctionButton:SetPoint('LEFT', resetButton, 'RIGHT', dft_buttonGap, 0)
-    autoAuctionButton:SetScript('OnClick', function()
-        autoAuction = not autoAuction
-        refreshUI()
-    end)
-    mainFrame.autoAuctionButton = autoAuctionButton
-
-    local fastAuctionButton = XUI.createButton(mainFrame, dft_buttonWidth, '快速')
-    fastAuctionButton:SetPoint('LEFT', autoAuctionButton, 'RIGHT', dft_buttonGap, 0)
-    fastAuctionButton:SetScript('OnClick', function()
-        fastAuction = not fastAuction
-        refreshUI()
-    end)
-    mainFrame.fastAuctionButton = fastAuctionButton
-
-    local craftAllSetButton = XUI.createButton(mainFrame, dft_buttonWidth, '全做')
-    craftAllSetButton:SetPoint('LEFT', fastAuctionButton, 'RIGHT', dft_buttonGap, 0)
-    craftAllSetButton:SetScript('OnClick', function()
-        craftAll = not craftAll
-        refreshUI()
-    end)
-    mainFrame.craftAllSetButton = craftAllSetButton
-
     local putonButton = XUI.createButton(mainFrame, dft_buttonWidth, '上架')
-    putonButton:SetPoint('LEFT', craftAllSetButton, 'RIGHT', dft_sectionGap, 0)
+    putonButton:SetPoint('LEFT', resetButton, 'RIGHT', dft_sectionGap, 0)
     putonButton:SetScript('OnClick', function()
         puton(true)
     end)
@@ -194,7 +166,7 @@ initUI = function()
     local craftAllButton = XUI.createButton(mainFrame, dft_buttonWidth, '制造')
     craftAllButton:SetPoint('LEFT', putonOldButton, 'RIGHT', dft_buttonGap, 0)
     craftAllButton:SetScript('OnClick', function()
-        addCraftQueue(true, craftAll)
+        addCraftQueue(true)
     end)
 
     local cleanLowerButton = XUI.createButton(mainFrame, dft_buttonWidth, '清理')
@@ -255,7 +227,7 @@ initUI = function()
         refreshUI()
     end)
 
-    local filterDropDown = XUI.createDropDown(mainFrame, 80, dft_filterList, '可售',
+    local filterDropDown = XUI.createDropDown(mainFrame, 80, dft_filterList, '优质',
         function(value) refreshUI() end)
     filterDropDown:SetPoint('LEFT', filterResetButton, 'RIGHT', -15, 0)
     mainFrame.filterDropDown = filterDropDown
@@ -401,14 +373,6 @@ initUI = function()
     end)
     mainFrame.autoCleanButton = autoCleanButton
 
-    local multiAuctionButton = XUI.createButton(mainFrame, dft_buttonWidth, '单倍')
-    multiAuctionButton:SetPoint('LEFT', autoCleanButton, 'RIGHT', dft_buttonGap, 0)
-    multiAuctionButton:SetScript('OnClick', function()
-        multiAuction = (multiAuction + 1) % 3
-        refreshUI()
-    end)
-    mainFrame.multiAuctionButton = multiAuctionButton
-
     local lastWidget = nil
     for i = 1, displayPageSize do
         local frame = XAPI.CreateFrame('Frame', nil, mainFrame)
@@ -433,8 +397,43 @@ initUI = function()
         frame.itemIndexButton = itemIndexButton
         itemIndexButton.frame = frame
 
+        local itemMailButton = XUI.createButton(frame, 30, 'U')
+        itemMailButton:SetPoint('LEFT', itemIndexButton, 'RIGHT', 0, 0)
+        itemMailButton:SetScript('OnClick', function(self)
+            local idx = self.frame.index
+            local item = XAutoAuctionList[idx];
+            if not item then return end
+
+            if not XAPI.IsMailBoxOpen() then
+                xdebug.error('请先打开邮箱')
+                return
+            end
+
+            XInfo.reloadBag()
+            local bagItem = XInfo.getBagItem(item['itemname'])
+            if not bagItem then
+                xdebug.error('背包中未找到该物品')
+                return
+            end
+
+            if bagItem['count'] < 12 then
+                xdebug.error(item['itemname'] .. '数量不足')
+                return
+            end
+
+            for pidx = 1, 12 do
+                local position = bagItem['positions'][pidx];
+                XAPI.C_Container_PickupContainerItem(position[1], position[2])
+                XAPI.ClickSendMailItemButton(pidx)
+            end
+            XAPI.SendMail('阿肌', item['itemname'] .. ' * 10')
+            xdebug.info(item['itemname'] .. '发送成功')
+        end)
+        frame.itemMailButton = itemMailButton
+        itemMailButton.frame = frame
+
         local itemNameButton = XUI.createButton(frame, 160, '')
-        itemNameButton:SetPoint('LEFT', itemIndexButton, 'RIGHT', 0, 0)
+        itemNameButton:SetPoint('LEFT', itemMailButton, 'RIGHT', 0, 0)
         itemNameButton:SetScript('OnClick', function(self)
             local idx = self.frame.index
             local item = XAutoAuctionList[idx];
@@ -663,24 +662,6 @@ refreshUI = function()
     XInfo.reloadBag()
     XInfo.reloadAuction()
 
-    if fastAuction then
-        mainFrame.fastAuctionButton:SetText('快速')
-    else
-        mainFrame.fastAuctionButton:SetText('慢速')
-    end
-
-    if autoAuction then
-        mainFrame.autoAuctionButton:SetText('自动')
-    else
-        mainFrame.autoAuctionButton:SetText('手动')
-    end
-
-    if craftAll then
-        mainFrame.craftAllSetButton:SetText('全做')
-    else
-        mainFrame.craftAllSetButton:SetText('只做')
-    end
-
     if autoClean then
         mainFrame.autoCleanButton:SetText('清理')
     else
@@ -699,14 +680,6 @@ refreshUI = function()
         mainFrame.dealCountTypeButton:SetText('10D')
     else
         mainFrame.dealCountTypeButton:SetText('30D')
-    end
-
-    if multiAuction == 2 then
-        mainFrame.multiAuctionButton:SetText('全部')
-    elseif multiAuction == 1 then
-        mainFrame.multiAuctionButton:SetText('双倍')
-    else
-        mainFrame.multiAuctionButton:SetText('单倍')
     end
 
     local labelText = format('%s) ', #taskList)
@@ -743,8 +716,6 @@ refreshUI = function()
         local minPriceOther = item['minpriceother']
         local basePrice = item['baseprice']
         local materialPrice = XInfo.getMaterialPrice(itemName)
-
-        local dealCount = XInfo.getAuctionInfoField(itemName, 'dealcount', 0)
 
         local disFlag = false
         if displayFilter == '全部' then
@@ -862,7 +833,7 @@ refreshUI = function()
             local materialCountStr = 'M' .. XUtils.formatCount2(materialCount)
 
             local auctionCountStr = XUI.getColor_AuctionStackCount(auctionCount, stackCount) ..
-                'A' .. XUtils.formatCount(auctionCount, 1)
+                'A' .. XUtils.formatCount(auctionCount, 2)
 
             local validCountStr = 'M' .. XUtils.formatCount(validCount, 1)
             if validCount > stackCount then
@@ -1109,13 +1080,13 @@ end
 
 checkImportant = function(item)
     local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0, 1)
-    if item['star'] or dealCount >= 100 then
+    if item['star'] or dealCount >= 200 then
         return true
     end
     return false
 end
 
-addCraftQueue = function(printCount, _craftAll)
+addCraftQueue = function(printCount)
     XInfo.reloadBag()
     XInfo.reloadAuction()
     local count = 0
@@ -1152,13 +1123,11 @@ addCraftQueue = function(printCount, _craftAll)
                     local stackCount = item['stackcount']
                     local materialCount = XInfo.getMaterialCount(item['itemname'])
 
-                    local subCount = stackCount - auctionCount - bagCount
-                    if _craftAll then
-                        if checkImportant(item) then
-                            if auctionCount + bagCount < stackCount * 2 then
-                                subCount = stackCount * 2 - auctionCount - bagCount
-                            end
-                        end
+                    local subCount = 0
+                    if checkImportant(item) then
+                        subCount = stackCount - bagCount
+                    else
+                        subCount = stackCount - auctionCount - bagCount
                     end
                     if subCount > materialCount then subCount = materialCount end
                     if subCount > 0 then
@@ -1208,7 +1177,7 @@ cleanLower = function(targetItemName)
                 for _, item in ipairs(XAutoAuctionList) do
                     if item['itemname'] == itemName then
                         if buyoutPrice / stackCount > item['minpriceother'] then
-                            if checkImportant(item) or IsShiftKeyDown() then
+                            if not checkImportant(item) then
                                 xdebug.info('清理低价：' .. item['itemname']
                                     .. '(' .. XUtils.priceToMoneyString(buyoutPrice / stackCount)
                                     .. '/' .. XUtils.priceToMoneyString(item['minpriceother']) .. ')')
@@ -1285,13 +1254,6 @@ puton = function(printCount)
             if bagItem then bagCount = bagItem['count'] end
             local validCount = getMyValidCount(item['itemname'])
             local stackCount = item['stackcount']
-            if multiAuction == 2 then
-                stackCount = 999
-            elseif multiAuction == 1 then
-                if checkImportant(item) then
-                    stackCount = stackCount * 2
-                end
-            end
             if item['minpriceother'] >= item['baseprice'] and bagCount > 0 and validCount < stackCount then
                 if item['star'] then
                     table.insert(starQueue, i)
@@ -1545,13 +1507,6 @@ local function processQueryTask_Auction(task)
     local validCount = getMyValidCount(item['itemname'])
 
     local targetCount = item['stackcount']
-    if checkImportant(item) then
-        if multiAuction == 2 then
-            targetCount = 999
-        elseif multiAuction == 1 then
-            targetCount = targetCount * 2
-        end
-    end
     local subcount = targetCount - validCount
     if itemBag['count'] < subcount then
         subcount = itemBag['count']
@@ -1592,7 +1547,6 @@ local function processQueryTask(task)
                 item['updatetime'] = time()
 
                 local index = 1
-                task['recentmaxpriceother'] = 0
                 while true do
                     local res = { XAPI.GetAuctionItemInfo('list', index) }
                     local itemName = res[1]
@@ -1635,11 +1589,6 @@ local function processQueryTask(task)
                                 table.insert(item['mylist'], buyoutPrice)
                             end
                         end
-                        if buyoutPrice > task['recentmaxpriceother'] then
-                            if not XInfo.isMe(seller) then
-                                task['recentmaxpriceother'] = buyoutPrice
-                            end
-                        end
                     end
                     index = index + 1
                 end
@@ -1647,19 +1596,12 @@ local function processQueryTask(task)
                 task['queryresultprocessed'] = true
             end
 
-            if fastAuction then -- 快速模式
-                if item['minpriceother'] < item['baseprice'] then
-                    finishTask()
-                    return
-                else
-                    processQueryTask_Auction(task)
-                    return
-                end
+            if item['minpriceother'] < item['baseprice'] then
+                finishTask()
+                return
             else
-                if task['recentmaxpriceother'] > item['baseprice'] then
-                    processQueryTask_Auction(task)
-                    return
-                end
+                processQueryTask_Auction(task)
+                return
             end
 
             if not XAPI.CanSendAuctionQuery() then return end
@@ -1829,10 +1771,7 @@ local function onUpdate()
         return
     end
 
-
-    if autoAuction then
-        addCraftQueue(false, craftAll)
-    end
+    addCraftQueue(false)
 
     if curTask then
         if time() - curTask['starttime'] > curTask['timeout'] then
@@ -1876,9 +1815,7 @@ local function onUpdate()
         return
     end
 
-    if autoAuction then
-        puton(false)
-    end
+    puton(false)
 
     if time() - queryRoundFinishTime < dft_roundInterval then return end
 
@@ -1918,7 +1855,6 @@ local function onUpdate()
 
             queryRound = queryRound + 1
             queryRoundFinishTime = time()
-            autoAuction = true
 
             refreshUI()
             return
@@ -2035,7 +1971,7 @@ end
 SLASH_XAUCTIONCENTERCLOSE1 = '/xauctioncenter_close'
 
 SlashCmdList['XAUCTIONCENTERADDCRAFTQUEUE'] = function()
-    addCraftQueue(true, craftAll)
+    addCraftQueue(true)
 end
 SLASH_XAUCTIONCENTERADDCRAFTQUEUE1 = '/xauctioncenter_addcreaftqueue'
 

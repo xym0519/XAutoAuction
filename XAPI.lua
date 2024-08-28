@@ -209,6 +209,12 @@ XAPI.C_Item_UnlockItemByGUID = function(...)
 end
 
 -- 容器
+
+-- 银行是否打开
+XAPI.IsBankOpen = function()
+    return XAPI.C_Container_GetContainerNumSlots(XAPI.NUM_BAG_SLOTS + 1) > 0
+end
+
 -- 选中物品
 -- https://wowpedia.fandom.com/wiki/API_C_Container.PickupContainerItem
 -- Arguments: (bagId, slotIndex)
@@ -490,6 +496,30 @@ end
 --   13. isGM: boolean - 1 if this letter was sent by a GameMaster.
 XAPI.GetInboxHeaderInfo = function(...)
     return GetInboxHeaderInfo(...)
+end
+
+-- 放置邮件物品
+-- https://wowpedia.fandom.com/wiki/API_ClickSendMailItemButton
+-- Arguments: (itemIndex, [clearItem])
+--   itemIndex: number - The index of the item (1-ATTACHMENTS_MAX_SEND(12))
+--   clearItem: boolean? - Clear the item already in this slot. (Done by right clicking an item)
+XAPI.ClickSendMailItemButton = function(...)
+    return ClickSendMailItemButton(...)
+end
+
+-- 发送邮件
+-- https://wowpedia.fandom.com/wiki/API_SendMail
+-- Arguments: (recipient, subject, [body])
+--   recipient: string - Intended recipient of the mail.
+--   subject: string - Subject of the mail. Cannot be an empty string or nil, but may be whitespace, e.g. " "
+--   body: string? - Body of the mail.
+XAPI.SendMail = function(...)
+    return SendMail(...)
+end
+
+-- 判定邮箱是否打开
+XAPI.IsMailBoxOpen = function()
+    return MailFrame:IsVisible()
 end
 
 -- 角色

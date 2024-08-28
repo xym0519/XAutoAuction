@@ -5,7 +5,7 @@ local moduleName = 'XInfo'
 XInfoBagList = {}
 XInfo.emptyBagCount = 0
 
--- count, bankcount, totalcount, positions(x, y)
+-- count, bankcount, totalcount, positions(bagId, slotId)
 XInfo.getBagItem = function(itemName)
     if XInfoBagList and XInfoBagList[itemName] then
         return XInfoBagList[itemName]
@@ -52,7 +52,7 @@ XInfo.reloadBag = function()
     end
 
     -- 银行未打开，从之前的数据中获取bankcount
-    if XAPI.C_Container_GetContainerNumSlots(XAPI.NUM_BAG_SLOTS + 1) <= 0 then
+    if not XAPI.IsBankOpen() then
         for itemName, item in pairs(XInfoBagList) do
             local newItem = list[itemName]
             if not newItem then
@@ -234,6 +234,7 @@ XInfo.getMaterialBagItem = function(itemName)
     end
 end
 
+-- type: count, bankcount, totalcount
 XInfo.getMaterialCount = function(itemName, type)
     if type == nil then type = 'totalcount' end
     local materialBagItem = XInfo.getMaterialBagItem(itemName)

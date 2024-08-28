@@ -254,9 +254,9 @@ XUI.getColor_DealCount = function(dealCount)
         multiRate = 1
     end
     local res = XUI.White
-    if dealCount > 100 * multiRate then
+    if dealCount > 200 * multiRate then
         res = XUI.Cyan
-    elseif dealCount > 50 * multiRate then
+    elseif dealCount > 100 * multiRate then
         res = XUI.Green
     elseif dealCount > 20 * multiRate then
         res = XUI.Yellow

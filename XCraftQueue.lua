@@ -62,9 +62,7 @@ initUI = function()
     local cleanButton = XUI.createButton(mainFrame, 35, '清')
     cleanButton:SetPoint('LEFT', nextButton, 'RIGHT', 5, 0)
     cleanButton:SetScript('OnClick', function()
-        stop()
-        finishCurTask()
-        craftQueue = {}
+        reset()
         refreshUI()
     end)
 
@@ -305,6 +303,8 @@ stop = function()
 end
 
 reset = function()
+    isRunning = false
+    finishCurTask()
     craftQueue = {}
     refreshUI()
 end
@@ -333,9 +333,20 @@ local function onUpdate()
     table.remove(craftQueue, 1)
 
     local materialName = XInfo.getMaterialName(curTask['itemname'])
-    taskExpires = time() + dft_smalltime * curTask['count'] + 2
+    local materialCount = XInfo.getMaterialCount(materialName, 'count')
+    local count = curTask['count']
+    if count > materialCount then
+        count = materialCount
+    end
+    if count <= 0 then
+        finishCurTask()
+        refreshUI()
+        return
+    end
+
+    taskExpires = time() + dft_smalltime * count + 2
     if XUtils.inArray(materialName, { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼', '巨锆石', '恐惧石' }) then
-        taskExpires = time() + dft_largetime * curTask['count'] + 2
+        taskExpires = time() + dft_largetime * count + 2
     end
 
     local tradeSkillItem = XInfo.getTradeSkillItem(curTask['itemname'])
@@ -345,7 +356,7 @@ local function onUpdate()
         return
     end
 
-    XAPI.DoTradeSkill(tradeSkillItem['index'], curTask['count'])
+    XAPI.DoTradeSkill(tradeSkillItem['index'], count)
 end
 
 local function onStart(...)

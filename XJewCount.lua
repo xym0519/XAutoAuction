@@ -52,11 +52,11 @@ initUI = function()
     mainFrame:SetPoint('BOTTOM', UIParent, 'BOTTOM', 0, 60)
     mainFrame:Hide()
 
-    local fulfilStackButton = XUI.createButton(mainFrame, 25, '>')
+    local fulfilStackButton = XUI.createButton(mainFrame, 25, 'V')
     fulfilStackButton:SetHeight(20)
     fulfilStackButton:SetPoint('TOPRIGHT', mainFrame, 'TOPRIGHT', -30, -1)
     fulfilStackButton:SetScript('OnClick', function()
-        if XAPI.C_Container_GetContainerNumSlots(5) <= 0 then
+        if not XAPI.IsBankOpen() then
             xdebug.error('银行未打开')
             return
         end
