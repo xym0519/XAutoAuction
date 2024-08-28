@@ -416,12 +416,12 @@ initUI = function()
                 return
             end
 
-            if bagItem['count'] < 12 then
+            if bagItem['count'] < 10 then
                 xdebug.error(item['itemname'] .. '数量不足')
                 return
             end
 
-            for pidx = 1, 12 do
+            for pidx = 1, 10 do
                 local position = bagItem['positions'][pidx];
                 XAPI.C_Container_PickupContainerItem(position[1], position[2])
                 XAPI.ClickSendMailItemButton(pidx)
