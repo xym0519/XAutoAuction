@@ -533,3 +533,18 @@ end
 XAPI.UnitName = function(...)
     return UnitName(...)
 end
+
+
+-- Auctionator
+-- 精确搜索
+XAPI.AuctionatorSearchExact = function(search)
+    if Auctionator then
+        if Auctionator.API.v1.MultiSearchExact then
+            return Auctionator.API.v1.MultiSearchExact('XAutoAuction', { search })
+        else
+            xdebug.error('精确搜索接口未找到')
+        end
+    else
+        xdebug.error('Auctionator插件未找到')
+    end
+end

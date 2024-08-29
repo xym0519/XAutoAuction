@@ -26,8 +26,6 @@ local queryPage = 0
 local queryFound = nil
 local queryResultProcessed = true
 local queryRound = 1
-local checkOnly = true
-local manualBuy = true
 local buyingItem = nil
 
 -- Function definition
@@ -84,6 +82,8 @@ initUI = function()
             item.minprice = dft_minPrice
             item.minbuyoutprice = dft_minPrice
         end
+        stopBuy()
+        queryIndex = 1
         refreshUI()
     end)
 
@@ -111,24 +111,8 @@ initUI = function()
         end, { { Name = '物品' }, { Name = '价格' } }, '自动购买设置')
     end)
 
-    local checkOnlyButton = XUI.createButton(mainFrame, dft_buttonWidth, '')
-    checkOnlyButton:SetPoint('LEFT', settingButton, 'RIGHT', dft_buttonGap, 0)
-    checkOnlyButton:SetScript('OnClick', function()
-        checkOnly = not checkOnly
-        refreshUI()
-    end)
-    mainFrame.checkOnlyButton = checkOnlyButton
-
-    local manualBuyButton = XUI.createButton(mainFrame, dft_buttonWidth, '')
-    manualBuyButton:SetPoint('LEFT', checkOnlyButton, 'RIGHT', dft_buttonGap, 0)
-    manualBuyButton:SetScript('OnClick', function()
-        manualBuy = not manualBuy
-        refreshUI()
-    end)
-    mainFrame.manualBuyButton = manualBuyButton
-
     local hintLabel = XUI.createLabel(mainFrame, 170, '')
-    hintLabel:SetPoint('LEFT', manualBuyButton, 'RIGHT', 10, 0)
+    hintLabel:SetPoint('LEFT', settingButton, 'RIGHT', 10, 0)
     mainFrame.hintLabel = hintLabel
 
     local lastWidget = preButton
@@ -284,6 +268,7 @@ initUI_Confirm = function()
     local cancelButton = XUI.createButton(confirmFrame, 80, '取消')
     cancelButton:SetPoint('LEFT', confirmButton, 'RIGHT', 12, 0)
     cancelButton:SetScript('OnClick', function()
+        finishCurTask()
         buyingItem = nil
         queryResultProcessed = true
         confirmFrame:Hide()
@@ -307,18 +292,6 @@ refreshUI = function()
     else
         mainFrame.startButton:SetText('起')
         mainFrame.hintLabel:SetText('等待')
-    end
-
-    if checkOnly then
-        mainFrame.checkOnlyButton:SetText('查')
-    else
-        mainFrame.checkOnlyButton:SetText('买')
-    end
-
-    if manualBuy then
-        mainFrame.manualBuyButton:SetText('手')
-    else
-        mainFrame.manualBuyButton:SetText('自')
     end
 
     for i = 1, displayPageSize do
@@ -443,7 +416,6 @@ confirmBuy = function()
 
     local index = 1
     local found = false
-    local bought = false
     while true do
         local res = { XAPI.GetAuctionItemInfo('list', index) }
         local timeLeft = XAPI.GetAuctionItemTimeLeft('list', index)
@@ -466,33 +438,11 @@ confirmBuy = function()
                 nextBidPrice = bidPrice + bidIncrease
             end
 
-            local price = buyoutPrice / stackCount
-            if price > 0 then
-                if buyingItem.minbuyoutprice then
-                    if price < buyingItem.minbuyoutprice then
-                        buyingItem.minbuyoutprice = price
-                    end
-                else
-                    buyingItem.minbuyoutprice = price
-                end
-
-                if nextBidPrice / stackCount < price then
-                    price = nextBidPrice / stackCount
-                end
-            else
-                price = nextBidPrice / stackCount
-            end
-            if buyingItem.minprice then
-                if price < buyingItem.minprice then
-                    buyingItem.minprice = price
-                end
-            else
-                buyingItem.minprice = price
-            end
-
             if (timeLeft < 3 and nextBidPrice / stackCount <= buyingItem['price'])
                 or (buyoutPrice > 0 and buyoutPrice / stackCount <= buyingItem['price']) then
-                found = true
+                if (not XInfo.isMe(seller)) and (not isMine) then
+                    found = true
+                end
             end
 
             if (not XInfo.isMe(seller)) and (not isMine) then
@@ -588,53 +538,42 @@ local function onUpdate()
                 XExternal.updateItemInfo(itemName, itemId)
                 XExternal.addScanHistory(itemName, time(), buyoutPrice)
 
-                local nextBidPrice = 0
-                if bidPrice == 0 then
-                    nextBidPrice = bidStart
-                else
-                    nextBidPrice = bidPrice + bidIncrease
-                end
+                if itemName == item['itemname'] then
+                    local nextBidPrice = 0
+                    if bidPrice == 0 then
+                        nextBidPrice = bidStart
+                    else
+                        nextBidPrice = bidPrice + bidIncrease
+                    end
 
-                local price = buyoutPrice / stackCount
-                if price > 0 then
-                    if item.minbuyoutprice then
-                        if price < item.minbuyoutprice then
+                    local price = buyoutPrice / stackCount
+                    if price > 0 then
+                        if item.minbuyoutprice then
+                            if price < item.minbuyoutprice then
+                                item.minbuyoutprice = price
+                            end
+                        else
                             item.minbuyoutprice = price
                         end
-                    else
-                        item.minbuyoutprice = price
-                    end
 
-                    if nextBidPrice / stackCount < price then
+                        if nextBidPrice / stackCount < price then
+                            price = nextBidPrice / stackCount
+                        end
+                    else
                         price = nextBidPrice / stackCount
                     end
-                else
-                    price = nextBidPrice / stackCount
-                end
-                if item.minprice then
-                    if price < item.minprice then
+                    if item.minprice then
+                        if price < item.minprice then
+                            item.minprice = price
+                        end
+                    else
                         item.minprice = price
                     end
-                else
-                    item.minprice = price
-                end
 
-                if (timeLeft < 3 and nextBidPrice / stackCount <= item['price'])
-                    or (buyoutPrice > 0 and buyoutPrice / stackCount <= item['price']) then
-                    lowerPriceFound = true
-                end
-
-                if (not checkOnly) and (not manualBuy) then
-                    if (not XInfo.isMe(seller)) and (not isMine) then
-                        if buyoutPrice / stackCount <= item['price'] and itemName == item['itemname'] and buyoutPrice > 0 then
-                            xdebug.info('Buyout: ' .. itemName .. ' (' .. stackCount .. ')'
-                                .. '    ' .. XUtils.priceToMoneyString(buyoutPrice / stackCount))
-                            XAPI.PlaceAuctionBid('list', index, buyoutPrice)
-                            break
-                        elseif timeLeft < 3 and nextBidPrice / stackCount <= item['price'] and itemName == item['itemname'] then
-                            xdebug.info('Bid: ' .. itemName .. ' (' .. stackCount .. ')'
-                                .. '    ' .. XUtils.priceToMoneyString(nextBidPrice / stackCount))
-                            XAPI.PlaceAuctionBid('list', index, nextBidPrice)
+                    if (timeLeft < 3 and nextBidPrice / stackCount <= item['price'])
+                        or (buyoutPrice > 0 and buyoutPrice / stackCount <= item['price']) then
+                        if (not XInfo.isMe(seller)) and (not isMine) then
+                            lowerPriceFound = true
                             break
                         end
                     end
@@ -643,24 +582,17 @@ local function onUpdate()
             end
 
             if lowerPriceFound then
-                if manualBuy then
-                    if buyingItem == nil then
-                        buyingItem = item
-                        confirmFrame:Show()
-                    end
-                    return
+                if buyingItem == nil then
+                    buyingItem = item
+                    confirmFrame.title:SetText(item['itemname'])
+                    confirmFrame:Show()
                 end
+                return
             else
                 finishCurTask()
                 return
             end
 
-            if checkOnly then
-                finishCurTask()
-                return
-            end
-
-            queryResultProcessed = true
             return
         end
 

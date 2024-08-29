@@ -416,17 +416,17 @@ initUI = function()
                 return
             end
 
-            if bagItem['count'] < 10 then
+            if bagItem['count'] < 5 then
                 xdebug.error(item['itemname'] .. '数量不足')
                 return
             end
 
-            for pidx = 1, 10 do
+            for pidx = 1, 5 do
                 local position = bagItem['positions'][pidx];
                 XAPI.C_Container_PickupContainerItem(position[1], position[2])
                 XAPI.ClickSendMailItemButton(pidx)
             end
-            XAPI.SendMail('阿肌', item['itemname'] .. ' * 10')
+            XAPI.SendMail('阿肌', item['itemname'] .. ' * 5')
             xdebug.info(item['itemname'] .. '发送成功')
         end)
         frame.itemMailButton = itemMailButton
@@ -440,11 +440,7 @@ initUI = function()
             if not item then return end
 
             if IsShiftKeyDown() then
-                if Auctionator then
-                    if Auctionator.API.v1.MultiSearchExact then
-                        Auctionator.API.v1.MultiSearchExact('XAutoAuction', { item['itemname'] })
-                    end
-                end
+                XAPI.AuctionatorSearchExact(item['itemname'])
             else
                 XUIInputDialog.show(moduleName, function(input)
                     local itemName = item['itemname']
@@ -828,7 +824,7 @@ refreshUI = function()
             local updateTimeStr = XUtils.formatTime(item['updatetime'])
 
             local bagCountStr = XUI.getColor_BagStackCount(bagCount, stackCount) ..
-                'B' .. XUtils.formatCount(bagCount, 1)
+                'B' .. XUtils.formatCount(bagCount, 2)
 
             local materialCountStr = 'M' .. XUtils.formatCount2(materialCount)
 
