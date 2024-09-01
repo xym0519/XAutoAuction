@@ -130,8 +130,7 @@ end
 
 -- Commands
 SlashCmdList['XAUTOAUCTIONREFRESH'] = function()
-    XInfo.reloadBag()
-    XInfo.reloadAuction()
+    XInfo.reloadCount()
     XInfo.reloadTradeSkill()
     XAutoAuction.refreshUI()
 end

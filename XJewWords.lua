@@ -342,11 +342,9 @@ refreshUI = function()
             end
             local unit = item['unit']
             local ccount = item['ccount']
-            local totalCount = 0
-            local itemBag = XInfo.getBagItem(itemName)
-            if itemBag ~= nil then
-                totalCount = itemBag['totalcount']
-            end
+            local bagCount = XInfo.getBagItemCount(itemName)
+            local bankCount = XInfo.getBankItemCount(itemName)
+            local totalCount = bagCount + bankCount
 
             local totalCountStr = XUI.getColor_BagBankCount(totalCount) .. totalCount
 

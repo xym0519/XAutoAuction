@@ -455,6 +455,37 @@ XAPI.DoTradeSkill = function(...)
 end
 
 -- 邮件
+-- 获取邮件数量
+-- https://wowpedia.fandom.com/wiki/API_GetInboxNumItems
+-- Returns
+--   numItems: number
+--   totalItems: number
+XAPI.GetInboxNumItems = function()
+    return GetInboxNumItems()
+end
+
+-- 获取邮件摘要信息
+-- https://wowpedia.fandom.com/wiki/API_GetInboxHeaderInfo
+-- Arguments: (index)
+--   index: number - the index of the message (ascending from 1).
+-- Returns
+--   1. packageIcon: string - texture path for package icon if it contains a package (nil otherwise).
+--   2. stationeryIcon: string - texture path for mail message icon.
+--   3. sender: string - name of the player who sent the message.
+--   4. subject: string - the message subject.
+--   5. money: number - The amount of money attached.
+--   6. CODAmount: number - The amount of COD payment required to receive the package.
+--   7. daysLeft: number - The number of days (fractional) before the message expires.
+--   8. hasItem: number - Either the number of attachments or nil if no items are present. Note that items that have been taken from the mailbox continue to occupy empty slots, but hasItem is the total number of items remaining in the mailbox. Use ATTACHMENTS_MAX_RECEIVE for the total number of attachments rather than this.
+--   9. wasRead: boolean - 1 if the mail has been read, nil otherwise. Using GetInboxText() marks an item as read.
+--   10. wasReturned: boolean - 1 if the mail was returned, nil otherwise.
+--   11. textCreated: boolean - 1 if a letter object has been created from this mail, nil otherwise.
+--   12. canReply: boolean - 1 if this letter can be replied to, nil otherwise.
+--   13. isGM: boolean - 1 if this letter was sent by a GameMaster.
+XAPI.GetInboxHeaderInfo = function(...)
+    return GetInboxHeaderInfo(...)
+end
+
 -- 获取邮件账单信息
 -- https://wowpedia.fandom.com/wiki/API_GetInboxInvoiceInfo
 -- Arguments: (index)
@@ -515,6 +546,15 @@ end
 --   body: string? - Body of the mail.
 XAPI.SendMail = function(...)
     return SendMail(...)
+end
+
+-- 收取邮件附件
+-- https://wowpedia.fandom.com/wiki/API_TakeInboxItem
+-- Arguments: (index, itemIndex)
+--   index: the index of the mailbox message you want to take the item attachment from.
+--   itemIndex: The index of the item to take (1-ATTACHMENTS_MAX_RECEIVE(16))
+XAPI.TakeInboxItem = function(...)
+    return TakeInboxItem(...)
 end
 
 -- 判定邮箱是否打开

@@ -10,7 +10,7 @@ local dft_basePriceRate = 1.5
 local dft_roundInterval = 3
 local dft_taskInterval = 1
 local dft_taskTimeout = 30
-local dft_filterList = { '全部', '可售', '优质', '价低', '有效', '无效', '星星' }
+local dft_filterList = { '全部', '星星', '优质', '可售', '有效', '价低', '无效', '量大' }
 local dft_deltaPrice = 10
 local dft_postdelay = 2
 local dft_autoCleanInterval = 60
@@ -101,7 +101,7 @@ resetData = function()
 end
 
 initUI = function()
-    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 995, 430)
+    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 1055, 430)
     mainFrame:SetFrameStrata('HIGH')
     mainFrame.title:SetText('自动拍卖')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
@@ -421,19 +421,80 @@ initUI = function()
                 return
             end
 
+            for t = 1, 12 do
+                XAPI.ClickSendMailItemButton(t, true)
+            end
             for pidx = 1, 5 do
                 local position = bagItem['positions'][pidx];
                 XAPI.C_Container_PickupContainerItem(position[1], position[2])
+
                 XAPI.ClickSendMailItemButton(pidx)
             end
-            XAPI.SendMail('阿肌', item['itemname'] .. ' * 5')
+            XAPI.SendMail('阿肌', 'P-' .. item['itemname'] .. '-5')
             xdebug.info(item['itemname'] .. '发送成功')
+            XInfo.reloadBag()
+            XInfo.reloadMail()
+            refreshUI()
         end)
         frame.itemMailButton = itemMailButton
         itemMailButton.frame = frame
 
+        local itemReceiveButton = XUI.createButton(frame, 30, 'R')
+        itemReceiveButton:SetPoint('LEFT', itemMailButton, 'RIGHT', 0, 0)
+        itemReceiveButton:SetScript('OnClick', function(self)
+            local idx = self.frame.index
+            local item = XAutoAuctionList[idx];
+            if not item then return end
+
+            if not XAPI.IsMailBoxOpen() then
+                xdebug.error('请先打开邮箱')
+                return
+            end
+
+            local mailCount = XAPI.GetInboxNumItems()
+            if mailCount <= 0 then
+                xdebug.error('没有邮件')
+                return
+            end
+
+            XInfo.reloadBag()
+
+            for midx = 1, mailCount do
+                local mailInfo = { XAPI.GetInboxHeaderInfo(midx) }
+                local subject = mailInfo[4]
+                local itemCount = mailInfo[8]
+                if itemCount then
+                    if itemCount > 0 then
+                        local _itemName, _itemCount = string.match(subject, 'P%-([^-]*)%-(.*)')
+                        if _itemName and _itemCount then
+                            if _itemName == item['itemname'] then
+                                local count = itemCount
+                                if XInfo.emptyBagCount < count then
+                                    count = XInfo.emptyBagCount
+                                end
+                                if count > 0 then
+                                    for iidx = itemCount, itemCount - (count - 1), -1 do
+                                        XAPI.TakeInboxItem(midx, iidx)
+                                        break
+                                    end
+                                    break
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+
+            xdebug.info('收取' .. item['itemname'])
+            XInfo.reloadBag()
+            XInfo.reloadMail()
+            refreshUI()
+        end)
+        frame.itemReceiveButton = itemReceiveButton
+        itemReceiveButton.frame = frame
+
         local itemNameButton = XUI.createButton(frame, 160, '')
-        itemNameButton:SetPoint('LEFT', itemMailButton, 'RIGHT', 0, 0)
+        itemNameButton:SetPoint('LEFT', itemReceiveButton, 'RIGHT', 0, 0)
         itemNameButton:SetScript('OnClick', function(self)
             local idx = self.frame.index
             local item = XAutoAuctionList[idx];
@@ -622,8 +683,21 @@ initUI = function()
         frame.starButton = starButton
         starButton.frame = frame
 
+        local itemCanCraftButton = XUI.createButton(frame, 30, '造')
+        itemCanCraftButton:SetPoint('LEFT', starButton, 'RIGHT', 0, 0)
+        itemCanCraftButton:SetScript('OnClick', function(self)
+            local idx = self.frame.index
+            local item = XAutoAuctionList[idx];
+            if not item then return end
+
+            item['cancraft'] = not item['cancraft']
+            refreshUI()
+        end)
+        frame.itemCanCraftButton = itemCanCraftButton
+        itemCanCraftButton.frame = frame
+
         local itemRefreshButton = XUI.createButton(frame, 30, '刷')
-        itemRefreshButton:SetPoint('LEFT', starButton, 'RIGHT', 0, 0)
+        itemRefreshButton:SetPoint('LEFT', itemCanCraftButton, 'RIGHT', 0, 0)
         itemRefreshButton:SetScript('OnClick', function(self)
             local idx = self.frame.index
             local item = XAutoAuctionList[idx];
@@ -712,6 +786,7 @@ refreshUI = function()
         local minPriceOther = item['minpriceother']
         local basePrice = item['baseprice']
         local materialPrice = XInfo.getMaterialPrice(itemName)
+        local bagCount = XInfo.getBagItemCount(itemName)
 
         local disFlag = false
         if displayFilter == '全部' then
@@ -746,6 +821,10 @@ refreshUI = function()
             if enabled and star then
                 disFlag = true
             end
+        elseif displayFilter == '量大' then
+            if bagCount >= 5 then
+                disFlag = true
+            end
         end
 
         if filterWord ~= '' and (not XUtils.stringContains(itemName, filterWord)) then
@@ -773,25 +852,21 @@ refreshUI = function()
             if enabled == nil then enabled = false end
             local star = item['star']
             if star == nil then star = false end
+            local canCraft = item['cancraft']
+            if canCraft == nil then canCraft = false end
             local basePrice = item['baseprice']
             local minPriceOther = item['minpriceother']
             local lastPriceOther = item['lastpriceother']
             local stackCount = item['stackcount']
             local lowerCount = item['lowercount']
             local priceLowerCount = item['pricelowercount']
-            local materialCount = XInfo.getMaterialCount(itemName)
 
-            local itemBag = XInfo.getBagItem(itemName)
-            local bagCount = 0
-            local bagTotalCount = 0
-            if itemBag then
-                bagCount = itemBag['count']
-                bagTotalCount = itemBag['totalcount']
-            end
+            local bagCount = XInfo.getBagItemCount(itemName)
+            local bankCount = XInfo.getBankItemCount(itemName)
+            local mailCount = XInfo.getMailItemCount(itemName)
 
             local auctionCount = getMyCount(itemName)
             local validCount = getMyValidCount(itemName)
-            local bagAuctionCount = bagTotalCount + auctionCount
 
             local dealRate = XInfo.getAuctionInfoField(itemName, 'dealrate', 99)
             local dealCount = XInfo.getAuctionInfoField(itemName, 'dealcount', 0)
@@ -823,15 +898,43 @@ refreshUI = function()
 
             local updateTimeStr = XUtils.formatTime(item['updatetime'])
 
-            local bagCountStr = XUI.getColor_BagStackCount(bagCount, stackCount) ..
-                'B' .. XUtils.formatCount(bagCount, 2)
+            local bagCountStr = 'B' .. bagCount;
+            if bagCount > 10 then
+                bagCountStr = XUI.Purple .. bagCountStr
+            elseif bagCount > 5 then
+                bagCountStr = XUI.Yellow .. bagCountStr
+            elseif bagCount > 0 then
+                bagCountStr = XUI.Green .. bagCountStr
+            else
+                bagCountStr = XUI.Red .. bagCountStr
+            end
 
-            local materialCountStr = 'M' .. XUtils.formatCount2(materialCount)
+            local mailCountStr = '' .. mailCount;
+            if mailCount > 20 then
+                mailCountStr = XUI.Purple .. mailCountStr
+            elseif mailCount > 10 then
+                mailCountStr = XUI.Red .. mailCountStr
+            elseif mailCount > 5 then
+                mailCountStr = XUI.Yellow .. mailCountStr
+            else
+                mailCountStr = XUI.Green .. mailCountStr
+            end
+
+            local bankCountStr = '' .. bankCount;
+            if bankCount > 200 then
+                bankCountStr = XUI.Cyan .. bankCountStr
+            elseif bankCount > 100 then
+                bankCountStr = XUI.Green .. bankCountStr
+            elseif bankCount > 40 then
+                bankCountStr = XUI.Yellow .. bankCountStr
+            else
+                bankCountStr = XUI.Red .. bankCountStr
+            end
 
             local auctionCountStr = XUI.getColor_AuctionStackCount(auctionCount, stackCount) ..
-                'A' .. XUtils.formatCount(auctionCount, 2)
+                'A' .. auctionCount
 
-            local validCountStr = 'M' .. XUtils.formatCount(validCount, 1)
+            local validCountStr = 'M' .. validCount
             if validCount > stackCount then
                 validCountStr = XUI.Cyan .. validCountStr
             elseif validCount == stackCount then
@@ -842,10 +945,7 @@ refreshUI = function()
                 validCountStr = XUI.Red .. validCountStr
             end
 
-            local bagAuctionCountStr = XUI.getColor_BagStackCount(bagAuctionCount, stackCount) ..
-                'T' .. XUtils.formatCount(bagAuctionCount, 2)
-
-            local lowerCountStr = 'L' .. XUtils.formatCount(lowerCount)
+            local lowerCountStr = 'L' .. lowerCount
             if lowerCount > 5 then
                 lowerCountStr = XUI.Red .. lowerCountStr
             elseif lowerCount > 0 then
@@ -854,7 +954,7 @@ refreshUI = function()
                 lowerCountStr = XUI.White .. lowerCountStr
             end
 
-            local priceLowerCountStr = 'P' .. XUtils.formatCount(priceLowerCount)
+            local priceLowerCountStr = 'P' .. priceLowerCount
             if priceLowerCount > 10 then
                 priceLowerCountStr = XUI.Red .. priceLowerCountStr
             elseif priceLowerCount > 0 then
@@ -863,7 +963,7 @@ refreshUI = function()
                 priceLowerCountStr = XUI.White .. priceLowerCountStr
             end
 
-            local stackCountStr = 'S' .. XUtils.formatCount(stackCount, 1)
+            local stackCountStr = 'S' .. stackCount
             if stackCount > 2 then
                 stackCountStr = XUI.Cyan .. stackCountStr
             elseif stackCount > 1 then
@@ -891,11 +991,11 @@ refreshUI = function()
             frame.itemNameButton:SetText(itemNameStr)
 
             frame.labelTime:SetText(updateTimeStr)
-            frame.labelBag:SetText(bagCountStr .. XUI.White .. '/' .. bagAuctionCountStr
-                .. XUI.White .. '/' .. materialCountStr .. XUI.White .. '/' .. stackCountStr)
-            frame.labelAuction:SetText(auctionCountStr .. XUI.White .. '/' .. validCountStr
-                .. XUI.White .. '/' .. priceLowerCountStr .. '/' .. lowerCountStr .. XUI.White)
-            frame.labelDeal:SetText(dealRateStr .. XUI.White .. '/' .. dealCountStr)
+            frame.labelBag:SetText(bagCountStr .. XUI.White .. ' / ' .. mailCountStr .. ' / ' .. bankCountStr
+                .. XUI.White .. ' / ' .. stackCountStr)
+            frame.labelAuction:SetText(auctionCountStr .. XUI.White .. ' / ' .. validCountStr
+                .. XUI.White .. ' / ' .. priceLowerCountStr .. ' / ' .. lowerCountStr .. XUI.White)
+            frame.labelDeal:SetText(dealRateStr .. XUI.White .. ' / ' .. dealCountStr)
             frame.labelPrice:SetText(minPriceOtherStr .. XUI.White .. ' / ' .. lastPriceOtherStr .. ' / ' .. basePriceStr)
 
             if enabled then
@@ -909,6 +1009,13 @@ refreshUI = function()
             else
                 frame.starButton:SetText(XUI.Red .. '星')
             end
+
+            if canCraft then
+                frame.itemCanCraftButton:SetText(XUI.Green .. '造')
+            else
+                frame.itemCanCraftButton:SetText(XUI.Red .. '禁')
+            end
+
             frame:Show()
         else
             frame:Hide()
@@ -960,6 +1067,7 @@ addItem = function(itemName, basePrice, defaultPrice, stackCount)
         baseprice = basePrice,
         defaultprice = defaultPrice,
         stackcount = stackCount,
+        cancraft = true
     }
     resetItem(item)
     table.insert(XAutoAuctionList, item)
@@ -1089,7 +1197,7 @@ addCraftQueue = function(printCount)
     local starQueue = {}
     local unStarQueue = {}
     for idx, item in ipairs(XAutoAuctionList) do
-        if item['enabled'] then
+        if item['enabled'] and item['cancraft'] then
             local inQuery = false
             if curTask and curTask['action'] == 'query' and curTask['index'] == idx then
                 inQuery = true
@@ -1104,17 +1212,11 @@ addCraftQueue = function(printCount)
             end
             if not inQuery then
                 if item['minpriceother'] >= item['baseprice'] then
-                    local bagCount = 0
-                    local bagItem = XInfo.getBagItem(item['itemname'])
-                    if bagItem ~= nil then
-                        bagCount = bagItem['count']
-                    end
+                    local bagCount = XInfo.getBagItemCount(item['itemname'])
                     local auctionCount = getMyCount(item['itemname'])
-                    local auctionItem = XInfo.getAuctionItem(item['itemname'])
-                    if auctionItem then
-                        if auctionItem['count'] > auctionCount then
-                            auctionCount = auctionItem['count']
-                        end
+                    local auctionItemCount = XInfo.getAuctionItemCount(item['itemname'])
+                    if auctionItemCount > auctionCount then
+                        auctionCount = auctionItemCount
                     end
                     local stackCount = item['stackcount']
                     local materialCount = XInfo.getMaterialCount(item['itemname'])
@@ -1161,6 +1263,9 @@ cleanLower = function(targetItemName)
     XInfo.reloadAuction()
 
     XCraftQueue.stop()
+    local targetIndex = -1
+    local maxPrice = 0
+    local minPriceOther = 0
     for i = numItems, 1, -1 do
         local res = { XAPI.GetAuctionItemInfo('owner', i) }
         local itemName = res[1]
@@ -1173,22 +1278,44 @@ cleanLower = function(targetItemName)
                 for _, item in ipairs(XAutoAuctionList) do
                     if item['itemname'] == itemName then
                         if buyoutPrice / stackCount > item['minpriceother'] then
-                            if not checkImportant(item) then
-                                xdebug.info('清理低价：' .. item['itemname']
-                                    .. '(' .. XUtils.priceToMoneyString(buyoutPrice / stackCount)
-                                    .. '/' .. XUtils.priceToMoneyString(item['minpriceother']) .. ')')
-                                XAPI.CancelAuction(i)
+                            if targetItemName == nil then
+                                if not checkImportant(item) then
+                                    xdebug.info('清理低价：' .. item['itemname']
+                                        .. '(' .. XUtils.priceToMoneyString(buyoutPrice / stackCount)
+                                        .. '/' .. XUtils.priceToMoneyString(item['minpriceother']) .. ')')
+                                    XAPI.CancelAuction(i)
 
-                                if not XUtils.inArray(item['itemname'], cleaningItems) then
-                                    table.insert(cleaningItems, item['itemname'])
+                                    if not XUtils.inArray(item['itemname'], cleaningItems) then
+                                        table.insert(cleaningItems, item['itemname'])
+                                    end
+                                    return
                                 end
-                                return
+                            else
+                                if buyoutPrice / stackCount > maxPrice then
+                                    maxPrice = buyoutPrice / stackCount
+                                    minPriceOther = item['minpriceother']
+                                    targetIndex = i
+                                end
                             end
                         end
                         break
                     end
                 end
             end
+        end
+    end
+
+    if targetItemName then
+        if targetIndex ~= -1 then
+            xdebug.info('清理低价：' .. targetItemName
+                .. '(' .. XUtils.priceToMoneyString(maxPrice)
+                .. '/' .. XUtils.priceToMoneyString(minPriceOther) .. ')')
+            XAPI.CancelAuction(targetIndex)
+
+            if not XUtils.inArray(targetItemName, cleaningItems) then
+                table.insert(cleaningItems, targetItemName)
+            end
+            return
         end
     end
 
@@ -1245,9 +1372,7 @@ puton = function(printCount)
     local unStarQueue = {}
     for i, item in ipairs(XAutoAuctionList) do
         if item['enabled'] then
-            local bagCount = 0
-            local bagItem = XInfo.getBagItem(item['itemname'])
-            if bagItem then bagCount = bagItem['count'] end
+            local bagCount = XInfo.getBagItemCount(item['itemname'])
             local validCount = getMyValidCount(item['itemname'])
             local stackCount = item['stackcount']
             if item['minpriceother'] >= item['baseprice'] and bagCount > 0 and validCount < stackCount then
@@ -1479,8 +1604,8 @@ local function processQueryTask_Auction(task)
     XInfo.reloadBag()
     XInfo.reloadAuction()
 
-    local itemBag = XInfo.getBagItem(item['itemname'])
-    if not itemBag then
+    local itemBagCount = XInfo.getBagItemCount(item['itemname'])
+    if itemBagCount <= 0 then
         finishTask()
         return
     end
@@ -1504,8 +1629,8 @@ local function processQueryTask_Auction(task)
 
     local targetCount = item['stackcount']
     local subcount = targetCount - validCount
-    if itemBag['count'] < subcount then
-        subcount = itemBag['count']
+    if itemBagCount < subcount then
+        subcount = itemBagCount
     end
     if subcount <= 0 then
         finishTask()
@@ -1817,49 +1942,49 @@ local function onUpdate()
 
     local nextTaskIndex = -1
 
-    if queryRound == 1 then
-        for i = starQueryIndex, #XAutoAuctionList do
-            local item = XAutoAuctionList[i]
-            if item and item['enabled'] and item['star'] and item['lastround'] < 1 then
-                starQueryIndex = i + 1
-                nextTaskIndex = i
-                break
-            end
-        end
+    -- if queryRound == 1 then
+    --     for i = starQueryIndex, #XAutoAuctionList do
+    --         local item = XAutoAuctionList[i]
+    --         if item and item['enabled'] and item['star'] and item['lastround'] < 1 then
+    --             starQueryIndex = i + 1
+    --             nextTaskIndex = i
+    --             break
+    --         end
+    --     end
 
-        if nextTaskIndex == -1 then
-            starQueryIndex = #XAutoAuctionList
+    --     if nextTaskIndex == -1 then
+    --         starQueryIndex = #XAutoAuctionList
 
-            for i = queryIndex, #XAutoAuctionList do
-                local item = XAutoAuctionList[i]
-                if item and item['enabled'] and (not item['star']) and item['lastround'] < 1 then
-                    local round = math.floor(item['lowercount'] / 20)
-                    if round > 3 then round = 3 end
-                    if item['lastround'] + round <= queryRound then
-                        queryIndex = i + 1
-                        nextTaskIndex = i
-                        break
-                    end
-                end
-            end
-        end
+    --         for i = queryIndex, #XAutoAuctionList do
+    --             local item = XAutoAuctionList[i]
+    --             if item and item['enabled'] and (not item['star']) and item['lastround'] < 1 then
+    --                 local round = math.floor(item['lowercount'] / 20)
+    --                 if round > 3 then round = 3 end
+    --                 if item['lastround'] + round <= queryRound then
+    --                     queryIndex = i + 1
+    --                     nextTaskIndex = i
+    --                     break
+    --                 end
+    --             end
+    --         end
+    --     end
 
-        if nextTaskIndex == -1 then
-            queryIndex = 1
-            starQueryIndex = 1
-            queryStarFlag = true
+    --     if nextTaskIndex == -1 then
+    --         queryIndex = 1
+    --         starQueryIndex = 1
+    --         queryStarFlag = true
 
-            queryRound = queryRound + 1
-            queryRoundFinishTime = time()
+    --         queryRound = queryRound + 1
+    --         queryRoundFinishTime = time()
 
-            refreshUI()
-            return
-        end
+    --         refreshUI()
+    --         return
+    --     end
 
-        addQueryTaskByIndex(nextTaskIndex)
-        refreshUI()
-        return
-    end
+    --     addQueryTaskByIndex(nextTaskIndex)
+    --     refreshUI()
+    --     return
+    -- end
 
     if queryStarFlag then
         for idx = starQueryIndex, #XAutoAuctionList do

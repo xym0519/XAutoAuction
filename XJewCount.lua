@@ -26,13 +26,9 @@ createLabel = function(itemName)
     end)
     label.Refresh = function(self)
         local titemName = self.itemName
-        local bagCount = 0
-        local totalCount = 0
-        local item = XInfo.getBagItem(titemName)
-        if item then
-            bagCount = item['count']
-            totalCount = item['totalcount']
-        end
+        local bagCount = XInfo.getBagItemCount(titemName)
+        local bankCount = XInfo.getBankItemCount(titemName)
+        local totalCount = bagCount + bankCount
 
         titemName = string.sub(titemName, 1, 3)
 

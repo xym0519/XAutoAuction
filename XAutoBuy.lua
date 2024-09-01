@@ -330,13 +330,8 @@ refreshUI = function()
                 minBuyoutPriceStr = XUI.Red .. XUtils.priceToString(minBuyoutPrice)
             end
 
-            local bagCount = 0
-            local bankCount = 0
-            local itemBag = XInfo.getBagItem(itemName)
-            if itemBag then
-                bagCount = itemBag['count']
-                bankCount = itemBag['bankcount']
-            end
+            local bagCount = XInfo.getBagItemCount(itemName)
+            local bankCount = XInfo.getBankItemCount(itemName)
             local bagCountStr = XUtils.formatCount2(bagCount)
             local bankCountStr = XUtils.formatCount2(bankCount)
 

@@ -3,6 +3,7 @@ local dft_updateInterval = 10
 GameTooltip:HookScript('OnTooltipSetItem', function(self)
     if lastUpdateTime + dft_updateInterval < time() then
         XInfo.reloadBag()
+        if XAPI.IsBankOpen() then XInfo.reloadBank() end
         lastUpdateTime = time()
     end
 
@@ -22,20 +23,16 @@ GameTooltip:HookScript('OnTooltipSetItem', function(self)
         type = '30D'
     end
     self:AddLine('---------- 物品信息 ----------')
-    local bagItem = XInfo.getBagItem(itemName)
-    if bagItem ~= nil then
-        if bagItem['count'] > 0 then
-            self:AddDoubleLine('背包:', XUI.Green .. bagItem['count'])
-        else
-            self:AddDoubleLine('背包:', XUI.Red .. 0)
-        end
-        if bagItem['bankcount'] > 0 then
-            self:AddDoubleLine('银行:', XUI.Green .. bagItem['bankcount'])
-        else
-            self:AddDoubleLine('银行:', XUI.Red .. 0)
-        end
+    local bagCount = XInfo.getBagItemCount(itemName)
+    local bankCount = XInfo.getBankItemCount(itemName)
+    if bagCount > 0 then
+        self:AddDoubleLine('背包:', XUI.Green .. bagCount)
     else
         self:AddDoubleLine('背包:', XUI.Red .. 0)
+    end
+    if bankCount > 0 then
+        self:AddDoubleLine('银行:', XUI.Green .. bankCount)
+    else
         self:AddDoubleLine('银行:', XUI.Red .. 0)
     end
 
@@ -89,11 +86,10 @@ GameTooltip:HookScript('OnTooltipSetItem', function(self)
     if autoAuctionItem then
         local materialName = XInfo.getMaterialName(itemName)
         if materialName then
-            local materialBagItem = XInfo.getBagItem(materialName)
-            if materialBagItem then
-                self:AddDoubleLine('原料数量:', XUI.White ..
-                    materialBagItem['count'] .. ' / ' .. materialBagItem['bankcount'])
-            end
+            local materialBagCount = XInfo.getBagItemCount(materialName)
+            local materialBankCount = XInfo.getBankItemCount(materialName)
+            self:AddDoubleLine('原料数量:', XUI.White ..
+                materialBagCount .. ' / ' .. materialBankCount)
             local buyItem = XAutoBuy.getItem(materialName)
             if buyItem then
                 self:AddDoubleLine('原料Bid:', XUI.White .. XUtils.priceToMoneyString(buyItem['minprice']))

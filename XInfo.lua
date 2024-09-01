@@ -3,9 +3,23 @@ local moduleName = 'XInfo'
 
 -- Bag items
 XInfoBagList = {}
+XInfoBankList = {}
 XInfo.emptyBagCount = 0
 
--- count, bankcount, totalcount, positions(bagId, slotId)
+XInfo.reloadCount = function()
+    XInfo.reloadBag()
+    XInfo.reloadBank()
+    XInfo.reloadMail()
+    XInfo.reloadAuction()
+end
+
+XInfo.getItemTotalCount = function(itemName)
+    return XInfo.getBagItemCount(itemName)
+        + XInfo.getBankItemCount(itemName)
+        + XInfo.getMailItemCount(itemName)
+end
+
+-- count, positions(bagId, slotId)
 XInfo.getBagItem = function(itemName)
     if XInfoBagList and XInfoBagList[itemName] then
         return XInfoBagList[itemName]
@@ -13,14 +27,53 @@ XInfo.getBagItem = function(itemName)
     return nil
 end
 
+XInfo.getBagItemCount = function(itemName)
+    local item = XInfo.getBagItem(itemName)
+    if not item then return 0 end
+    return item['count']
+end
+
+XInfo.getBankItem = function(itemName)
+    if XInfoBankList and XInfoBankList[itemName] then
+        return XInfoBankList[itemName]
+    end
+    return nil
+end
+
+XInfo.getBankItemCount = function(itemName)
+    local item = XInfo.getBankItem(itemName)
+    if not item then return 0 end
+    return item['count']
+end
+
 local lastBagUpdateTime = 0
-XInfo.reloadBag = function()
-    if time() - lastBagUpdateTime < 1 then return end
+local lastBankUpdateTime = 0
+function ReloadBagBank(type)
+    if type == 'bag' and time() - lastBagUpdateTime < 1 then return end
+    if type == 'bank' and time() - lastBankUpdateTime < 1 then return end
+    if type == 'bank' then
+        if not XAPI.IsBankOpen() then
+            xdebug.error('请先打开银行')
+            return
+        end
+    end
+
+    local slotIdList = {}
+    if type == 'bag' then
+        for i = 0, XAPI.NUM_BAG_SLOTS do
+            table.insert(slotIdList, i)
+        end
+    else
+        table.insert(slotIdList, -1)
+        for i = XAPI.NUM_BAG_SLOTS + 1, XAPI.NUM_BAG_SLOTS + XAPI.NUM_BANKBAGSLOTS do
+            table.insert(slotIdList, i)
+        end
+    end
 
     local list = {}
     local emptyBagCount = 0
 
-    for i = -1, XAPI.NUM_BAG_SLOTS + XAPI.NUM_BANKBAGSLOTS do
+    for _, i in ipairs(slotIdList) do
         local slotCount = XAPI.C_Container_GetContainerNumSlots(i)
         local isBag = (i >= 0 and i <= XAPI.NUM_BAG_SLOTS)
         for j = 1, slotCount do
@@ -29,19 +82,10 @@ XInfo.reloadBag = function()
                 local itemName = itemInfo.itemName
                 local count = itemInfo.stackCount
                 if list[itemName] then
-                    list[itemName]['totalcount'] = list[itemName]['totalcount'] + count
-                    if isBag then
-                        list[itemName]['count'] = list[itemName]['count'] + count
-                        table.insert(list[itemName]['positions'], { i, j })
-                    else
-                        list[itemName]['bankcount'] = list[itemName]['bankcount'] + count
-                    end
+                    list[itemName]['count'] = list[itemName]['count'] + count
+                    table.insert(list[itemName]['positions'], { i, j })
                 else
-                    if isBag then
-                        list[itemName] = { count = count, bankcount = 0, totalcount = count, positions = { { i, j } } }
-                    else
-                        list[itemName] = { count = 0, bankcount = count, totalcount = count, positions = {} }
-                    end
+                    list[itemName] = { count = count, positions = { { i, j } } }
                 end
             else
                 if isBag then
@@ -51,22 +95,65 @@ XInfo.reloadBag = function()
         end
     end
 
-    -- 银行未打开，从之前的数据中获取bankcount
-    if not XAPI.IsBankOpen() then
-        for itemName, item in pairs(XInfoBagList) do
-            local newItem = list[itemName]
-            if not newItem then
-                list[itemName] = { count = 0, bankcount = item['bankcount'], totalcount = item['bankcount'], positions = {} }
+    if type == 'bag' then
+        XInfoBagList = list
+        XInfo.emptyBagCount = emptyBagCount
+        lastBagUpdateTime = time()
+    else
+        XInfoBankList = list
+        lastBankUpdateTime = time()
+    end
+end
+
+XInfo.reloadBag = function()
+    ReloadBagBank('bag')
+end
+
+XInfo.reloadBank = function()
+    ReloadBagBank('bank')
+end
+
+-- Mail Items
+XInfoMailList = {}
+local lastMailUpdateTime = 0
+XInfo.reloadMail = function()
+    if time() - lastMailUpdateTime < 1 then return end
+    if not XAPI.IsMailBoxOpen() then
+        xdebug.error('邮箱未打开')
+    end
+    local count = XAPI.GetInboxNumItems();
+    local list = {}
+    for i = 1, count do
+        local mail = { XAPI.GetInboxHeaderInfo(i) }
+        local subject = mail[4]
+        local itemCount = mail[8]
+
+        local itemName, _itemCount = string.match(subject, 'P%-([^-]*)%-(.*)')
+
+        -- 检查提取是否成功
+        if itemName and _itemCount then
+            if list[itemName] then
+                list[itemName]['count'] = list[itemName]['count'] + itemCount
             else
-                newItem['bankcount'] = item['bankcount']
-                newItem['totalcount'] = list[itemName]['count'] + item['bankcount']
+                list[itemName] = { count = itemCount }
             end
         end
     end
-    XInfoBagList = list
-    XInfo.emptyBagCount = emptyBagCount
+    XInfoMailList = list
+    lastMailUpdateTime = time()
+end
 
-    lastBagUpdateTime = time()
+XInfo.getMailItem = function(itemName)
+    if XInfoMailList and XInfoMailList[itemName] then
+        return XInfoMailList[itemName]
+    end
+    return nil
+end
+
+XInfo.getMailItemCount = function(itemName)
+    local item = XInfo.getMailItem(itemName)
+    if not item then return 0 end
+    return item['count']
 end
 
 -- Auction Items
@@ -135,6 +222,12 @@ XInfo.reloadAuction = function()
     XInfo.auctionedMoney = tAuctionedMoney
 
     lastAuctionUpdateTime = time()
+end
+
+XInfo.getAuctionItemCount = function(itemName)
+    local item = XInfo.getAuctionItem(itemName)
+    if not item then return 0 end
+    return item['count']
 end
 
 -- Trade skills
@@ -234,12 +327,13 @@ XInfo.getMaterialBagItem = function(itemName)
     end
 end
 
--- type: count, bankcount, totalcount
-XInfo.getMaterialCount = function(itemName, type)
-    if type == nil then type = 'totalcount' end
-    local materialBagItem = XInfo.getMaterialBagItem(itemName)
-    if not materialBagItem then return 0 end
-    return materialBagItem[type]
+XInfo.getMaterialCount = function(itemName)
+    local materialName = XInfo.getMaterialName(itemName)
+    if materialName then
+        return XInfo.getItemTotalCount(materialName)
+    else
+        return 0
+    end
 end
 
 XInfo.getMaterialPrice = function(itemName)

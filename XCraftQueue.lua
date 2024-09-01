@@ -29,7 +29,7 @@ local reset
 
 -- Function implemention
 initUI = function()
-    mainFrame = XUI.createFrame('XCraftQueueMainFrame', 290, 180)
+    mainFrame = XUI.createFrame('XCraftQueueMainFrame', 350, 180)
     mainFrame.title:SetText('制造队列')
     mainFrame:SetPoint('LEFT', UIParent, 'LEFT', 0, 0)
     mainFrame:Hide()
@@ -103,7 +103,7 @@ initUI = function()
         end)
         frame.nameLabel = nameLabel
 
-        local countLabel = XUI.createLabel(frame, 60, '')
+        local countLabel = XUI.createLabel(frame, 120, '')
         countLabel:SetPoint('LEFT', nameLabel, 'RIGHT', 5, 0)
         countLabel:SetScript("OnEnter", function(self)
             local idx = displayPageNo * displayPageSize + i
@@ -206,31 +206,25 @@ refreshUI = function()
         if idx <= #craftQueue then
             local item = craftQueue[idx];
 
-            local materialCountNum = 0
-            local materialBagItem = XInfo.getMaterialBagItem(item['itemname'])
-            if materialBagItem then
-                materialCountNum = materialBagItem['totalcount']
-            end
+            local materialCountNum = XInfo.getMaterialCount(item['itemname'])
             local materialCount = XUI.getColor_BagCount(materialCountNum) .. XUtils.formatCount(materialCountNum, 2)
 
-            local itemBag = XInfo.getBagItem(item['itemname'])
-            local bagTotalCount = 0
-            if itemBag then
-                bagTotalCount = itemBag['totalcount']
-            end
+            local nonAuctionCount = XInfo.getItemTotalCount(item['itemname'])
 
             local auctionCount = XAuctionCenter.getMyCount(item['itemname'])
-            local bagAuctionCount = bagTotalCount + auctionCount
 
-            local auctionItem = XInfo.getAuctionItem(item['itemname'])
-            local auctionCount = 0
-            if auctionItem then auctionCount = auctionItem['count'] end
+            local auctionCount2 = XInfo.getAuctionItemCount(item['itemname'])
+            if auctionCount2 > auctionCount then
+                auctionCount = auctionCount2
+            end
+            local totalCount = nonAuctionCount + auctionCount
 
             local name1 = string.sub(item['itemname'], 1, 6)
             local name2 = string.sub(string.sub(item['itemname'], -9), 1, 6)
             frame.nameLabel:SetText(name1 .. name2, 1, 12)
             frame.countLabel:SetText(XUtils.formatCount(item['count'], 1) ..
-                XUI.White .. '/' .. auctionCount .. '/' .. bagAuctionCount .. XUI.White .. '/' .. materialCount)
+                XUI.White .. ' / ' .. 'A' .. auctionCount
+                .. ' / ' .. 'T' .. totalCount .. XUI.White .. ' / ' .. 'M' .. materialCount)
             frame:Show()
         else
             frame:Hide()
@@ -333,7 +327,7 @@ local function onUpdate()
     table.remove(craftQueue, 1)
 
     local materialName = XInfo.getMaterialName(curTask['itemname'])
-    local materialCount = XInfo.getMaterialCount(materialName, 'count')
+    local materialCount = XInfo.getBagItemCount(materialName)
     local count = curTask['count']
     if count > materialCount then
         count = materialCount
