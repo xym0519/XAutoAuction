@@ -237,10 +237,13 @@ initUI = function()
         lastWidget = frame
     end
 
-    local billButton = XUI.createButton(mainFrame, 60, '记账')
+    local billButton = XUI.createButton(mainFrame, 60, '发送')
     billButton:SetPoint('TOPRIGHT', mainFrame, 'TOPRIGHT', -15, -30)
     billButton:SetScript('OnClick', function(self)
-        XUIConfirmDialog.show(moduleName, '确认', '是否记账', function()
+        for _, frame in ipairs(displayFrameList) do
+            frame.countEditBox:ClearFocus()
+        end
+        XUIConfirmDialog.show(moduleName, '确认', '是否发送并记账', function()
             local count = 0
             for _, item in ipairs(XJewWordList) do
                 local itemName = item['itemname']
@@ -250,8 +253,14 @@ initUI = function()
                     XExternal.addBuyHistory(itemName, time(), price1, ccount)
                     count = count + 1
                 end
+
+                item['ccount'] = 0
             end
+
+            XAPI.SendChatMessage(mainFrame.price3Editbox:GetText(), 'PARTY')
+
             xdebug.info('记账成功，新增' .. count .. '条购买记录')
+            refreshUI()
         end)
     end)
 
@@ -366,9 +375,16 @@ refreshUI = function()
                 price2Str = XUI.Red .. price2Str
             end
 
+            local ccountStr = ccount
+            if ccount > 0 then
+                ccountStr = XUI.Green .. ccount
+            else
+                ccountStr = XUI.Red .. ccount
+            end
+
             frame.indexButton:SetText(idx)
             frame.itemNameButton:SetText(itemName)
-            frame.countEditBox:SetText(ccount)
+            frame.countEditBox:SetText(ccountStr)
             frame.countLabel:SetText(totalCountStr)
             frame.price1Label:SetText(price1Str)
             frame.price2Label:SetText(price2Str)

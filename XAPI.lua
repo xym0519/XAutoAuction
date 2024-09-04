@@ -557,6 +557,22 @@ XAPI.TakeInboxItem = function(...)
     return TakeInboxItem(...)
 end
 
+-- 获取邮件物品信息
+-- https://wowpedia.fandom.com/wiki/API_GetInboxItem
+-- Arguments: (index, itemIndex)
+--   index: number - The index of the message to query, in the range [1,GetInboxNumItems()]
+--   itemIndex: number - The index of the item to query, in the range [1,ATTACHMENTS_MAX_RECEIVE]
+-- Returns:
+--   1. name: string - The localized name of the item
+--   2. itemID: number - Numeric ID of the item.
+--   3. texture: string - The path to the icon texture for the item
+--   4. count: number - The number of items in the stack
+--   5. quality: number - The quality index of the item
+--   6. canUse: boolean - 1 if the player can use the item, or nil otherwise
+XAPI.GetInboxItem = function(...)
+    return GetInboxItem(...)
+end
+
 -- 判定邮箱是否打开
 XAPI.IsMailBoxOpen = function()
     return MailFrame:IsVisible()

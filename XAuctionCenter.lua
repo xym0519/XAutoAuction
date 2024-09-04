@@ -10,11 +10,12 @@ local dft_basePriceRate = 1.5
 local dft_roundInterval = 3
 local dft_taskInterval = 1
 local dft_taskTimeout = 30
-local dft_filterList = { '全部', '星星', '优质', '可售', '有效', '价低', '无效', '量大' }
+local dft_filterList = { '全部', '星星', '优质', '可售', '有效', '价低', '无效', '邮件', '量大' }
 local dft_deltaPrice = 10
 local dft_postdelay = 2
 local dft_autoCleanInterval = 60
 local dft_oldInterval = 1800
+local dft_maxCraftCount = 20
 
 local dft_buttonWidth = 45
 local dft_buttonGap = 1
@@ -101,7 +102,7 @@ resetData = function()
 end
 
 initUI = function()
-    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 1055, 430)
+    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 1095, 430)
     mainFrame:SetFrameStrata('HIGH')
     mainFrame.title:SetText('自动拍卖')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
@@ -459,6 +460,11 @@ initUI = function()
 
             XInfo.reloadBag()
 
+            if XInfo.emptyBagCount <= 0 then
+                xdebug.error('包裹已满')
+                return
+            end
+
             for midx = 1, mailCount do
                 local mailInfo = { XAPI.GetInboxHeaderInfo(midx) }
                 local subject = mailInfo[4]
@@ -468,17 +474,14 @@ initUI = function()
                         local _itemName, _itemCount = string.match(subject, 'P%-([^-]*)%-(.*)')
                         if _itemName and _itemCount then
                             if _itemName == item['itemname'] then
-                                local count = itemCount
-                                if XInfo.emptyBagCount < count then
-                                    count = XInfo.emptyBagCount
-                                end
-                                if count > 0 then
-                                    for iidx = itemCount, itemCount - (count - 1), -1 do
+                                for iidx = 1, 12 do
+                                    local _titemName = XAPI.GetInboxItem(midx, iidx)
+                                    if _titemName == item['itemname'] then
                                         XAPI.TakeInboxItem(midx, iidx)
                                         break
                                     end
-                                    break
                                 end
+                                break
                             end
                         end
                     end
@@ -544,7 +547,7 @@ initUI = function()
         frame.labelBag = labelBag
         labelBag.frame = frame
 
-        local labelAuction = XUI.createLabel(frame, 125, '')
+        local labelAuction = XUI.createLabel(frame, 155, '')
         labelAuction:SetPoint('LEFT', labelBag, 'RIGHT', 3, 0)
         labelAuction:SetScript("OnEnter", function(self)
             local idx = self.frame.index
@@ -558,7 +561,7 @@ initUI = function()
         frame.labelAuction = labelAuction
         labelAuction.frame = frame
 
-        local labelDeal = XUI.createLabel(frame, 70, '')
+        local labelDeal = XUI.createLabel(frame, 90, '')
         labelDeal:SetPoint('LEFT', labelAuction, 'RIGHT', 3, 0)
         labelDeal:SetScript("OnEnter", function(self)
             local idx = self.frame.index
@@ -572,7 +575,7 @@ initUI = function()
         frame.labelDeal = labelDeal
         labelDeal.frame = frame
 
-        local labelPrice = XUI.createLabel(frame, 160, '')
+        local labelPrice = XUI.createLabel(frame, 150, '')
         labelPrice:SetPoint('LEFT', labelDeal, 'RIGHT', 3, 0)
         labelPrice:SetScript("OnEnter", function(self)
             local idx = self.frame.index
@@ -787,6 +790,7 @@ refreshUI = function()
         local basePrice = item['baseprice']
         local materialPrice = XInfo.getMaterialPrice(itemName)
         local bagCount = XInfo.getBagItemCount(itemName)
+        local mailCount = XInfo.getMailItemCount(itemName)
 
         local disFlag = false
         if displayFilter == '全部' then
@@ -823,6 +827,10 @@ refreshUI = function()
             end
         elseif displayFilter == '量大' then
             if bagCount >= 5 then
+                disFlag = true
+            end
+        elseif displayFilter == '邮件' then
+            if mailCount > 0 then
                 disFlag = true
             end
         end
@@ -865,7 +873,7 @@ refreshUI = function()
             local bankCount = XInfo.getBankItemCount(itemName)
             local mailCount = XInfo.getMailItemCount(itemName)
 
-            local auctionCount = getMyCount(itemName)
+            local auctionCount = XInfo.getAuctionItemCount(itemName)
             local validCount = getMyValidCount(itemName)
 
             local dealRate = XInfo.getAuctionInfoField(itemName, 'dealrate', 99)
@@ -1218,6 +1226,7 @@ addCraftQueue = function(printCount)
                     if auctionItemCount > auctionCount then
                         auctionCount = auctionItemCount
                     end
+                    local totalItemCount = XInfo.getItemTotalCount(item['itemname'])
                     local stackCount = item['stackcount']
                     local materialCount = XInfo.getMaterialCount(item['itemname'])
 
@@ -1226,6 +1235,11 @@ addCraftQueue = function(printCount)
                         subCount = stackCount - bagCount
                     else
                         subCount = stackCount - auctionCount - bagCount
+                    end
+                    if not item['star'] then
+                        if subCount > dft_maxCraftCount - totalItemCount - auctionItemCount then
+                            subCount = dft_maxCraftCount - totalItemCount - auctionItemCount
+                        end
                     end
                     if subCount > materialCount then subCount = materialCount end
                     if subCount > 0 then

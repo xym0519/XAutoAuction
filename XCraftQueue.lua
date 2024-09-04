@@ -29,7 +29,7 @@ local reset
 
 -- Function implemention
 initUI = function()
-    mainFrame = XUI.createFrame('XCraftQueueMainFrame', 350, 180)
+    mainFrame = XUI.createFrame('XCraftQueueMainFrame', 400, 180)
     mainFrame.title:SetText('制造队列')
     mainFrame:SetPoint('LEFT', UIParent, 'LEFT', 0, 0)
     mainFrame:Hide()
@@ -103,7 +103,7 @@ initUI = function()
         end)
         frame.nameLabel = nameLabel
 
-        local countLabel = XUI.createLabel(frame, 120, '')
+        local countLabel = XUI.createLabel(frame, 170, '')
         countLabel:SetPoint('LEFT', nameLabel, 'RIGHT', 5, 0)
         countLabel:SetScript("OnEnter", function(self)
             local idx = displayPageNo * displayPageSize + i
@@ -207,9 +207,16 @@ refreshUI = function()
             local item = craftQueue[idx];
 
             local materialCountNum = XInfo.getMaterialCount(item['itemname'])
-            local materialCount = XUI.getColor_BagCount(materialCountNum) .. XUtils.formatCount(materialCountNum, 2)
+            local materialCount = XUI.getColor_BagCount(materialCountNum) ..
+            'M' .. XUtils.formatCount(materialCountNum, 2)
 
             local nonAuctionCount = XInfo.getItemTotalCount(item['itemname'])
+
+            local mailCount = XInfo.getMailItemCount(item['itemname'])
+            local mailCountStr = mailCount .. ''
+            if mailCount > 0 then
+                mailCountStr = XUI.Red .. mailCountStr
+            end
 
             local auctionCount = XAuctionCenter.getMyCount(item['itemname'])
 
@@ -223,8 +230,8 @@ refreshUI = function()
             local name2 = string.sub(string.sub(item['itemname'], -9), 1, 6)
             frame.nameLabel:SetText(name1 .. name2, 1, 12)
             frame.countLabel:SetText(XUtils.formatCount(item['count'], 1) ..
-                XUI.White .. ' / ' .. 'A' .. auctionCount
-                .. ' / ' .. 'T' .. totalCount .. XUI.White .. ' / ' .. 'M' .. materialCount)
+                XUI.White .. ' / ' .. mailCountStr .. XUI.White .. ' / ' .. 'A' .. auctionCount
+                .. ' / ' .. 'T' .. totalCount .. XUI.White .. ' / ' .. materialCount)
             frame:Show()
         else
             frame:Hide()
@@ -323,6 +330,12 @@ local function onUpdate()
     end
 
     if time() < lastTaskFinishTime + dft_taskInterval then return end
+
+    XInfo.reloadBag()
+    if XInfo.emptyBagCount <= 0 then
+        return
+    end
+
     curTask = craftQueue[1];
     table.remove(craftQueue, 1)
 
