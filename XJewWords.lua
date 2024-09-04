@@ -21,6 +21,7 @@ initUI = function()
     mainFrame.title:SetText('珠宝文案')
     mainFrame:SetPoint('RIGHT', UIParent, 'RIGHT', -80, 0)
     mainFrame:Hide()
+    tinsert(UISpecialFrames, mainFrame:GetName())
 
     local preButton = XUI.createButton(mainFrame, 60, '上页')
     preButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -30)
@@ -325,7 +326,7 @@ refreshUI = function()
     mainFrame.title:SetText('珠宝文案 (' .. (displayPageNo + 1) .. '/'
         .. (math.ceil(#XJewWordList / displayPageSize)) .. ')')
 
-    XInfo.reloadBag()
+    XInfo.reloadCount()
 
     if XJewWordSetting.Prefix then
         if XJewWordSetting.Prefix ~= mainFrame.prefixEdit:GetText() then
@@ -351,11 +352,9 @@ refreshUI = function()
             end
             local unit = item['unit']
             local ccount = item['ccount']
-            local bagCount = XInfo.getBagItemCount(itemName)
-            local bankCount = XInfo.getBankItemCount(itemName)
-            local totalCount = bagCount + bankCount
+            local totalCount = XInfo.getItemTotalCount(itemName)
 
-            local totalCountStr = XUI.getColor_BagBankCount(totalCount) .. totalCount
+            local totalCountStr = XUI.getColor_TotalCount(totalCount) .. totalCount
 
             local price1Str = '喊' .. price1
             local price2Str = '扫' .. price2

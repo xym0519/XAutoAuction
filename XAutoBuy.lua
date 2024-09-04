@@ -45,6 +45,7 @@ initUI = function()
     mainFrame.title:SetText('自动购买')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
     mainFrame:Hide()
+    tinsert(UISpecialFrames, mainFrame:GetName())
 
     local preButton = XUI.createButton(mainFrame, dft_buttonWidth, '上')
     preButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -30)

@@ -17,6 +17,7 @@ XInfo.getItemTotalCount = function(itemName)
     return XInfo.getBagItemCount(itemName)
         + XInfo.getBankItemCount(itemName)
         + XInfo.getMailItemCount(itemName)
+        + XInfo.getAuctionItemCount(itemName)
 end
 
 -- count, positions(bagId, slotId)
@@ -53,7 +54,6 @@ function ReloadBagBank(type)
     if type == 'bank' and time() - lastBankUpdateTime < 1 then return end
     if type == 'bank' then
         if not XAPI.IsBankOpen() then
-            xdebug.error('请先打开银行')
             return
         end
     end
@@ -119,23 +119,24 @@ local lastMailUpdateTime = 0
 XInfo.reloadMail = function()
     if time() - lastMailUpdateTime < 1 then return end
     if not XAPI.IsMailBoxOpen() then
-        xdebug.error('邮箱未打开')
+        return
     end
     local count = XAPI.GetInboxNumItems();
     local list = {}
     for i = 1, count do
         local mail = { XAPI.GetInboxHeaderInfo(i) }
-        local subject = mail[4]
         local itemCount = mail[8]
 
-        local itemName, _itemCount = string.match(subject, 'P%-([^-]*)%-(.*)')
-
-        -- 检查提取是否成功
-        if itemName and _itemCount then
-            if list[itemName] then
-                list[itemName]['count'] = list[itemName]['count'] + itemCount
-            else
-                list[itemName] = { count = itemCount }
+        if itemCount > 0 then
+            for j = 1, 12 do
+                local itemName, _, _, _itemCount = XAPI.GetInboxItem(i, j)
+                if itemName and _itemCount then
+                    if list[itemName] then
+                        list[itemName]['count'] = list[itemName]['count'] + _itemCount
+                    else
+                        list[itemName] = { count = _itemCount }
+                    end
+                end
             end
         end
     end
@@ -272,31 +273,25 @@ XInfo.reloadTradeSkill = function(type)
     return true
 end
 
--- Auction statistics info
+-- Auction Info
 XInfo.getAuctionInfo = function(itemName)
-    if XAuctionInfoList and XAuctionInfoList[itemName] then
-        return XAuctionInfoList[itemName]
+    if XAuctionInfoList then
+        if XAuctionInfoList[itemName] then
+            return XAuctionInfoList[itemName]
+        end
     end
     return nil
 end
 
-XInfo.getAuctionInfoField = function(itemName, fieldName, defaultValue, allHistory)
+XInfo.getAuctionInfoField = function(itemName, fieldName, defaultValue)
     itemName = strtrim(itemName)
     local item = XInfo.getAuctionInfo(itemName)
     if not item then return defaultValue end;
 
-    if allHistory == nil then
-        allHistory = XInfo.allHistory
-    end
-
     local fields = { 'itemid', 'itemname', 'itemlink', 'quality', 'level', 'icon',
         'vendorprice', 'sort', 'category', 'class', 'group' }
     if not XUtils.inArray(fieldName, fields) then
-        if allHistory == 1 then
-            fieldName = fieldName .. '10'
-        elseif allHistory == 2 then
-            fieldName = fieldName .. '30'
-        end
+        fieldName = fieldName .. '10'
     end
 
     if not item[fieldName] then return defaultValue end
@@ -305,8 +300,12 @@ XInfo.getAuctionInfoField = function(itemName, fieldName, defaultValue, allHisto
 end
 
 -- Material
-XInfo.materialList = { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼', '巨锆石', '恐惧石', '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石', '天焰钻石',
-    '大地侵攻钻石' }
+XInfo.materialList = { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼', '巨锆石', '恐惧石',
+    '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石',
+    '天焰钻石', '大地侵攻钻石' }
+XInfo.materialListS = { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石' }
+XInfo.materialListB = { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼', '巨锆石', '恐惧石' }
+XInfo.materialListO = { '天焰钻石', '大地侵攻钻石' }
 XInfo.getMaterialName = function(itemName)
     local materialName = nil
     for i = 1, #XInfo.materialList do
@@ -327,7 +326,52 @@ XInfo.getMaterialBagItem = function(itemName)
     end
 end
 
-XInfo.getMaterialCount = function(itemName)
+XInfo.getMaterialBagCount = function(itemName)
+    local materialName = XInfo.getMaterialName(itemName)
+    if materialName then
+        return XInfo.getBagItemCount(materialName)
+    else
+        return 0
+    end
+end
+
+XInfo.getMaterialBankItem = function(itemName)
+    local materialName = XInfo.getMaterialName(itemName)
+    if materialName then
+        return XInfo.getBankItem(materialName)
+    else
+        return nil
+    end
+end
+
+XInfo.getMaterialBankCount = function(itemName)
+    local materialName = XInfo.getMaterialName(itemName)
+    if materialName then
+        return XInfo.getBankItemCount(materialName)
+    else
+        return 0
+    end
+end
+
+XInfo.getMaterialMailItem = function(itemName)
+    local materialName = XInfo.getMaterialName(itemName)
+    if materialName then
+        return XInfo.getMailItem(materialName)
+    else
+        return nil
+    end
+end
+
+XInfo.getMaterialMailCount = function(itemName)
+    local materialName = XInfo.getMaterialName(itemName)
+    if materialName then
+        return XInfo.getMailItemCount(materialName)
+    else
+        return 0
+    end
+end
+
+XInfo.getMaterialTotalCount = function(itemName)
     local materialName = XInfo.getMaterialName(itemName)
     if materialName then
         return XInfo.getItemTotalCount(materialName)
@@ -352,9 +396,6 @@ XInfo.myName = XAPI.UnitName('player')
 XInfo.isMe = function(characterName)
     return XUtils.inArray(characterName, XInfo.characterList)
 end
-
--- Other 0-all 1-10 2-30
-XInfo.allHistory = 1
 
 -- Event callback
 local dft_interval = 3
@@ -431,8 +472,3 @@ XAutoAuction.registerRefreshCallback(moduleName, function()
 end)
 
 -- Commands
-SlashCmdList['XINFOALLHISTORY'] = function()
-    XInfo.allHistory = (XInfo.allHistory + 1) % 3
-    XAutoAuction.refreshUI()
-end
-SLASH_XINFOALLHISTORY1 = '/xinfo_allhistory'

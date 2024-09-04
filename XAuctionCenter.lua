@@ -63,6 +63,7 @@ local insertAuctionTaskByIndex
 local insertCleanLowerTask
 
 local checkImportant
+local checkImportantByName
 
 local addCraftQueue
 local cleanLower
@@ -73,7 +74,6 @@ local putonOld
 local printList
 local printItemsByName
 local setPriceByName
-local getMyCount
 local getMyValidCount
 
 -- Function implemention
@@ -107,6 +107,7 @@ initUI = function()
     mainFrame.title:SetText('自动拍卖')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
     mainFrame:Hide()
+    tinsert(UISpecialFrames, mainFrame:GetName())
 
     local preButton = XUI.createButton(mainFrame, dft_buttonWidth, '上页')
     preButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -30)
@@ -212,25 +213,33 @@ initUI = function()
         refreshUI()
     end)
 
-    local dealCountTypeButton = XUI.createButton(mainFrame, dft_buttonWidth, '10D')
-    dealCountTypeButton:SetPoint('LEFT', lastButton, 'RIGHT', dft_sectionGap, 0)
-    dealCountTypeButton:SetScript('OnClick', function()
-        XInfo.allHistory = (XInfo.allHistory + 1) % 3
+    local filter1Button = XUI.createButton(mainFrame, dft_buttonWidth, '优质')
+    filter1Button:SetPoint('LEFT', lastButton, 'RIGHT', dft_buttonGap, 0)
+    filter1Button:SetScript('OnClick', function()
+        XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '优质')
+        mainFrame.filterBox:SetText('')
         refreshUI()
     end)
-    mainFrame.dealCountTypeButton = dealCountTypeButton
 
-    local filterResetButton = XUI.createButton(mainFrame, dft_buttonWidth, '全部')
-    filterResetButton:SetPoint('LEFT', dealCountTypeButton, 'RIGHT', dft_buttonGap, 0)
-    filterResetButton:SetScript('OnClick', function()
-        XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '全部')
+    local filter2Button = XUI.createButton(mainFrame, dft_buttonWidth, '量大')
+    filter2Button:SetPoint('LEFT', filter1Button, 'RIGHT', dft_buttonGap, 0)
+    filter2Button:SetScript('OnClick', function()
+        XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '量大')
+        mainFrame.filterBox:SetText('')
+        refreshUI()
+    end)
+
+    local filter3Button = XUI.createButton(mainFrame, dft_buttonWidth, '邮件')
+    filter3Button:SetPoint('LEFT', filter2Button, 'RIGHT', dft_buttonGap, 0)
+    filter3Button:SetScript('OnClick', function()
+        XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '邮件')
         mainFrame.filterBox:SetText('')
         refreshUI()
     end)
 
     local filterDropDown = XUI.createDropDown(mainFrame, 80, dft_filterList, '优质',
         function(value) refreshUI() end)
-    filterDropDown:SetPoint('LEFT', filterResetButton, 'RIGHT', -15, 0)
+    filterDropDown:SetPoint('LEFT', filter3Button, 'RIGHT', -15, 0)
     mainFrame.filterDropDown = filterDropDown
 
     local filterBox = XUI.createEditbox(mainFrame, 90)
@@ -612,7 +621,7 @@ initUI = function()
                 XInfo.reloadAuction()
                 local item = XAutoAuctionList[idx];
                 if not item then return end
-                local basePrice = XInfo.getAuctionInfoField(item['itemname'], 'baseprice', 9999999, 1)
+                local basePrice = XInfo.getAuctionInfoField(item['itemname'], 'baseprice', 9999999)
                 if basePrice then
                     item['baseprice'] = basePrice
                 end
@@ -747,14 +756,6 @@ refreshUI = function()
         mainFrame.startButton:SetText('开始')
     end
 
-    if XInfo.allHistory == 0 then
-        mainFrame.dealCountTypeButton:SetText('ALL')
-    elseif XInfo.allHistory == 1 then
-        mainFrame.dealCountTypeButton:SetText('10D')
-    else
-        mainFrame.dealCountTypeButton:SetText('30D')
-    end
-
     local labelText = format('%s) ', #taskList)
     if not curTask then
         labelText = labelText .. '等待'
@@ -791,6 +792,7 @@ refreshUI = function()
         local materialPrice = XInfo.getMaterialPrice(itemName)
         local bagCount = XInfo.getBagItemCount(itemName)
         local mailCount = XInfo.getMailItemCount(itemName)
+        local itemTotalCount = XInfo.getItemTotalCount(itemName)
 
         local disFlag = false
         if displayFilter == '全部' then
@@ -826,11 +828,11 @@ refreshUI = function()
                 disFlag = true
             end
         elseif displayFilter == '量大' then
-            if bagCount >= 5 then
+            if itemTotalCount >= 20 then
                 disFlag = true
             end
         elseif displayFilter == '邮件' then
-            if mailCount > 0 then
+            if mailCount > 0 or bagCount > 5 then
                 disFlag = true
             end
         end
@@ -1083,7 +1085,6 @@ addItem = function(itemName, basePrice, defaultPrice, stackCount)
 end
 
 resetItem = function(item, keepUpdateTime)
-    item['mylist'] = {}
     item['myvalidlist'] = {}
     item['lowercount'] = 0
     item['pricelowercount'] = 0
@@ -1138,7 +1139,7 @@ addQueryTaskByIndex = function(index)
             end
         end
         idx = idx + 1
-        table.insert(taskList, 1, task)
+        table.insert(taskList, idx, task)
     else
         table.insert(taskList, task)
     end
@@ -1191,19 +1192,23 @@ insertCleanLowerTask = function()
 end
 
 checkImportant = function(item)
-    local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0, 1)
+    local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0)
     if item['star'] or dealCount >= 200 then
         return true
     end
     return false
 end
 
+checkImportantByName = function(itemName)
+    local item = getItem(itemName)
+    if not item then return false end
+    return checkImportant(item)
+end
+
 addCraftQueue = function(printCount)
     XInfo.reloadBag()
     XInfo.reloadAuction()
     local count = 0
-    local starQueue = {}
-    local unStarQueue = {}
     for idx, item in ipairs(XAutoAuctionList) do
         if item['enabled'] and item['cancraft'] then
             local inQuery = false
@@ -1221,14 +1226,10 @@ addCraftQueue = function(printCount)
             if not inQuery then
                 if item['minpriceother'] >= item['baseprice'] then
                     local bagCount = XInfo.getBagItemCount(item['itemname'])
-                    local auctionCount = getMyCount(item['itemname'])
-                    local auctionItemCount = XInfo.getAuctionItemCount(item['itemname'])
-                    if auctionItemCount > auctionCount then
-                        auctionCount = auctionItemCount
-                    end
-                    local totalItemCount = XInfo.getItemTotalCount(item['itemname'])
+                    local auctionCount = XInfo.getAuctionItemCount(item['itemname'])
+                    local itemTotalCount = XInfo.getItemTotalCount(item['itemname'])
                     local stackCount = item['stackcount']
-                    local materialCount = XInfo.getMaterialCount(item['itemname'])
+                    local materialCount = XInfo.getMaterialBagCount(item['itemname'])
 
                     local subCount = 0
                     if checkImportant(item) then
@@ -1237,28 +1238,18 @@ addCraftQueue = function(printCount)
                         subCount = stackCount - auctionCount - bagCount
                     end
                     if not item['star'] then
-                        if subCount > dft_maxCraftCount - totalItemCount - auctionItemCount then
-                            subCount = dft_maxCraftCount - totalItemCount - auctionItemCount
+                        if subCount > dft_maxCraftCount - itemTotalCount then
+                            subCount = dft_maxCraftCount - itemTotalCount
                         end
                     end
                     if subCount > materialCount then subCount = materialCount end
                     if subCount > 0 then
-                        if item['star'] then
-                            table.insert(starQueue, { itemname = item['itemname'], count = subCount })
-                        else
-                            table.insert(unStarQueue, { itemname = item['itemname'], count = subCount })
-                        end
+                        XCraftQueue.addItem(item['itemname'], subCount, 'fulfil')
                         count = count + 1
                     end
                 end
             end
         end
-    end
-    for _, item in ipairs(starQueue) do
-        XCraftQueue.addItem(item['itemname'], item['count'], 'fulfil')
-    end
-    for _, item in ipairs(unStarQueue) do
-        XCraftQueue.addItem(item['itemname'], item['count'], 'fulfil')
     end
     if printCount then
         xdebug.info('Craft: ' .. count)
@@ -1536,7 +1527,7 @@ setPriceByName = function(itemName, basePrice, profitRate, isDealRate, confirm)
                 if item['enabled'] ~= nil and item['enabled'] then
                     if all or (not item['star']) then
                         local vendorPrice = XInfo.getAuctionInfoField(item['itemname'], 'vendorprice', 0)
-                        local dealRate = XInfo.getAuctionInfoField(item['itemname'], 'dealrate', 99, 1)
+                        local dealRate = XInfo.getAuctionInfoField(item['itemname'], 'dealrate', 99)
                         local price = basePrice / (1 - profitRate)
                         if isDealRate then
                             price = price + dealRate * vendorPrice * 0.15
@@ -1551,17 +1542,6 @@ setPriceByName = function(itemName, basePrice, profitRate, isDealRate, confirm)
             end
         end
     end
-end
-
-getMyCount = function(itemName)
-    local count = 0
-    for _, item in ipairs(XAutoAuctionList) do
-        if item['itemname'] == itemName then
-            count = #item['mylist']
-            break
-        end
-    end
-    return count
 end
 
 getMyValidCount = function(itemName)
@@ -1707,7 +1687,6 @@ local function processQueryTask(task)
 
                         if buyoutPrice <= item['minpriceother'] then
                             if XInfo.isMe(seller) then
-                                table.insert(item['mylist'], buyoutPrice)
                                 table.insert(item['myvalidlist'], buyoutPrice)
                             else
                                 local newPriceList = {}
@@ -1718,10 +1697,6 @@ local function processQueryTask(task)
                                 end
                                 item['myvalidlist'] = newPriceList
                                 item['minpriceother'] = buyoutPrice
-                            end
-                        else
-                            if XInfo.isMe(seller) then
-                                table.insert(item['mylist'], buyoutPrice)
                             end
                         end
                     end
@@ -1825,7 +1800,6 @@ local function processAuctionTask(task)
         local price = task['price']
         local count = task['count']
         for _ = 1, count do
-            table.insert(item['mylist'], price)
             table.insert(item['myvalidlist'], price)
         end
         finishTask()
@@ -2130,5 +2104,5 @@ XAuctionCenter.addQueryTaskByItemName = addQueryTaskByItemName
 XAuctionCenter.getItem = getItem
 XAuctionCenter.printItemsByName = printItemsByName
 XAuctionCenter.setPriceByName = setPriceByName
-XAuctionCenter.getMyCount = getMyCount
 XAuctionCenter.getMyValidCount = getMyValidCount
+XAuctionCenter.checkImportantByName = checkImportantByName

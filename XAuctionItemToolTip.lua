@@ -7,7 +7,7 @@ XAuctionItemToolTip.Show = function(itemName, frame, anchor, sections)
 
         local minPriceOther = item['minpriceother']
         local basePrice = item['baseprice']
-        local materialCount = XInfo.getMaterialCount(itemName)
+        local materialCount = XInfo.getMaterialTotalCount(itemName)
         local materialPrice = XInfo.getMaterialPrice(itemName)
         local materialCostPrice = XInfo.getAuctionInfoField(itemName, 'costprice', 0)
         local stackCount = item['stackcount']

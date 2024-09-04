@@ -232,62 +232,68 @@ XUI.Purple = '|cFFFF00FF'
 XUI.White = '|cFFFFFFFF'
 XUI.Gray = '|cFF999999'
 
+XUI.Color_Worst = XUI.Purple
+XUI.Color_Bad = XUI.Red
+XUI.Color_Poor = XUI.Orange
+XUI.Color_Fair = XUI.Yellow
+XUI.Color_Normal = XUI.White
+XUI.Color_Good = XUI.Green
+XUI.Color_Great = XUI.Cyan
+
 -- <20%(>5): 红 / 20%-33%(3~5): 黄 / 33%-50%(2~3): 绿 / >50%(<2) 青
 XUI.getColor_DealRate = function(dealRate)
-    local res = XUI.White
+    local res = XUI.Color_Normal
     if dealRate > 5 then
-        res = XUI.Red
+        res = XUI.Color_Bad
     elseif dealRate > 3 then
-        res = XUI.Yellow
+        res = XUI.Color_Fair
     elseif dealRate > 2 then
-        res = XUI.Green
+        res = XUI.Color_Good
     else
-        res = XUI.Cyan
+        res = XUI.Color_Great
     end
     return res
 end
 
--- >20: 青 / 10~20: 绿 / 3~10: 黄 / <3: 红
+-- >10组: 青 / 5~10组: 绿 / 1~5组: 黄 / <1组: 红
 XUI.getColor_DealCount = function(dealCount)
-    local multiRate = 3
-    if XInfo.allHistory == 1 then
-        multiRate = 1
-    end
-    local res = XUI.White
-    if dealCount > 200 * multiRate then
-        res = XUI.Cyan
-    elseif dealCount > 100 * multiRate then
-        res = XUI.Green
-    elseif dealCount > 20 * multiRate then
-        res = XUI.Yellow
+    local res = XUI.Color_Normal
+    if dealCount > 200 then
+        res = XUI.Color_Great
+    elseif dealCount > 100 then
+        res = XUI.Color_Good
+    elseif dealCount > 20 then
+        res = XUI.Color_Fair
     else
-        res = XUI.Red
+        res = XUI.Color_Bad
     end
     return res
 end
 
+-- >3组: 青 / 2~3组: 绿 / 1~2组: 黄 / <1组: 红
 XUI.getColor_BagCount = function(bagCount)
-    local res = XUI.White
+    local res = XUI.Color_Normal
     if bagCount >= 60 then
-        res = XUI.Cyan
+        res = XUI.Color_Great
     elseif bagCount >= 40 then
-        res = XUI.Green
+        res = XUI.Color_Good
     elseif bagCount >= 20 then
-        res = XUI.Yellow
+        res = XUI.Color_Fair
     else
-        res = XUI.Red
+        res = XUI.Color_Bad
     end
     return res
 end
 
-XUI.getColor_BagBankCount = function(totalCount)
-    local res = XUI.White
+-- >10组: 青 / 5~10组: 绿 / 2~5组: 黄 / <2组: 红
+XUI.getColor_TotalCount = function(totalCount)
+    local res = XUI.Color_Normal
     if totalCount >= 200 then
-        res = XUI.Cyan
+        res = XUI.Color_Great
     elseif totalCount >= 100 then
-        res = XUI.Green
+        res = XUI.Color_Good
     elseif totalCount >= 40 then
-        res = XUI.Yellow
+        res = XUI.Color_Fair
     else
         res = XUI.Red
     end
@@ -295,27 +301,29 @@ XUI.getColor_BagBankCount = function(totalCount)
 end
 
 XUI.getColor_BagStackCount = function(bagCount, stackCount)
-    local res = XUI.White
+    local res = XUI.Color_Normal
     if bagCount >= stackCount * 2 then
-        res = XUI.Cyan
+        res = XUI.Color_Great
     elseif bagCount >= stackCount then
-        res = XUI.Green
+        res = XUI.Color_Good
     elseif bagCount > 0 then
-        res = XUI.Yellow
+        res = XUI.Color_Fair
     else
-        res = XUI.Red
+        res = XUI.Color_Bad
     end
     return res
 end
 
 XUI.getColor_AuctionStackCount = function(auctionCount, stackCount)
-    local res = XUI.White
-    if auctionCount >= stackCount * 2 or auctionCount <= 0 then
-        res = XUI.Red
+    local res = XUI.Color_Normal
+    if auctionCount > stackCount * 3 then
+        res = XUI.Color_Worst
+    elseif auctionCount >= stackCount * 2 or auctionCount <= 0 then
+        res = XUI.Color_Bad
     elseif auctionCount > stackCount or auctionCount < stackCount then
-        res = XUI.Yellow
+        res = XUI.Color_Fair
     else
-        res = XUI.Green
+        res = XUI.Color_Good
     end
     return res
 end

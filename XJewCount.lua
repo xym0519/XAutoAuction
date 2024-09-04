@@ -27,14 +27,13 @@ createLabel = function(itemName)
     label.Refresh = function(self)
         local titemName = self.itemName
         local bagCount = XInfo.getBagItemCount(titemName)
-        local bankCount = XInfo.getBankItemCount(titemName)
-        local totalCount = bagCount + bankCount
+        local totalCount = XInfo.getItemTotalCount(titemName)
 
         titemName = string.sub(titemName, 1, 3)
 
         local bagCountStr = XUI.getColor_BagCount(bagCount) .. bagCount
 
-        local totalCountStr = XUI.getColor_BagBankCount(totalCount) .. totalCount
+        local totalCountStr = XUI.getColor_TotalCount(totalCount) .. totalCount
 
         local content = titemName .. '： ' .. bagCountStr .. XUI.White .. ' / ' .. totalCountStr
         self:SetText(content)

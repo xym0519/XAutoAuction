@@ -206,11 +206,11 @@ refreshUI = function()
         if idx <= #craftQueue then
             local item = craftQueue[idx];
 
-            local materialCountNum = XInfo.getMaterialCount(item['itemname'])
+            local materialCountNum = XInfo.getMaterialBagCount(item['itemname'])
             local materialCount = XUI.getColor_BagCount(materialCountNum) ..
-            'M' .. XUtils.formatCount(materialCountNum, 2)
+                'M' .. XUtils.formatCount(materialCountNum, 2)
 
-            local nonAuctionCount = XInfo.getItemTotalCount(item['itemname'])
+            local itemTotalCount = XInfo.getItemTotalCount(item['itemname'])
 
             local mailCount = XInfo.getMailItemCount(item['itemname'])
             local mailCountStr = mailCount .. ''
@@ -218,20 +218,14 @@ refreshUI = function()
                 mailCountStr = XUI.Red .. mailCountStr
             end
 
-            local auctionCount = XAuctionCenter.getMyCount(item['itemname'])
-
-            local auctionCount2 = XInfo.getAuctionItemCount(item['itemname'])
-            if auctionCount2 > auctionCount then
-                auctionCount = auctionCount2
-            end
-            local totalCount = nonAuctionCount + auctionCount
+            local auctionCount = XInfo.getAuctionItemCount(item['itemname'])
 
             local name1 = string.sub(item['itemname'], 1, 6)
             local name2 = string.sub(string.sub(item['itemname'], -9), 1, 6)
             frame.nameLabel:SetText(name1 .. name2, 1, 12)
             frame.countLabel:SetText(XUtils.formatCount(item['count'], 1) ..
                 XUI.White .. ' / ' .. mailCountStr .. XUI.White .. ' / ' .. 'A' .. auctionCount
-                .. ' / ' .. 'T' .. totalCount .. XUI.White .. ' / ' .. materialCount)
+                .. ' / ' .. 'T' .. itemTotalCount .. XUI.White .. ' / ' .. materialCount)
             frame:Show()
         else
             frame:Hide()
@@ -263,19 +257,30 @@ addItem = function(itemName, count, type)
         end
     end
     if not found then
-        if #craftQueue > 1 then
-            local autoAuctionItem = XAuctionCenter.getItem(itemName)
-            if autoAuctionItem then
-                if autoAuctionItem['enabled'] and autoAuctionItem['star'] then
-                    table.insert(craftQueue, 2, { itemname = itemName, count = count })
-                else
-                    table.insert(craftQueue, { itemname = itemName, count = count })
+        local index = 0
+        local important = XAuctionCenter.checkImportantByName(itemName)
+        local price = 0
+        local auctionItem = XAuctionCenter.getItem(itemName)
+        if auctionItem then price = auctionItem['lastpriceother'] end
+        if price == 9999999 then price = 0 end
+
+        for idx, item in pairs(craftQueue) do
+            if important then
+                if (item['important'] and item['price'] < price) or (not item['important']) then
+                    index = idx
+                    break
                 end
             else
-                table.insert(craftQueue, { itemname = itemName, count = count })
+                if (not item['important']) and item['price'] < price then
+                    index = idx
+                    break
+                end
             end
+        end
+        if index == 0 then
+            table.insert(craftQueue, { itemname = itemName, count = count, price = price, important = important })
         else
-            table.insert(craftQueue, { itemname = itemName, count = count })
+            table.insert(craftQueue, index, { itemname = itemName, count = count, price = price, important = important })
         end
     end
     refreshUI()
@@ -352,7 +357,7 @@ local function onUpdate()
     end
 
     taskExpires = time() + dft_smalltime * count + 2
-    if XUtils.inArray(materialName, { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼', '巨锆石', '恐惧石' }) then
+    if XUtils.inArray(materialName, XInfo.materialListB) then
         taskExpires = time() + dft_largetime * count + 2
     end
 

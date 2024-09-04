@@ -14,14 +14,6 @@ GameTooltip:HookScript('OnTooltipSetItem', function(self)
         XExternal.updateItemInfo(itemName, itemId)
     end
 
-    local type = ''
-    if XInfo.allHistory == 0 then
-        type = 'All'
-    elseif XInfo.allHistory == 1 then
-        type = '10D'
-    else
-        type = '30D'
-    end
     self:AddLine('---------- 物品信息 ----------')
     local bagCount = XInfo.getBagItemCount(itemName)
     local bankCount = XInfo.getBankItemCount(itemName)
@@ -86,8 +78,8 @@ GameTooltip:HookScript('OnTooltipSetItem', function(self)
     if autoAuctionItem then
         local materialName = XInfo.getMaterialName(itemName)
         if materialName then
-            local materialBagCount = XInfo.getBagItemCount(materialName)
-            local materialBankCount = XInfo.getBankItemCount(materialName)
+            local materialBagCount = XInfo.getMaterialBagCount(itemName)
+            local materialBankCount = XInfo.getMaterialBankCount(itemName)
             self:AddDoubleLine('原料数量:', XUI.White ..
                 materialBagCount .. ' / ' .. materialBankCount)
             local buyItem = XAutoBuy.getItem(materialName)
@@ -102,10 +94,6 @@ GameTooltip:HookScript('OnTooltipSetItem', function(self)
             end
         end
     end
-
-    self:AddLine('---------- 其他信息 ----------')
-    self:AddDoubleLine('周期:', type)
-
 
     self:AddLine('--------------------------------')
 end)
