@@ -127,14 +127,16 @@ XInfo.reloadMail = function()
         local mail = { XAPI.GetInboxHeaderInfo(i) }
         local itemCount = mail[8]
 
-        if itemCount > 0 then
-            for j = 1, 12 do
-                local itemName, _, _, _itemCount = XAPI.GetInboxItem(i, j)
-                if itemName and _itemCount then
-                    if list[itemName] then
-                        list[itemName]['count'] = list[itemName]['count'] + _itemCount
-                    else
-                        list[itemName] = { count = _itemCount }
+        if itemCount then
+            if itemCount > 0 then
+                for j = 1, 12 do
+                    local itemName, _, _, _itemCount = XAPI.GetInboxItem(i, j)
+                    if itemName and _itemCount then
+                        if list[itemName] then
+                            list[itemName]['count'] = list[itemName]['count'] + _itemCount
+                        else
+                            list[itemName] = { count = _itemCount }
+                        end
                     end
                 end
             end

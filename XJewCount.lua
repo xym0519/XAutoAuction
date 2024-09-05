@@ -46,6 +46,7 @@ initUI = function()
     mainFrame.title:SetText('原石数量')
     mainFrame:SetPoint('BOTTOM', UIParent, 'BOTTOM', 0, 60)
     mainFrame:Hide()
+    tinsert(UISpecialFrames, mainFrame:GetName())
 
     local fulfilStackButton = XUI.createButton(mainFrame, 25, 'V')
     fulfilStackButton:SetHeight(20)

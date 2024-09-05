@@ -7,6 +7,7 @@ local mainFrame
 local dft_smalltime = 5
 local dft_largetime = 1.5
 local dft_taskInterval = 1
+local dft_minPrice = 9999999
 
 local craftQueue = {}
 local displayPageNo = 0
@@ -33,6 +34,7 @@ initUI = function()
     mainFrame.title:SetText('制造队列')
     mainFrame:SetPoint('LEFT', UIParent, 'LEFT', 0, 0)
     mainFrame:Hide()
+    tinsert(UISpecialFrames, mainFrame:GetName())
 
     local startButton = XUI.createButton(mainFrame, 35, '起')
     startButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -30)
@@ -259,28 +261,26 @@ addItem = function(itemName, count, type)
     if not found then
         local index = 0
         local important = XAuctionCenter.checkImportantByName(itemName)
-        local price = 0
-        local auctionItem = XAuctionCenter.getItem(itemName)
-        if auctionItem then price = auctionItem['lastpriceother'] end
-        if price == 9999999 then price = 0 end
+        local dealCount = XInfo.getAuctionInfoField(itemName, 'dealcount', 0)
 
         for idx, item in pairs(craftQueue) do
             if important then
-                if (item['important'] and item['price'] < price) or (not item['important']) then
+                if (item['important'] and item['dealcount'] < dealCount) or (not item['important']) then
                     index = idx
                     break
                 end
             else
-                if (not item['important']) and item['price'] < price then
+                if (not item['important']) and item['dealcount'] < dealCount then
                     index = idx
                     break
                 end
             end
         end
         if index == 0 then
-            table.insert(craftQueue, { itemname = itemName, count = count, price = price, important = important })
+            table.insert(craftQueue, { itemname = itemName, count = count, dealcount = dealCount, important = important })
         else
-            table.insert(craftQueue, index, { itemname = itemName, count = count, price = price, important = important })
+            table.insert(craftQueue, index,
+            { itemname = itemName, count = count, dealcount = dealCount, important = important })
         end
     end
     refreshUI()

@@ -10,7 +10,7 @@ local dft_basePriceRate = 1.5
 local dft_roundInterval = 3
 local dft_taskInterval = 1
 local dft_taskTimeout = 30
-local dft_filterList = { '全部', '星星', '优质', '可售', '有效', '价低', '无效', '邮件', '量大' }
+local dft_filterList = { '全部', '星星', '优质', '可售', '有效', '价低', '无效', '垃圾', '邮寄', '收件', '量大' }
 local dft_deltaPrice = 10
 local dft_postdelay = 2
 local dft_autoCleanInterval = 60
@@ -214,7 +214,7 @@ initUI = function()
     end)
 
     local filter1Button = XUI.createButton(mainFrame, dft_buttonWidth, '优质')
-    filter1Button:SetPoint('LEFT', lastButton, 'RIGHT', dft_buttonGap, 0)
+    filter1Button:SetPoint('LEFT', lastButton, 'RIGHT', dft_sectionGap, 0)
     filter1Button:SetScript('OnClick', function()
         XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '优质')
         mainFrame.filterBox:SetText('')
@@ -229,17 +229,25 @@ initUI = function()
         refreshUI()
     end)
 
-    local filter3Button = XUI.createButton(mainFrame, dft_buttonWidth, '邮件')
+    local filter3Button = XUI.createButton(mainFrame, dft_buttonWidth, '邮寄')
     filter3Button:SetPoint('LEFT', filter2Button, 'RIGHT', dft_buttonGap, 0)
     filter3Button:SetScript('OnClick', function()
-        XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '邮件')
+        XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '邮寄')
+        mainFrame.filterBox:SetText('')
+        refreshUI()
+    end)
+
+    local filter4Button = XUI.createButton(mainFrame, dft_buttonWidth, '收件')
+    filter4Button:SetPoint('LEFT', filter3Button, 'RIGHT', dft_buttonGap, 0)
+    filter4Button:SetScript('OnClick', function()
+        XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '收件')
         mainFrame.filterBox:SetText('')
         refreshUI()
     end)
 
     local filterDropDown = XUI.createDropDown(mainFrame, 80, dft_filterList, '优质',
         function(value) refreshUI() end)
-    filterDropDown:SetPoint('LEFT', filter3Button, 'RIGHT', -15, 0)
+    filterDropDown:SetPoint('LEFT', filter4Button, 'RIGHT', -15, 0)
     mainFrame.filterDropDown = filterDropDown
 
     local filterBox = XUI.createEditbox(mainFrame, 90)
@@ -793,6 +801,8 @@ refreshUI = function()
         local bagCount = XInfo.getBagItemCount(itemName)
         local mailCount = XInfo.getMailItemCount(itemName)
         local itemTotalCount = XInfo.getItemTotalCount(itemName)
+        local dealCount = XInfo.getAuctionInfoField(itemName, 'dealcount', 0)
+        local dealRate = XInfo.getAuctionInfoField(itemName, 'dealrate', 99)
 
         local disFlag = false
         if displayFilter == '全部' then
@@ -831,9 +841,19 @@ refreshUI = function()
             if itemTotalCount >= 20 then
                 disFlag = true
             end
-        elseif displayFilter == '邮件' then
-            if mailCount > 0 or bagCount > 5 then
+        elseif displayFilter == '邮寄' then
+            if bagCount > 5 then
                 disFlag = true
+            end
+        elseif displayFilter == '收件' then
+            if mailCount > 0 then
+                disFlag = true
+            end
+        elseif displayFilter == '垃圾' then
+            if enabled then
+                if dealRate > 5 and dealCount < 20 then
+                    disFlag = true
+                end
             end
         end
 
@@ -1120,28 +1140,65 @@ getItem = function(itemName)
 end
 
 addQueryTaskByIndex = function(index)
-    for _, task in ipairs(taskList) do
+    for idx, task in ipairs(taskList) do
         if task['action'] == 'query' and task['index'] == index then
-            return
+            if IsShiftKeyDown() then
+                table.remove(taskList, idx)
+            else
+                return
+            end
         end
     end
 
     local item = XAutoAuctionList[index];
     if not item then return end
 
-    resetItem(item)
-    local task = { action = 'query', index = index, page = 1, timeout = dft_taskTimeout }
-    if checkImportant(item) then
-        local idx = 0
-        for tidx, ttask in ipairs(taskList) do
-            if ttask['action'] == 'query' then
-                idx = tidx
+    local important = XAuctionCenter.checkImportantByName(item['itemname'])
+    local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0)
+
+    if IsShiftKeyDown() then
+        resetItem(item)
+        local task = {
+            action = 'query',
+            index = index,
+            page = 1,
+            timeout = dft_taskTimeout,
+            important = important,
+            dealcount = dealCount
+        }
+        table.insert(taskList, 1, task)
+        return
+    end
+
+    local idx = 0
+    for _index, task in pairs(taskList) do
+        if task['action'] == 'query' then
+            if important then
+                if (task['important'] and task['dealcount'] < dealCount) or (not task['important']) then
+                    idx = _index
+                    break
+                end
+            else
+                if (not task['important']) and task['dealcount'] < dealCount then
+                    idx = _index
+                    break
+                end
             end
         end
-        idx = idx + 1
-        table.insert(taskList, idx, task)
-    else
+    end
+    resetItem(item)
+    local task = {
+        action = 'query',
+        index = index,
+        page = 1,
+        timeout = dft_taskTimeout,
+        important = important,
+        dealcount = dealCount
+    }
+    if idx == 0 then
         table.insert(taskList, task)
+    else
+        table.insert(taskList, idx, task)
     end
 end
 
