@@ -255,14 +255,14 @@ XUI.getColor_DealRate = function(dealRate)
     return res
 end
 
--- >10组: 青 / 5~10组: 绿 / 1~5组: 黄 / <1组: 红
+-- >40/天: 青 / 10~40/天: 绿 / 3~10: 黄 / <3个: 红
 XUI.getColor_DealCount = function(dealCount)
     local res = XUI.Color_Normal
-    if dealCount > 200 then
+    if dealCount > 40*3 then
         res = XUI.Color_Great
-    elseif dealCount > 100 then
+    elseif dealCount > 10*3 then
         res = XUI.Color_Good
-    elseif dealCount > 20 then
+    elseif dealCount > 3*3 then
         res = XUI.Color_Fair
     else
         res = XUI.Color_Bad

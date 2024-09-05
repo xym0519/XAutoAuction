@@ -380,7 +380,7 @@ initUI = function()
                 end
                 setPriceByName(itemName, basePrice, profitRate, isDealRate == 1, false)
             end
-        }, { Name = '基准价格' }, { Name = '利润率', Value = 0 }, { Name = '手续费', Value = 0 } }, '调价')
+        }, { Name = '基准价格' }, { Name = '利润率', Value = 0.1 }, { Name = '手续费', Value = 1 } }, '调价')
     end)
 
     local autoCleanButton = XUI.createButton(mainFrame, dft_buttonWidth, '清理')
@@ -434,7 +434,10 @@ initUI = function()
                 return
             end
 
-            if bagItem['count'] < 5 then
+            local batchCount = 5
+            if IsShiftKeyDown() then batchCount = 12 end
+
+            if bagItem['count'] < batchCount then
                 xdebug.error(item['itemname'] .. '数量不足')
                 return
             end
@@ -442,13 +445,13 @@ initUI = function()
             for t = 1, 12 do
                 XAPI.ClickSendMailItemButton(t, true)
             end
-            for pidx = 1, 5 do
+            for pidx = 1, batchCount do
                 local position = bagItem['positions'][pidx];
                 XAPI.C_Container_PickupContainerItem(position[1], position[2])
 
                 XAPI.ClickSendMailItemButton(pidx)
             end
-            XAPI.SendMail('阿肌', 'P-' .. item['itemname'] .. '-5')
+            XAPI.SendMail('阿肌', 'P-' .. item['itemname'] .. '-' .. batchCount)
             xdebug.info(item['itemname'] .. '发送成功')
             XInfo.reloadBag()
             XInfo.reloadMail()
@@ -522,6 +525,8 @@ initUI = function()
 
             if IsShiftKeyDown() then
                 XAPI.AuctionatorSearchExact(item['itemname'])
+            elseif IsLeftControlKeyDown() then
+                XInfo.printBuyHistory(item['itemname'])
             else
                 XUIInputDialog.show(moduleName, function(input)
                     local itemName = item['itemname']
@@ -851,7 +856,7 @@ refreshUI = function()
             end
         elseif displayFilter == '垃圾' then
             if enabled then
-                if dealRate > 5 and dealCount < 20 then
+                if dealRate > 5 and dealCount < 6 then
                     disFlag = true
                 end
             end
@@ -1250,7 +1255,7 @@ end
 
 checkImportant = function(item)
     local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0)
-    if item['star'] or dealCount >= 200 then
+    if item['star'] or dealCount >= 40*3 then
         return true
     end
     return false
@@ -1585,9 +1590,10 @@ setPriceByName = function(itemName, basePrice, profitRate, isDealRate, confirm)
                     if all or (not item['star']) then
                         local vendorPrice = XInfo.getAuctionInfoField(item['itemname'], 'vendorprice', 0)
                         local dealRate = XInfo.getAuctionInfoField(item['itemname'], 'dealrate', 99)
+                        if dealRate == 99 then dealRate = 1 end
                         local price = basePrice / (1 - profitRate)
                         if isDealRate then
-                            price = price + dealRate * vendorPrice * 0.15
+                            price = price + dealRate * vendorPrice * XAPI.FeeRate
                         end
                         if confirm then
                             item['baseprice'] = price

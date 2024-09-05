@@ -11,6 +11,13 @@ XAPI.AUCTION_REMOVED_MAIL_SUBJECT = AUCTION_REMOVED_MAIL_SUBJECT
 -- 拍卖超期提示
 XAPI.AUCTION_EXPIRED_MAIL_SUBJECT = AUCTION_EXPIRED_MAIL_SUBJECT
 
+-- 手续费率
+XAPI.FeeRate = 0.15
+
+-- 税费率
+XAPI.TaxRate = 0.05
+XAPI.ProfitRate = 1 - XAPI.TaxRate
+
 -- 界面 & 操作
 -- 清除鼠标选中物体
 -- https://wowpedia.fandom.com/wiki/API_ClearCursor

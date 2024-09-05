@@ -290,11 +290,11 @@ XInfo.getAuctionInfoField = function(itemName, fieldName, defaultValue)
     local item = XInfo.getAuctionInfo(itemName)
     if not item then return defaultValue end;
 
-    local fields = { 'itemid', 'itemname', 'itemlink', 'quality', 'level', 'icon',
-        'vendorprice', 'sort', 'category', 'class', 'group' }
-    if not XUtils.inArray(fieldName, fields) then
-        fieldName = fieldName .. '10'
-    end
+    -- local fields = { 'itemid', 'itemname', 'itemlink', 'quality', 'level', 'icon',
+    --     'vendorprice', 'sort', 'category', 'class', 'group' }
+    -- if not XUtils.inArray(fieldName, fields) then
+    --     fieldName = fieldName .. '10'
+    -- end
 
     if not item[fieldName] then return defaultValue end
 
@@ -397,6 +397,40 @@ XInfo.characterList = { '暗影肌', '阿肌' }
 XInfo.myName = XAPI.UnitName('player')
 XInfo.isMe = function(characterName)
     return XUtils.inArray(characterName, XInfo.characterList)
+end
+
+-- print count
+XInfo.printBuyHistory = function(itemName, count)
+    if not count then count = 30 end
+    xdebug.info(itemName, '购买记录')
+    local pcount = 0
+    for i = #XBuyList, 1, -1 do
+        local item = XBuyList[i]
+        if item['itemname'] == itemName then
+            xdebug.info(XUtils.formatTime(item['time']) ..
+            '    ' .. XUtils.priceToMoneyString(item['price']) .. '    ' .. item['count'])
+            pcount = pcount + 1
+            if pcount > count then return end
+        end
+    end
+end
+
+XInfo.printSellHistory = function(itemName, count)
+    if not count then count = 30 end
+    xdebug.info(itemName, '购买出售')
+    local pcount = 0
+    for i = #XSellList, 1, -1 do
+        local item = XSellList[i]
+        if item['itemname'] == itemName then
+            local successStr = '失败'
+            if item['issuccess'] then successStr = '成功' end
+            xdebug.info(XUtils.formatTime(item['time']) .. '    '
+                .. XUtils.priceToMoneyString(item['price']) .. '    '
+                .. item['count'] .. '    ' .. successStr)
+            pcount = pcount + 1
+            if pcount > count then return end
+        end
+    end
 end
 
 -- Event callback

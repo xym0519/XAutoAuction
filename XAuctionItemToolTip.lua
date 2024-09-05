@@ -61,8 +61,8 @@ XAuctionItemToolTip.Show = function(itemName, frame, anchor, sections)
             if costPrice < materialPrice then
                 costPrice = materialPrice
             end
-            local tprice = minPriceOther * 0.95 - costPrice - vendorPrice * 0.3
-            local tpriceStr = XUtils.priceToMoneyString(minPriceOther * 0.95)
+            local tprice = minPriceOther * XAPI.ProfitRate - costPrice - vendorPrice * XAPI.FeeRate
+            local tpriceStr = XUtils.priceToMoneyString(minPriceOther * XAPI.ProfitRate)
             local subPrice = tprice - basePrice
             if subPrice <= 0 then
                 tpriceStr = XUI.Red .. tpriceStr

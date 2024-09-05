@@ -145,22 +145,26 @@ initUI = function()
             local idx = displayPageNo * displayPageSize + i
             displaySettingItem = XAutoBuyList[idx]
 
-            XUIInputDialog.show(moduleName,
-                function(data)
-                    local name = nil
-                    local price = nil
-                    for _, item in ipairs(data) do
-                        if item.Name == '物品' then name = item.Value end
-                        if item.Name == '价格' then price = tonumber(item.Value) end
-                    end
-                    if name and price then
-                        displaySettingItem['itemname'] = name
-                        displaySettingItem['price'] = price
-                        refreshUI()
-                    end
-                end,
-                { { Name = '物品', Value = displaySettingItem['itemname'] }, { Name = '价格', Value = displaySettingItem['price'] } },
-                '自动购买设置')
+            if IsLeftControlKeyDown() then
+                XInfo.printBuyHistory(displaySettingItem['itemname'])
+            else
+                XUIInputDialog.show(moduleName,
+                    function(data)
+                        local name = nil
+                        local price = nil
+                        for _, item in ipairs(data) do
+                            if item.Name == '物品' then name = item.Value end
+                            if item.Name == '价格' then price = tonumber(item.Value) end
+                        end
+                        if name and price then
+                            displaySettingItem['itemname'] = name
+                            displaySettingItem['price'] = price
+                            refreshUI()
+                        end
+                    end,
+                    { { Name = '物品', Value = displaySettingItem['itemname'] }, { Name = '价格', Value = displaySettingItem['price'] } },
+                    '自动购买设置')
+            end
         end)
         frame.itemNameButton = itemNameButton
 
@@ -240,8 +244,8 @@ initUI = function()
                         XAuctionCenter.setPriceByName('*' .. item['itemname'], basePrice, profitRate, isDealRate == 1,
                             false)
                     end
-                }, { Name = '利润率', Value = 0 },
-                    { Name = '手续费', Value = 0 } },
+                }, { Name = '利润率', Value = 0.1 },
+                    { Name = '手续费', Value = 1 } },
                 item['itemname'])
 
             refreshUI()

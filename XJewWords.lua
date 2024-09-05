@@ -112,27 +112,31 @@ initUI = function()
             local idx = displayPageNo * displayPageSize + i
             displaySettingItem = XJewWordList[idx]
 
-            XUIInputDialog.show(moduleName, function(data)
-                    local itemName = nil
-                    local price1 = nil
-                    local unit = ''
-                    for _, item in ipairs(data) do
-                        if item.Name == '物品名称' then itemName = item.Value end
-                        if item.Name == '喊话价格' then price1 = tonumber(item.Value) end
-                        if item.Name == '收购单位' then unit = item.Value end
-                    end
+            if IsLeftControlKeyDown() then
+                XInfo.printBuyHistory(displaySettingItem['itemname'])
+            else
+                XUIInputDialog.show(moduleName, function(data)
+                        local itemName = nil
+                        local price1 = nil
+                        local unit = ''
+                        for _, item in ipairs(data) do
+                            if item.Name == '物品名称' then itemName = item.Value end
+                            if item.Name == '喊话价格' then price1 = tonumber(item.Value) end
+                            if item.Name == '收购单位' then unit = item.Value end
+                        end
 
-                    if itemName and price1 then
-                        displaySettingItem['itemname'] = itemName
-                        displaySettingItem['price1'] = price1
-                        displaySettingItem['unit'] = unit
-                    else
-                        xdebug.warn('珠宝文案，信息不能为空')
-                    end
-                    refreshUI()
-                end,
-                { { Name = '物品名称', Value = displaySettingItem['itemname'] }, { Name = '喊话价格', Value = displaySettingItem['price1'] }, { Name = '收购单位', Value = displaySettingItem['unit'] } },
-                displaySettingItem['itemname'])
+                        if itemName and price1 then
+                            displaySettingItem['itemname'] = itemName
+                            displaySettingItem['price1'] = price1
+                            displaySettingItem['unit'] = unit
+                        else
+                            xdebug.warn('珠宝文案，信息不能为空')
+                        end
+                        refreshUI()
+                    end,
+                    { { Name = '物品名称', Value = displaySettingItem['itemname'] }, { Name = '喊话价格', Value = displaySettingItem['price1'] }, { Name = '收购单位', Value = displaySettingItem['unit'] } },
+                    displaySettingItem['itemname'])
+            end
         end)
         frame.itemNameButton = itemNameButton
 
