@@ -23,6 +23,7 @@ local dft_sectionGap = 10
 
 local autoClean = false
 
+local displayList = {}
 local displayPageNo = 0
 local displayFrameList = {}
 local displayPageSize = 10
@@ -49,6 +50,7 @@ local initData
 local resetData
 local initUI
 local refreshUI
+local filterDisplayList
 
 local start
 local stop
@@ -121,7 +123,7 @@ initUI = function()
     local nextButton = XUI.createButton(mainFrame, dft_buttonWidth, '下页')
     nextButton:SetPoint('LEFT', preButton, 'RIGHT', dft_buttonGap, 0)
     nextButton:SetScript('OnClick', function()
-        if displayPageNo < math.ceil(#XAutoAuctionList / displayPageSize) - 1 then
+        if displayPageNo < math.ceil(#displayList / displayPageSize) - 1 then
             displayPageNo = displayPageNo + 1
             refreshUI()
         end
@@ -209,7 +211,7 @@ initUI = function()
     local lastButton = XUI.createButton(mainFrame, dft_buttonWidth, '末页')
     lastButton:SetPoint('LEFT', firstButton, 'RIGHT', dft_buttonGap, 0)
     lastButton:SetScript('OnClick', function()
-        displayPageNo = math.ceil(#XAutoAuctionList / displayPageSize) - 1;
+        displayPageNo = math.ceil(#displayList / displayPageSize) - 1;
         refreshUI()
     end)
 
@@ -218,6 +220,8 @@ initUI = function()
     filter1Button:SetScript('OnClick', function()
         XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '优质')
         mainFrame.filterBox:SetText('')
+        filterDisplayList()
+        displayPageNo = 0
         refreshUI()
     end)
 
@@ -226,6 +230,8 @@ initUI = function()
     filter2Button:SetScript('OnClick', function()
         XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '量大')
         mainFrame.filterBox:SetText('')
+        filterDisplayList()
+        displayPageNo = 0
         refreshUI()
     end)
 
@@ -234,6 +240,8 @@ initUI = function()
     filter3Button:SetScript('OnClick', function()
         XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '邮寄')
         mainFrame.filterBox:SetText('')
+        filterDisplayList()
+        displayPageNo = 0
         refreshUI()
     end)
 
@@ -242,11 +250,17 @@ initUI = function()
     filter4Button:SetScript('OnClick', function()
         XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '收件')
         mainFrame.filterBox:SetText('')
+        filterDisplayList()
+        displayPageNo = 0
         refreshUI()
     end)
 
     local filterDropDown = XUI.createDropDown(mainFrame, 80, dft_filterList, '优质',
-        function(value) refreshUI() end)
+        function(value)
+            filterDisplayList()
+            displayPageNo = 0
+            refreshUI()
+        end)
     filterDropDown:SetPoint('LEFT', filter4Button, 'RIGHT', -15, 0)
     mainFrame.filterDropDown = filterDropDown
 
@@ -255,11 +269,14 @@ initUI = function()
     filterBox:SetScript('OnEnterPressed', function(self)
         self:ClearFocus();
         displayPageNo = 0
+        filterDisplayList()
         refreshUI()
     end)
     filterBox:SetScript('OnEscapePressed', function(self)
         self:SetText('')
         self:ClearFocus();
+        displayPageNo = 0
+        filterDisplayList()
         refreshUI()
     end)
     mainFrame.filterBox = filterBox
@@ -790,97 +807,18 @@ refreshUI = function()
     end
     mainFrame.hintLabel:SetText(labelText)
 
-    local filterWord = mainFrame.filterBox:GetText();
-    local displayFilter = XAPI.UIDropDownMenu_GetText(mainFrame.filterDropDown)
-    local dataList = {}
-    for i, item in ipairs(XAutoAuctionList) do
-        item.index = i
-        local itemName = item['itemname']
-        local enabled = item['enabled']
-        if enabled == nil then enabled = false end
-        local star = item['star']
-        if star == nil then star = false end
-        local minPriceOther = item['minpriceother']
-        local basePrice = item['baseprice']
-        local materialPrice = XInfo.getMaterialPrice(itemName)
-        local bagCount = XInfo.getBagItemCount(itemName)
-        local mailCount = XInfo.getMailItemCount(itemName)
-        local itemTotalCount = XInfo.getItemTotalCount(itemName)
-        local dealCount = XInfo.getAuctionInfoField(itemName, 'dealcount', 0)
-        local dealRate = XInfo.getAuctionInfoField(itemName, 'dealrate', 99)
-
-        local disFlag = false
-        if displayFilter == '全部' then
-            disFlag = true
-        elseif displayFilter == '可售' then
-            if enabled then
-                if star or minPriceOther >= basePrice then
-                    disFlag = true
-                end
-            end
-        elseif displayFilter == '优质' then
-            if enabled then
-                if star or checkImportant(item) then
-                    disFlag = true
-                end
-            end
-        elseif displayFilter == '价低' then
-            if enabled then
-                if minPriceOther <= materialPrice then
-                    disFlag = true
-                end
-            end
-        elseif displayFilter == '有效' then
-            if enabled then
-                disFlag = true
-            end
-        elseif displayFilter == '无效' then
-            if not enabled then
-                disFlag = true
-            end
-        elseif displayFilter == '星星' then
-            if enabled and star then
-                disFlag = true
-            end
-        elseif displayFilter == '量大' then
-            if itemTotalCount >= 20 then
-                disFlag = true
-            end
-        elseif displayFilter == '邮寄' then
-            if bagCount > 5 then
-                disFlag = true
-            end
-        elseif displayFilter == '收件' then
-            if mailCount > 0 then
-                disFlag = true
-            end
-        elseif displayFilter == '垃圾' then
-            if enabled then
-                if dealRate > 5 and dealCount < 6 then
-                    disFlag = true
-                end
-            end
-        end
-
-        if filterWord ~= '' and (not XUtils.stringContains(itemName, filterWord)) then
-            disFlag = false
-        end
-
-        if disFlag then table.insert(dataList, item) end
-    end
-
     mainFrame.title:SetText('自动拍卖 (' .. (displayPageNo + 1) .. '/'
-        .. (math.ceil(#dataList / displayPageSize)) .. ')    QIdx: '
-        .. queryIndex .. '    SQIdx: ' .. starQueryIndex .. '    Rd: ' .. queryRound
-        .. '    EBag: ' .. XInfo.emptyBagCount
-        .. '    AucCnt: ' .. XInfo.auctioningCount
-        .. '/' .. XInfo.auctionedCount .. '(' .. (XUtils.round(XInfo.auctionedMoney / 10000)) .. ')')
+        .. (math.ceil(#displayList / displayPageSize)) .. ')'
+        .. '    出售中: ' .. XInfo.auctioningCount
+        .. '    已出售: ' .. XInfo.auctionedCount
+        .. '    待收款: ' .. (XUtils.round(XInfo.auctionedMoney / 10000))
+        .. '    背包: ' .. XInfo.emptyBagCount)
 
     for i = 1, displayPageSize do
         local frame = displayFrameList[i]
         local idx = displayPageNo * displayPageSize + i
-        if idx <= #dataList then
-            local item = dataList[idx]
+        if idx <= #displayList then
+            local item = displayList[idx]
             frame.index = item.index
             local itemName = item['itemname']
             local enabled = item['enabled']
@@ -1056,6 +994,90 @@ refreshUI = function()
             frame:Hide()
         end
     end
+end
+
+filterDisplayList = function()
+    if not mainFrame then return end
+
+    local filterWord = mainFrame.filterBox:GetText();
+    local displayFilter = XAPI.UIDropDownMenu_GetText(mainFrame.filterDropDown)
+    local dataList = {}
+    for i, item in ipairs(XAutoAuctionList) do
+        item.index = i
+        local itemName = item['itemname']
+        local enabled = item['enabled']
+        if enabled == nil then enabled = false end
+        local star = item['star']
+        if star == nil then star = false end
+        local minPriceOther = item['minpriceother']
+        local basePrice = item['baseprice']
+        local materialPrice = XInfo.getMaterialPrice(itemName)
+        local bagCount = XInfo.getBagItemCount(itemName)
+        local mailCount = XInfo.getMailItemCount(itemName)
+        local itemTotalCount = XInfo.getItemTotalCount(itemName)
+        local dealCount = XInfo.getAuctionInfoField(itemName, 'dealcount', 0)
+        local dealRate = XInfo.getAuctionInfoField(itemName, 'dealrate', 99)
+
+        local disFlag = false
+        if displayFilter == '全部' then
+            disFlag = true
+        elseif displayFilter == '可售' then
+            if enabled then
+                if star or minPriceOther >= basePrice then
+                    disFlag = true
+                end
+            end
+        elseif displayFilter == '优质' then
+            if enabled then
+                if star or checkImportant(item) then
+                    disFlag = true
+                end
+            end
+        elseif displayFilter == '价低' then
+            if enabled then
+                if minPriceOther <= materialPrice then
+                    disFlag = true
+                end
+            end
+        elseif displayFilter == '有效' then
+            if enabled then
+                disFlag = true
+            end
+        elseif displayFilter == '无效' then
+            if not enabled then
+                disFlag = true
+            end
+        elseif displayFilter == '星星' then
+            if enabled and star then
+                disFlag = true
+            end
+        elseif displayFilter == '量大' then
+            if itemTotalCount >= 20 then
+                disFlag = true
+            end
+        elseif displayFilter == '邮寄' then
+            if bagCount > 5 then
+                disFlag = true
+            end
+        elseif displayFilter == '收件' then
+            if mailCount > 0 then
+                disFlag = true
+            end
+        elseif displayFilter == '垃圾' then
+            if enabled then
+                if dealRate > 5 and dealCount < 6 then
+                    disFlag = true
+                end
+            end
+        end
+
+        if filterWord ~= '' and (not XUtils.stringContains(itemName, filterWord)) then
+            disFlag = false
+        end
+
+        if disFlag then table.insert(dataList, item) end
+    end
+    displayList = dataList;
 end
 
 start = function()
@@ -1255,7 +1277,7 @@ end
 
 checkImportant = function(item)
     local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0)
-    if item['star'] or dealCount >= 40*3 then
+    if item['star'] or dealCount >= 40 * 3 then
         return true
     end
     return false
@@ -1299,11 +1321,11 @@ addCraftQueue = function(printCount)
                     else
                         subCount = stackCount - auctionCount - bagCount
                     end
-                    if not item['star'] then
-                        if subCount > dft_maxCraftCount - itemTotalCount then
-                            subCount = dft_maxCraftCount - itemTotalCount
-                        end
+                    -- if not item['star'] then
+                    if subCount > dft_maxCraftCount - itemTotalCount then
+                        subCount = dft_maxCraftCount - itemTotalCount
                     end
+                    -- end
                     if subCount > materialCount then subCount = materialCount end
                     if subCount > 0 then
                         XCraftQueue.addItem(item['itemname'], subCount, 'fulfil')
@@ -2087,6 +2109,7 @@ end
 XAutoAuction.registerEventCallback(moduleName, 'ADDON_LOADED', function()
     initData()
     initUI()
+    filterDisplayList()
     refreshUI()
 end)
 
