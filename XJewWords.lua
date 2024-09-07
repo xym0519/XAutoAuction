@@ -300,8 +300,17 @@ initUI = function()
         refreshUI()
     end)
 
-    local prefixEdit = XUI.createEditbox(mainFrame, 70)
-    prefixEdit:SetPoint('RIGHT', clearCountButton, 'LEFT', -5, 0)
+    local suffixEdit = XUI.createEditbox(mainFrame, 200)
+    suffixEdit:SetPoint('RIGHT', clearCountButton, 'LEFT', -5, 0)
+    suffixEdit:SetScript('OnEditFocusLost', function(self)
+        self:SetText(self:GetText())
+        XJewWordSetting.Suffix = self:GetText()
+        refreshUI()
+    end)
+    mainFrame.suffixEdit = suffixEdit
+
+    local prefixEdit = XUI.createEditbox(mainFrame, 150)
+    prefixEdit:SetPoint('RIGHT', suffixEdit, 'LEFT', -5, 0)
     prefixEdit:SetScript('OnEditFocusLost', function(self)
         self:SetText(self:GetText())
         XJewWordSetting.Prefix = self:GetText()
@@ -335,6 +344,11 @@ refreshUI = function()
     if XJewWordSetting.Prefix then
         if XJewWordSetting.Prefix ~= mainFrame.prefixEdit:GetText() then
             mainFrame.prefixEdit:SetText(XJewWordSetting.Prefix)
+        end
+    end
+    if XJewWordSetting.Suffix then
+        if XJewWordSetting.Suffix ~= mainFrame.suffixEdit:GetText() then
+            mainFrame.suffixEdit:SetText(XJewWordSetting.Suffix)
         end
     end
 
@@ -426,7 +440,9 @@ refreshUI = function()
             price3 = price3 + price1 * ccount
         end
     end
-    price1Str = price1Str .. '直邮'
+    if XJewWordSetting.Suffix then
+        price1Str = price1Str .. XJewWordSetting.Suffix
+    end
     price2Str = price2Str .. '\nPS：零头自行向上取整'
     if XUtils.stringEndsWith(price3Str, '+') then
         price3Str = string.sub(price3Str, 1, string.len(price3Str) - 1)

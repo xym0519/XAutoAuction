@@ -10,7 +10,7 @@ local dft_basePriceRate = 1.5
 local dft_roundInterval = 3
 local dft_taskInterval = 1
 local dft_taskTimeout = 30
-local dft_filterList = { '全部', '星星', '优质', '可售', '有效', '价低', '无效', '垃圾', '邮寄', '收件', '量大' }
+local dft_filterList = { '全部', '星星', '优质', '可售', '有效', '价低', '无效', '垃圾', '不做', '邮寄', '收件', '量大' }
 local dft_deltaPrice = 10
 local dft_postdelay = 2
 local dft_autoCleanInterval = 60
@@ -642,7 +642,7 @@ initUI = function()
         end)
         deleteButton.frame = frame
 
-        local basePriceButton = XUI.createButton(frame, 30, '底')
+        local basePriceButton = XUI.createButton(frame, 30, '圾')
         basePriceButton:SetPoint('LEFT', deleteButton, 'RIGHT', 0, 0)
         basePriceButton:SetScript('OnClick', function(self)
             local idx = self.frame.index
@@ -651,10 +651,8 @@ initUI = function()
                 XInfo.reloadAuction()
                 local item = XAutoAuctionList[idx];
                 if not item then return end
-                local basePrice = XInfo.getAuctionInfoField(item['itemname'], 'baseprice', 9999999)
-                if basePrice then
-                    item['baseprice'] = basePrice
-                end
+                item['baseprice'] = 1
+                item['stackcount'] = 1
                 refreshUI()
             end)
         end)
@@ -745,7 +743,7 @@ initUI = function()
             local item = XAutoAuctionList[idx];
             if not item then return end
 
-            addQueryTaskByIndex(idx)
+            addQueryTaskByIndex(idx, IsShiftKeyDown())
         end)
         itemRefreshButton.frame = frame
 
@@ -1009,9 +1007,11 @@ filterDisplayList = function()
         if enabled == nil then enabled = false end
         local star = item['star']
         if star == nil then star = false end
+        local canCraft = item['cancraft']
+        if canCraft == nil then canCraft = true end
         local minPriceOther = item['minpriceother']
         local basePrice = item['baseprice']
-        local materialPrice = XInfo.getMaterialPrice(itemName)
+        local materialBuyPrice = XAutoBuy.getItemField(itemName, 'price', 0)
         local bagCount = XInfo.getBagItemCount(itemName)
         local mailCount = XInfo.getMailItemCount(itemName)
         local itemTotalCount = XInfo.getItemTotalCount(itemName)
@@ -1035,7 +1035,7 @@ filterDisplayList = function()
             end
         elseif displayFilter == '价低' then
             if enabled then
-                if minPriceOther <= materialPrice then
+                if minPriceOther <= materialBuyPrice then
                     disFlag = true
                 end
             end
@@ -1068,6 +1068,10 @@ filterDisplayList = function()
                 if dealRate > 5 and dealCount < 6 then
                     disFlag = true
                 end
+            end
+        elseif displayFilter == '不做' then
+            if not canCraft then
+                disFlag = true
             end
         end
 
@@ -1166,10 +1170,12 @@ getItem = function(itemName)
     return nil
 end
 
-addQueryTaskByIndex = function(index)
+addQueryTaskByIndex = function(index, force)
+    if force == nil then force = false end
+
     for idx, task in ipairs(taskList) do
         if task['action'] == 'query' and task['index'] == index then
-            if IsShiftKeyDown() then
+            if force then
                 table.remove(taskList, idx)
             else
                 return
@@ -1183,7 +1189,7 @@ addQueryTaskByIndex = function(index)
     local important = XAuctionCenter.checkImportantByName(item['itemname'])
     local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0)
 
-    if IsShiftKeyDown() then
+    if force then
         resetItem(item)
         local task = {
             action = 'query',
@@ -1201,14 +1207,21 @@ addQueryTaskByIndex = function(index)
     for _index, task in pairs(taskList) do
         if task['action'] == 'query' then
             if important then
-                if (task['important'] and task['dealcount'] < dealCount) or (not task['important']) then
+                if task['important'] then
+                    if task['dealcount'] < dealCount then
+                        idx = _index
+                        break
+                    end
+                else
                     idx = _index
-                    break
+                    break;
                 end
             else
-                if (not task['important']) and task['dealcount'] < dealCount then
-                    idx = _index
-                    break
+                if not task['important'] then
+                    if task['dealcount'] < dealCount then
+                        idx = _index
+                        break
+                    end
                 end
             end
         end
@@ -1229,10 +1242,10 @@ addQueryTaskByIndex = function(index)
     end
 end
 
-addQueryTaskByItemName = function(itemName)
+addQueryTaskByItemName = function(itemName, force)
     for i, item in ipairs(XAutoAuctionList) do
         if item['itemname'] == itemName then
-            addQueryTaskByIndex(i)
+            addQueryTaskByIndex(i, force)
             return
         end
     end

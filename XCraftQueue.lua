@@ -280,7 +280,7 @@ addItem = function(itemName, count, type)
             table.insert(craftQueue, { itemname = itemName, count = count, dealcount = dealCount, important = important })
         else
             table.insert(craftQueue, index,
-            { itemname = itemName, count = count, dealcount = dealCount, important = important })
+                { itemname = itemName, count = count, dealcount = dealCount, important = important })
         end
     end
     refreshUI()
@@ -325,6 +325,15 @@ local function onUpdate()
             finishCurTask()
             refreshUI()
             return
+        else
+            local tradeSkillItem = XInfo.getTradeSkillItem(curTask['itemname'])
+            if not tradeSkillItem then
+                finishCurTask()
+                refreshUI()
+                return
+            end
+
+            XAPI.DoTradeSkill(tradeSkillItem['index'], curTask['count'])
         end
         return
     end
@@ -387,7 +396,12 @@ local function onSuccess(...)
     if curTask['castid'] ~= castId then return end
 
     if curTask['count'] <= 1 then
-        XAuctionCenter.addQueryTaskByItemName(curTask['itemname'])
+        local item = XAuctionCenter.getItem(curTask['itemname'])
+        if item then
+            if #item['myvalidlist'] < item['stackcount'] then
+                XAuctionCenter.addQueryTaskByItemName(curTask['itemname'])
+            end
+        end
         finishCurTask()
     else
         curTask['count'] = curTask['count'] - 1

@@ -270,7 +270,7 @@ XUI.getColor_DealCount = function(dealCount)
     return res
 end
 
--- >3组: 青 / 2~3组: 绿 / 1~2组: 黄 / <1组: 红
+-- >3组: 青 / 2-3组: 绿 / 1-2组: 黄 / <1组: 红
 XUI.getColor_BagCount = function(bagCount)
     local res = XUI.Color_Normal
     if bagCount >= 60 then
@@ -285,7 +285,7 @@ XUI.getColor_BagCount = function(bagCount)
     return res
 end
 
--- >10组: 青 / 5~10组: 绿 / 2~5组: 黄 / <2组: 红
+-- >10组: 青 / 5-10组: 绿 / 2-5组: 黄 / <2组: 红
 XUI.getColor_TotalCount = function(totalCount)
     local res = XUI.Color_Normal
     if totalCount >= 200 then

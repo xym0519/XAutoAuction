@@ -33,6 +33,7 @@ local initUI
 local initUI_Confirm
 local refreshUI
 local getItem
+local getItemField
 local addItem
 local startBuy
 local stopBuy
@@ -368,6 +369,14 @@ getItem = function(itemName)
     return nil
 end
 
+-- price / minbuyoutprice / minprice
+getItemField = function(itemName, fieldName, defaultValue)
+    local item = getItem(itemName)
+    if not item then return defaultValue end
+    if not item[fieldName] then return defaultValue end
+    return item[fieldName]
+end
+
 addItem = function(itemName, price)
     if getItem(itemName) then return end
     local item = {
@@ -687,3 +696,4 @@ SLASH_XAUTOBUYHIDE1 = '/xautobuy_close'
 
 -- Interface
 XAutoBuy.getItem = getItem
+XAutoBuy.getItemField = getItemField
