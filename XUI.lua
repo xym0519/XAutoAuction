@@ -47,6 +47,20 @@ XUI.createFrame = function(name, width, height, strata)
 
     XFrameLevel = XFrameLevel + 10
 
+    frame.ShowOrigin = frame.Show
+    frame.Show = function(this)
+        this:SetFrameLevel(XFrameLevel)
+        XFrameLevel = XFrameLevel + 10
+        frame:ShowOrigin()
+
+        if XFrameLevel > 2000 then
+            for index, tframe in ipairs(XUI.frames) do
+                tframe:SetFrameLevel(index * 10)
+            end
+            XFrameLevel = (#XUI.frames + 1) * 10
+        end
+    end
+
     frame:HookScript('OnMouseDown', handleMouseClick)
     table.insert(XUI.frames, frame)
     return frame
@@ -60,7 +74,7 @@ XUI.createButton = function(parent, width, text)
 end
 
 XUI.createLabel = function(parent, width, text, align)
-    local debug = true
+    local debug = false
     local label = nil
     if align == nil then align = 'LEFT' end
     if text == nil then text = '' end
@@ -205,13 +219,14 @@ end
 
 -- contentWidth = width - 23
 XUI.createScrollView = function(parent, width, height)
-    local debug = true
+    local debug = false
 
     local borderWidth = 1
     local margin = 3
 
     local frame = XAPI.CreateFrame('Frame', nil, parent)
     frame:SetSize(width, height)
+    frame.ItemHeight = 30
 
     local frameBorderTop = frame:CreateTexture(nil, 'OVERLAY')
     frameBorderTop:SetColorTexture(0.5, 0.5, 0.5, 0.5)
@@ -236,6 +251,16 @@ XUI.createScrollView = function(parent, width, height)
     local scrollView = XAPI.CreateFrame('ScrollFrame', nil, frame, 'UIPanelScrollFrameTemplate')
     scrollView:SetPoint('TOPLEFT', borderWidth + margin, -borderWidth - margin)
     scrollView:SetPoint('BOTTOMRIGHT', -23 - borderWidth - margin, borderWidth + margin)
+    scrollView:SetScript("OnMouseWheel", function(self, delta)
+        local current = self:GetVerticalScroll()
+        local newValue = current - (delta * self.superView.ItemHeight) -- 控制滚动速度
+        if newValue < 0 then
+            newValue = 0
+        elseif newValue > self:GetVerticalScrollRange() then
+            newValue = self:GetVerticalScrollRange()
+        end
+        self:SetVerticalScroll(newValue)
+    end)
 
     local scrollBG = scrollView:CreateTexture(nil, 'BACKGROUND')
     scrollBG:SetAllPoints(scrollView)
@@ -259,7 +284,9 @@ XUI.createScrollView = function(parent, width, height)
     end
 
     frame.scrollView = scrollView
+    scrollView.superView = frame
     frame.contentView = contentView
+    contentView.superView = frame
     frame.itemFrameList = {}
 
     frame.CreateFrame = function(this, iwidth, iheight)

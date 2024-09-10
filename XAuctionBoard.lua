@@ -79,11 +79,43 @@ refreshUI = function()
 
         local nameLabel = XUI.createLabel(frame, 140, dataItem['itemname'], 'CENTER')
         nameLabel:SetPoint('LEFT', indexLabel, 'RIGHT', 5, 0)
+        nameLabel:SetScript("OnEnter", function(self)
+            local titemName = self.itemName
+            local itemId = XInfo.getAuctionInfoField(titemName, 'itemid')
+            if itemId > 0 then
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                GameTooltip:SetHyperlink("item:" .. itemId) -- 显示物品信息
+            end
+        end)
+        nameLabel:SetScript("OnLeave", function(self)
+            GameTooltip:Hide()
+        end)
+        nameLabel.itemName = dataItem['itemname']
 
-        local dealCountLabel = XUI.createLabel(frame, 40, dataItem['dealcount'], 'CENTER')
+        local dealCountStr = dataItem['dealcount'] .. ''
+        if dataItem['dealcount'] >= 40 then
+            dealCountStr = XUI.Color_Great .. dealCountStr
+        elseif dataItem['dealcount'] >= 20 then
+            dealCountStr = XUI.Color_Good .. dealCountStr
+        elseif dataItem['dealcount'] >= 0 then
+            dealCountStr = XUI.Color_Fair .. dealCountStr
+        else
+            dealCountStr = XUI.Color_Bad .. dealCountStr
+        end
+        local dealCountLabel = XUI.createLabel(frame, 40, dealCountStr, 'CENTER')
         dealCountLabel:SetPoint('LEFT', nameLabel, 'RIGHT', 5, 0)
 
-        local craftCountLabel = XUI.createLabel(frame, 40, dataItem['craftcount'], 'CENTER')
+        local craftCountStr = dataItem['craftcount'] .. ''
+        if dataItem['craftcount'] >= dataItem['dealcount'] * 3 then
+            craftCountStr = XUI.Color_Worst .. craftCountStr
+        elseif dataItem['craftcount'] >= dataItem['dealcount'] * 2 then
+            craftCountStr = XUI.Color_Bad .. craftCountStr
+        elseif dataItem['craftcount'] >= dataItem['dealcount'] * 1.5 then
+            craftCountStr = XUI.Color_Good .. craftCountStr
+        else
+            craftCountStr = XUI.Color_Great .. craftCountStr
+        end
+        local craftCountLabel = XUI.createLabel(frame, 40, craftCountStr, 'CENTER')
         craftCountLabel:SetPoint('LEFT', dealCountLabel, 'RIGHT', 5, 0)
     end
 end
@@ -113,6 +145,14 @@ addItem = function(itemName, type, count)
             table.insert(dataList, { itemname = itemName, dealcount = 0, craftcount = count })
         end
     end
+
+    table.sort(dataList, function(a, b)
+        if a['dealcount'] == b['dealcount'] then
+            return a['craftcount'] > b['craftcount']
+        else
+            return a['dealcount'] > b['dealcount']
+        end
+    end)
 
     refreshUI()
 end

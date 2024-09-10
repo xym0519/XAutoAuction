@@ -118,7 +118,7 @@ resetData = function()
 end
 
 initUI = function()
-    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 1120, 430)
+    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 1120, 500)
     mainFrame:SetFrameStrata('HIGH')
     mainFrame.title:SetText('自动拍卖')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
@@ -711,8 +711,8 @@ refreshUI = function()
         local basePriceStr = XUI.White .. XUtils.priceToString(basePrice)
         local lastPriceOtherStr = XUI.White .. XUtils.priceToString(lastPriceOther)
 
-        local dealRateStr = XUI.getColor_DealRate(dealRate) .. 'R' .. XUtils.formatCount(XUtils.round(dealRate))
-        local dealCountStr = XUI.getColor_DealCount(dealCount) .. 'D' .. XUtils.formatCount(dealCount, 3)
+        local dealRateStr = XUI.getColor_DealRate(dealRate) .. 'R' .. XUtils.round(dealRate)
+        local dealCountStr = XUI.getColor_DealCount(dealCount) .. 'D' .. dealCount
 
         frame.itemIndexButton:SetText(idx)
         frame.itemNameButton:SetText(itemNameStr)
