@@ -52,7 +52,7 @@ initUI = function()
     craftCountLabel:SetPoint('LEFT', dealCountLabel, 'RIGHT', 5, 0)
 
     local scrollView = XUI.createScrollView(mainFrame, mainFrame:GetWidth() - 20,
-        mainFrame:GetHeight() - 70 - labelFrame:GetHeight())
+        mainFrame:GetHeight() - labelFrame:GetHeight() - 70)
     scrollView:SetPoint('TOPLEFT', labelFrame, 'BottomLeft', 0, 0)
     mainFrame.scrollView = scrollView
 end

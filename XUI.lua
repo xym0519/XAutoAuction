@@ -60,7 +60,7 @@ XUI.createButton = function(parent, width, text)
 end
 
 XUI.createLabel = function(parent, width, text, align)
-    local debug = false
+    local debug = true
     local label = nil
     if align == nil then align = 'LEFT' end
     if text == nil then text = '' end
@@ -205,7 +205,7 @@ end
 
 -- contentWidth = width - 23
 XUI.createScrollView = function(parent, width, height)
-    local debug = false
+    local debug = true
 
     local borderWidth = 1
     local margin = 3
@@ -283,6 +283,9 @@ XUI.createScrollView = function(parent, width, height)
             itemFrame = nil
         end
         this.itemFrameList = {}
+    end
+    frame.GetItemFrame = function(this, index)
+        return this.itemFrameList[index]
     end
     return frame
 end

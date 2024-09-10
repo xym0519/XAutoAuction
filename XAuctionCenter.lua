@@ -3,6 +3,7 @@ local moduleName = 'XAuctionCenter'
 
 -- Variable definition
 local mainFrame = nil
+local scrollView = nil
 
 local dft_minPrice = 9999999
 local dft_maxPrice = 2180000
@@ -24,10 +25,6 @@ local dft_sectionGap = 10
 local autoClean = false
 
 local displayList = {}
-local displayPageNo = 0
-local displayFrameList = {}
-local displayPageSize = 10
-local displaySettingItem = nil
 
 local isStarted = false
 local taskList = {}
@@ -49,8 +46,8 @@ local craftRunning = false
 local initData
 local resetData
 local initUI
-local refreshUI
 local filterDisplayList
+local refreshUI
 
 local start
 local stop
@@ -78,6 +75,23 @@ local printItemsByName
 local setPriceByName
 local getMyValidCount
 
+local addClick
+local checkRecipeClick
+local priceAdjustClick
+
+local itemSortClick
+local itemMailClick
+local itemReceiveClick
+local itemNameClick
+local itemDeleteClick
+local itemRubbishClick
+local itemSettingClick
+local itemEnableClick
+local itemStarClick
+local itemCanCraftClick
+local itemRefreshClick
+local itemCleanClick
+
 -- Function implemention
 initData = function()
     if not XAutoAuctionList then return end
@@ -104,7 +118,7 @@ resetData = function()
 end
 
 initUI = function()
-    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 1095, 430)
+    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 1120, 430)
     mainFrame:SetFrameStrata('HIGH')
     mainFrame.title:SetText('自动拍卖')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
@@ -113,48 +127,22 @@ initUI = function()
 
     local auctionBoardButton = XUI.createButton(mainFrame, dft_buttonWidth, '面板')
     auctionBoardButton:SetPoint('TOPRIGHT', mainFrame, 'TOPRIGHT', -30, 0)
-    auctionBoardButton:SetScript('OnClick', function()
-        XAuctionBoard.toggle()
-    end)
+    auctionBoardButton:SetScript('OnClick', XAuctionBoard.toggle)
 
     local craftQueueButton = XUI.createButton(mainFrame, dft_buttonWidth, '制造')
     craftQueueButton:SetPoint('RIGHT', auctionBoardButton, 'LEFT', -3, 0)
-    craftQueueButton:SetScript('OnClick', function()
-        XCraftQueue.toggle()
-    end)
+    craftQueueButton:SetScript('OnClick', XCraftQueue.toggle)
 
     local jewCountButton = XUI.createButton(mainFrame, dft_buttonWidth, '材料')
     jewCountButton:SetPoint('RIGHT', craftQueueButton, 'LEFT', -3, 0)
-    jewCountButton:SetScript('OnClick', function()
-        XJewCount.toggle()
-    end)
+    jewCountButton:SetScript('OnClick', XJewCount.toggle)
 
     local autoSpeakButton = XUI.createButton(mainFrame, dft_buttonWidth, '喊话')
     autoSpeakButton:SetPoint('RIGHT', jewCountButton, 'LEFT', -3, 0)
-    autoSpeakButton:SetScript('OnClick', function()
-        XAutoSpeak.toggle()
-    end)
-
-    local preButton = XUI.createButton(mainFrame, dft_buttonWidth, '上页')
-    preButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -30)
-    preButton:SetScript('OnClick', function()
-        if displayPageNo > 0 then
-            displayPageNo = displayPageNo - 1
-            refreshUI()
-        end
-    end)
-
-    local nextButton = XUI.createButton(mainFrame, dft_buttonWidth, '下页')
-    nextButton:SetPoint('LEFT', preButton, 'RIGHT', dft_buttonGap, 0)
-    nextButton:SetScript('OnClick', function()
-        if displayPageNo < math.ceil(#displayList / displayPageSize) - 1 then
-            displayPageNo = displayPageNo + 1
-            refreshUI()
-        end
-    end)
+    autoSpeakButton:SetScript('OnClick', XAutoSpeak.toggle)
 
     local startButton = XUI.createButton(mainFrame, dft_buttonWidth, '开始')
-    startButton:SetPoint('LEFT', nextButton, 'RIGHT', dft_sectionGap, 0)
+    startButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -30)
     startButton:SetScript('OnClick', function()
         if isStarted then
             stop()
@@ -225,27 +213,12 @@ initUI = function()
     hintLabel:SetPoint('LEFT', printButton, 'RIGHT', 5, 0)
     mainFrame.hintLabel = hintLabel
 
-    local firstButton = XUI.createButton(mainFrame, dft_buttonWidth, '首页')
-    firstButton:SetPoint('TOPLEFT', preButton, 'BOTTOMLEFT')
-    firstButton:SetScript('OnClick', function()
-        displayPageNo = 0
-        refreshUI()
-    end)
-
-    local lastButton = XUI.createButton(mainFrame, dft_buttonWidth, '末页')
-    lastButton:SetPoint('LEFT', firstButton, 'RIGHT', dft_buttonGap, 0)
-    lastButton:SetScript('OnClick', function()
-        displayPageNo = math.ceil(#displayList / displayPageSize) - 1;
-        refreshUI()
-    end)
-
     local filter1Button = XUI.createButton(mainFrame, dft_buttonWidth, '优质')
-    filter1Button:SetPoint('LEFT', lastButton, 'RIGHT', dft_sectionGap, 0)
+    filter1Button:SetPoint('TOPLEFT', startButton, 'BottomLeft', 0, 0)
     filter1Button:SetScript('OnClick', function()
         XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '优质')
         mainFrame.filterBox:SetText('')
         filterDisplayList()
-        displayPageNo = 0
         refreshUI()
     end)
 
@@ -255,7 +228,6 @@ initUI = function()
         XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '量大')
         mainFrame.filterBox:SetText('')
         filterDisplayList()
-        displayPageNo = 0
         refreshUI()
     end)
 
@@ -265,7 +237,6 @@ initUI = function()
         XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '邮寄')
         mainFrame.filterBox:SetText('')
         filterDisplayList()
-        displayPageNo = 0
         refreshUI()
     end)
 
@@ -275,14 +246,12 @@ initUI = function()
         XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '收件')
         mainFrame.filterBox:SetText('')
         filterDisplayList()
-        displayPageNo = 0
         refreshUI()
     end)
 
     local filterDropDown = XUI.createDropDown(mainFrame, 80, dft_filterList, '优质',
         function(value)
             filterDisplayList()
-            displayPageNo = 0
             refreshUI()
         end)
     filterDropDown:SetPoint('LEFT', filter4Button, 'RIGHT', -15, 0)
@@ -292,698 +261,72 @@ initUI = function()
     filterBox:SetPoint('LEFT', filterDropDown, 'RIGHT', -5, 0)
     filterBox:SetScript('OnEnterPressed', function(self)
         self:ClearFocus();
-        displayPageNo = 0
         filterDisplayList()
         refreshUI()
     end)
     filterBox:SetScript('OnEscapePressed', function(self)
         self:SetText('')
         self:ClearFocus();
-        displayPageNo = 0
         filterDisplayList()
         refreshUI()
     end)
     mainFrame.filterBox = filterBox
 
-    local settingButton = XUI.createButton(mainFrame, dft_buttonWidth, '添加')
-    settingButton:SetPoint('LEFT', filterBox, 'RIGHT', dft_sectionGap, 0)
-    settingButton:SetScript('OnClick', function()
-        displaySettingItem = nil
-        XUIInputDialog.show(moduleName, function(data)
-            local itemName = nil
-            local basePrice = nil
-            local defaultPrice = nil
-            local stackCount = nil
-            for _, item in ipairs(data) do
-                if item.Name == '宝石名称' then itemName = item.Value end
-                if item.Name == '基准价格' then basePrice = tonumber(item.Value) end
-                if item.Name == '默认价格' then defaultPrice = tonumber(item.Value) end
-                if item.Name == '拍卖数量' then stackCount = tonumber(item.Value) end
-            end
-            if itemName and basePrice and defaultPrice and stackCount then
-                addItem(itemName, basePrice, defaultPrice, stackCount)
-            end
-        end, { { Name = '宝石名称' }, { Name = '基准价格' }, { Name = '默认价格' }, { Name = '拍卖数量' } }, '添加')
-    end)
+    local addButton = XUI.createButton(mainFrame, dft_buttonWidth, '添加')
+    addButton:SetPoint('LEFT', filterBox, 'RIGHT', dft_sectionGap, 0)
+    addButton:SetScript('OnClick', addClick)
 
     local checkRecipeButton = XUI.createButton(mainFrame, dft_buttonWidth, '配方')
-    checkRecipeButton:SetPoint('LEFT', settingButton, 'RIGHT', dft_buttonGap, 0)
-    checkRecipeButton:SetScript('OnClick', function()
-        if not XInfo.reloadTradeSkill() then
-            return
-        end
-        local list = XInfoTradeSkillList['珠宝加工']
-        local newList = {}
-        local disabledList = {}
-        for itemName, _ in pairs(list) do
-            if XUtils.stringEndsWith(itemName, '赤玉石')
-                or XUtils.stringEndsWith(itemName, '紫黄晶')
-                or XUtils.stringEndsWith(itemName, '王者琥珀')
-                or XUtils.stringEndsWith(itemName, '祖尔之眼')
-                or XUtils.stringEndsWith(itemName, '巨锆石')
-                or XUtils.stringEndsWith(itemName, '恐惧石')
-                or XUtils.stringEndsWith(itemName, '血玉石')
-                or XUtils.stringEndsWith(itemName, '帝黄晶')
-                or XUtils.stringEndsWith(itemName, '秋色石')
-                or XUtils.stringEndsWith(itemName, '森林翡翠')
-                or XUtils.stringEndsWith(itemName, '天蓝石')
-                or XUtils.stringEndsWith(itemName, '曙光猫眼石')
-                or XUtils.stringEndsWith(itemName, '天焰钻石')
-                or XUtils.stringEndsWith(itemName, '大地侵攻钻石') then
-                local existed = false
-                for _, item in ipairs(XAutoAuctionList) do
-                    if item['itemname'] == itemName then
-                        if not item['enabled'] then
-                            table.insert(disabledList, itemName)
-                        end
-                        existed = true
-                        break
-                    end
-                end
-                if not existed then
-                    table.insert(newList, itemName)
-                end
-            end
-        end
-        if #disabledList > 0 then
-            xdebug.warn('以下配方未开启：')
-            for idx, itemName in ipairs(disabledList) do
-                local itemLink = select(2, XAPI.GetItemInfo(itemName))
-                if not itemLink then itemLink = itemName end
-                xdebug.warn(idx .. ': ' .. itemLink)
-            end
-            xdebug.warn()
-        end
-        if #newList > 0 then
-            xdebug.warn('以下配方未添加：')
-            for idx, itemName in ipairs(newList) do
-                local itemLink = select(2, XAPI.GetItemInfo(itemName))
-                if not itemLink then itemLink = itemName end
-                xdebug.warn(idx .. ': ' .. itemLink)
-            end
-            xdebug.warn()
-            XUIConfirmDialog.show(moduleName, '确认', '是否确认添加配方', function()
-                for _, itemName in ipairs(newList) do
-                    addItem(itemName, dft_minPrice, dft_minPrice, 1)
-                end
-                xdebug.info('添加成功')
-            end)
-        end
-    end)
+    checkRecipeButton:SetPoint('LEFT', addButton, 'RIGHT', dft_buttonGap, 0)
+    checkRecipeButton:SetScript('OnClick', checkRecipeClick)
 
-    local priceButton = XUI.createButton(mainFrame, dft_buttonWidth, '调价')
-    priceButton:SetPoint('LEFT', checkRecipeButton, 'RIGHT', dft_buttonGap, 0)
-    priceButton:SetScript('OnClick', function()
-        XUIInputDialog.show(moduleName, function(data)
-            local itemName = nil
-            local basePrice = nil
-            local profitRate = nil
-            local isDealRate = nil
-            for _, item in ipairs(data) do
-                if item.Name == '宝石名称' then itemName = item.Value end
-                if item.Name == '基准价格' then basePrice = tonumber(item.Value) end
-                if item.Name == '利润率' then profitRate = tonumber(item.Value) end
-                if item.Name == '手续费' then isDealRate = tonumber(item.Value) end
-            end
-            setPriceByName(itemName, basePrice, profitRate, isDealRate == 1, true)
-        end, { {
-            Name = '宝石名称',
-            OnEnterPressed = function(_, data)
-                local itemName = nil
-                local basePrice = nil
-                local profitRate = nil
-                local isDealRate = nil
-                for _, item in ipairs(data) do
-                    if item.Name == '宝石名称' then itemName = item.Value end
-                    if item.Name == '基准价格' then basePrice = tonumber(item.Value) end
-                    if item.Name == '利润率' then profitRate = tonumber(item.Value) end
-                    if item.Name == '手续费' then isDealRate = tonumber(item.Value) end
-                end
-                setPriceByName(itemName, basePrice, profitRate, isDealRate == 1, false)
-            end
-        }, { Name = '基准价格' }, { Name = '利润率', Value = 0.1 }, { Name = '手续费', Value = 1 } }, '调价')
-    end)
+    local priceAdjustButton = XUI.createButton(mainFrame, dft_buttonWidth, '调价')
+    priceAdjustButton:SetPoint('LEFT', checkRecipeButton, 'RIGHT', dft_buttonGap, 0)
+    priceAdjustButton:SetScript('OnClick', priceAdjustClick)
 
     local autoCleanButton = XUI.createButton(mainFrame, dft_buttonWidth, '清理')
-    autoCleanButton:SetPoint('LEFT', priceButton, 'RIGHT', dft_buttonGap, 0)
+    autoCleanButton:SetPoint('LEFT', priceAdjustButton, 'RIGHT', dft_buttonGap, 0)
     autoCleanButton:SetScript('OnClick', function()
         autoClean = not autoClean
         refreshUI()
     end)
     mainFrame.autoCleanButton = autoCleanButton
 
-    local lastWidget = nil
-    for i = 1, displayPageSize do
-        local frame = XAPI.CreateFrame('Frame', nil, mainFrame)
-        frame:SetSize(mainFrame:GetWidth(), 30)
+    local labelFrame = XAPI.CreateFrame('Frame', nil, mainFrame)
+    labelFrame:SetSize(mainFrame:GetWidth() - 20, 30)
+    labelFrame:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 10, -90)
 
-        if i == 1 then
-            frame:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 0, -90)
-        else
-            frame:SetPoint('TOPLEFT', lastWidget, 'BOTTOMLEFT', 0, -2)
-        end
+    local indexLabel = XUI.createLabel(labelFrame, 35, '序号', 'CENTER')
+    indexLabel:SetPoint('LEFT', labelFrame, 'LEFT', 8, 0)
 
-        frame:Hide()
+    local nameLabel = XUI.createLabel(labelFrame, 155, '名称', 'CENTER')
+    nameLabel:SetPoint('LEFT', indexLabel, 'RIGHT', 60, 0)
 
-        local itemIndexButton = XUI.createButton(frame, 35, '999')
-        itemIndexButton:SetPoint('LEFT', frame, 'LEFT', 15, 0)
-        itemIndexButton:SetScript('OnClick', function(self)
-            local idx = self.frame.index
-            XUISortDialog.show('XAuctionCenter_Sort', XAutoAuctionList, idx, function()
-                refreshUI()
-            end)
-        end)
-        frame.itemIndexButton = itemIndexButton
-        itemIndexButton.frame = frame
+    local timeLabel = XUI.createLabel(labelFrame, 50, '时间', 'CENTER')
+    timeLabel:SetPoint('LEFT', nameLabel, 'RIGHT', 3, 0)
 
-        local itemMailButton = XUI.createButton(frame, 30, 'U')
-        itemMailButton:SetPoint('LEFT', itemIndexButton, 'RIGHT', 0, 0)
-        itemMailButton:SetScript('OnClick', function(self)
-            local idx = self.frame.index
-            local item = XAutoAuctionList[idx];
-            if not item then return end
+    local bagLabel = XUI.createLabel(labelFrame, 110, '包/邮/银/堆', 'CENTER')
+    bagLabel:SetPoint('LEFT', timeLabel, 'RIGHT', 3, 0)
 
-            if not XAPI.IsMailBoxOpen() then
-                xdebug.error('请先打开邮箱')
-                return
-            end
+    local auctionLabel = XUI.createLabel(labelFrame, 155, '卖/我/低/底', 'CENTER')
+    auctionLabel:SetPoint('LEFT', bagLabel, 'RIGHT', 3, 0)
 
-            XInfo.reloadBag()
-            local bagItem = XInfo.getBagItem(item['itemname'])
-            if not bagItem then
-                xdebug.error('背包中未找到该物品')
-                return
-            end
+    local dealLabel = XUI.createLabel(labelFrame, 90, '率/次', 'CENTER')
+    dealLabel:SetPoint('LEFT', auctionLabel, 'RIGHT', 3, 0)
 
-            local batchCount = 5
-            if IsShiftKeyDown() then batchCount = 12 end
+    local priceLabel = XUI.createLabel(labelFrame, 150, '现/上/基', 'CENTER')
+    priceLabel:SetPoint('LEFT', dealLabel, 'RIGHT', 3, 0)
 
-            if bagItem['count'] < batchCount then
-                xdebug.error(item['itemname'] .. '数量不足')
-                return
-            end
-
-            for t = 1, 12 do
-                XAPI.ClickSendMailItemButton(t, true)
-            end
-            for pidx = 1, batchCount do
-                local position = bagItem['positions'][pidx];
-                XAPI.C_Container_PickupContainerItem(position[1], position[2])
-
-                XAPI.ClickSendMailItemButton(pidx)
-            end
-            XAPI.SendMail('阿肌', 'P-' .. item['itemname'] .. '-' .. batchCount)
-            xdebug.info(item['itemname'] .. '发送成功')
-            XInfo.reloadBag()
-            XInfo.reloadMail()
-            refreshUI()
-        end)
-        frame.itemMailButton = itemMailButton
-        itemMailButton.frame = frame
-
-        local itemReceiveButton = XUI.createButton(frame, 30, 'R')
-        itemReceiveButton:SetPoint('LEFT', itemMailButton, 'RIGHT', 0, 0)
-        itemReceiveButton:SetScript('OnClick', function(self)
-            local idx = self.frame.index
-            local item = XAutoAuctionList[idx];
-            if not item then return end
-
-            if not XAPI.IsMailBoxOpen() then
-                xdebug.error('请先打开邮箱')
-                return
-            end
-
-            local mailCount = XAPI.GetInboxNumItems()
-            if mailCount <= 0 then
-                xdebug.error('没有邮件')
-                return
-            end
-
-            XInfo.reloadBag()
-
-            if XInfo.emptyBagCount <= 0 then
-                xdebug.error('包裹已满')
-                return
-            end
-
-            for midx = 1, mailCount do
-                local mailInfo = { XAPI.GetInboxHeaderInfo(midx) }
-                local subject = mailInfo[4]
-                local itemCount = mailInfo[8]
-                if itemCount then
-                    if itemCount > 0 then
-                        local _itemName, _itemCount = string.match(subject, 'P%-([^-]*)%-(.*)')
-                        if _itemName and _itemCount then
-                            if _itemName == item['itemname'] then
-                                for iidx = 1, 12 do
-                                    local _titemName = XAPI.GetInboxItem(midx, iidx)
-                                    if _titemName == item['itemname'] then
-                                        XAPI.TakeInboxItem(midx, iidx)
-                                        break
-                                    end
-                                end
-                                break
-                            end
-                        end
-                    end
-                end
-            end
-
-            xdebug.info('收取' .. item['itemname'])
-            XInfo.reloadBag()
-            XInfo.reloadMail()
-            refreshUI()
-        end)
-        frame.itemReceiveButton = itemReceiveButton
-        itemReceiveButton.frame = frame
-
-        local itemNameButton = XUI.createButton(frame, 160, '')
-        itemNameButton:SetPoint('LEFT', itemReceiveButton, 'RIGHT', 0, 0)
-        itemNameButton:SetScript('OnClick', function(self)
-            local idx = self.frame.index
-            local item = XAutoAuctionList[idx];
-            if not item then return end
-
-            if IsShiftKeyDown() then
-                XAPI.AuctionatorSearchExact(item['itemname'])
-            elseif IsLeftControlKeyDown() then
-                XInfo.printBuyHistory(item['itemname'])
-            else
-                XUIInputDialog.show(moduleName, function(input)
-                    local itemName = item['itemname']
-                    local count = input[1].Value
-                    XCraftQueue.addItem(itemName, count, 'fulfil')
-                end, { { Name = '数量', Value = item['stackcount'] } }, item['itemname'])
-            end
-        end)
-        itemNameButton:SetScript("OnEnter", function(self)
-            local idx = self.frame.index
-            local item = XAutoAuctionList[idx];
-            if not item then return end
-            local itemid = XInfo.getAuctionInfoField(item['itemname'], 'itemid')
-            if itemid > 0 then
-                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                GameTooltip:SetHyperlink("item:" .. itemid) -- 显示物品信息
-            end
-        end)
-        itemNameButton:SetScript("OnLeave", function(self)
-            GameTooltip:Hide()
-        end)
-        frame.itemNameButton = itemNameButton
-        itemNameButton.frame = frame
-
-        local labelTime = XUI.createLabel(frame, 50, '')
-        labelTime:SetPoint('LEFT', itemNameButton, 'RIGHT', 3, 0)
-        frame.labelTime = labelTime
-
-        local labelBag = XUI.createLabel(frame, 110, '')
-        labelBag:SetPoint('LEFT', labelTime, 'RIGHT', 3, 0)
-        frame.labelBag = labelBag
-        labelBag.frame = frame
-
-        local labelAuction = XUI.createLabel(frame, 155, '')
-        labelAuction:SetPoint('LEFT', labelBag, 'RIGHT', 3, 0)
-        frame.labelAuction = labelAuction
-        labelAuction.frame = frame
-
-        local labelDeal = XUI.createLabel(frame, 90, '')
-        labelDeal:SetPoint('LEFT', labelAuction, 'RIGHT', 3, 0)
-        frame.labelDeal = labelDeal
-        labelDeal.frame = frame
-
-        local labelPrice = XUI.createLabel(frame, 150, '')
-        labelPrice:SetPoint('LEFT', labelDeal, 'RIGHT', 3, 0)
-        frame.labelPrice = labelPrice
-        labelPrice.frame = frame
-
-        local deleteButton = XUI.createButton(frame, 30, '删')
-        deleteButton:SetPoint('LEFT', labelPrice, 'RIGHT', 0, 0)
-        deleteButton:SetScript('OnClick', function(self)
-            local idx = self.frame.index
-            local titem = XAutoAuctionList[idx]
-            if idx <= #XAutoAuctionList then
-                XUIConfirmDialog.show(moduleName, '删除', '是否确定删除：' .. titem['itemname'], function()
-                    table.remove(XAutoAuctionList, idx)
-                    refreshUI()
-                end)
-            end
-        end)
-        deleteButton.frame = frame
-
-        local basePriceButton = XUI.createButton(frame, 30, '圾')
-        basePriceButton:SetPoint('LEFT', deleteButton, 'RIGHT', 0, 0)
-        basePriceButton:SetScript('OnClick', function(self)
-            local idx = self.frame.index
-            XUIConfirmDialog.show(moduleName, '确认', '是否确认重设低价', function()
-                XInfo.reloadBag()
-                XInfo.reloadAuction()
-                local item = XAutoAuctionList[idx];
-                if not item then return end
-                item['baseprice'] = 1
-                item['stackcount'] = 1
-                refreshUI()
-            end)
-        end)
-        basePriceButton.frame = frame
-
-        local craftButton = XUI.createButton(frame, 30, '设')
-        craftButton:SetPoint('LEFT', basePriceButton, 'RIGHT', 0, 0)
-        craftButton:SetScript('OnClick', function(self)
-            local idx = self.frame.index
-            displaySettingItem = XAutoAuctionList[idx]
-            if not displaySettingItem then return end
-
-            XUIInputDialog.show(moduleName, function(data)
-                local itemName = nil
-                local basePrice = nil
-                local defaultPrice = nil
-                local stackCount = nil
-                for _, item in ipairs(data) do
-                    if item.Name == '宝石名称' then itemName = item.Value end
-                    if item.Name == '基准价格' then basePrice = tonumber(item.Value) end
-                    if item.Name == '默认价格' then defaultPrice = tonumber(item.Value) end
-                    if item.Name == '拍卖数量' then stackCount = tonumber(item.Value) end
-                end
-                if itemName and basePrice and defaultPrice and stackCount then
-                    displaySettingItem['itemname'] = itemName
-                    displaySettingItem['baseprice'] = basePrice
-                    displaySettingItem['defaultprice'] = defaultPrice
-                    displaySettingItem['stackcount'] = stackCount
-                end
-            end, {
-                { Name = '宝石名称', Value = displaySettingItem['itemname'] },
-                { Name = '基准价格', Value = displaySettingItem['baseprice'] },
-                { Name = '默认价格', Value = displaySettingItem['defaultprice'] },
-                { Name = '拍卖数量', Value = displaySettingItem['stackcount'] }
-            }, '添加')
-        end)
-        craftButton.frame = frame
-
-        local enableButton = XUI.createButton(frame, 30, '')
-        enableButton:SetPoint('LEFT', craftButton, 'RIGHT', 0, 0)
-        enableButton:SetScript('OnClick', function(self)
-            local idx = self.frame.index
-            local item = XAutoAuctionList[idx];
-            if not item then return end
-            if item['enabled'] ~= true then
-                item['enabled'] = true
-            else
-                item['enabled'] = false
-            end
-            refreshUI()
-        end)
-        frame.enableButton = enableButton
-        enableButton.frame = frame
-
-        local starButton = XUI.createButton(frame, 30, '星')
-        starButton:SetPoint('LEFT', enableButton, 'RIGHT', 0, 0)
-        starButton:SetScript('OnClick', function(self)
-            local idx = self.frame.index
-            local item = XAutoAuctionList[idx];
-            if not item then return end
-            if item['star'] == nil or item['star'] == false then
-                item['star'] = true
-            else
-                item['star'] = false
-            end
-            refreshUI()
-        end)
-        frame.starButton = starButton
-        starButton.frame = frame
-
-        local itemCanCraftButton = XUI.createButton(frame, 30, '造')
-        itemCanCraftButton:SetPoint('LEFT', starButton, 'RIGHT', 0, 0)
-        itemCanCraftButton:SetScript('OnClick', function(self)
-            local idx = self.frame.index
-            local item = XAutoAuctionList[idx];
-            if not item then return end
-
-            item['cancraft'] = not item['cancraft']
-            refreshUI()
-        end)
-        frame.itemCanCraftButton = itemCanCraftButton
-        itemCanCraftButton.frame = frame
-
-        local itemRefreshButton = XUI.createButton(frame, 30, '刷')
-        itemRefreshButton:SetPoint('LEFT', itemCanCraftButton, 'RIGHT', 0, 0)
-        itemRefreshButton:SetScript('OnClick', function(self)
-            local idx = self.frame.index
-            local item = XAutoAuctionList[idx];
-            if not item then return end
-
-            addQueryTaskByIndex(idx, IsShiftKeyDown())
-        end)
-        itemRefreshButton.frame = frame
-
-        local itemCleanButton = XUI.createButton(frame, 30, '清')
-        itemCleanButton:SetPoint('LEFT', itemRefreshButton, 'RIGHT', 0, 0)
-        itemCleanButton:SetScript('OnClick', function(self)
-            local idx = self.frame.index
-            local item = XAutoAuctionList[idx];
-            if not item then return end
-
-            cleanLower(item['itemname'])
-        end)
-        itemCleanButton.frame = frame
-
-        table.insert(displayFrameList, frame)
-        lastWidget = frame
-    end
+    scrollView = XUI.createScrollView(mainFrame, mainFrame:GetWidth() - 20,
+        mainFrame:GetHeight() - labelFrame:GetHeight() - 100)
+    scrollView:SetPoint('TOPLEFT', labelFrame, 'BottomLeft', 0, 0)
 
     refreshUI()
 end
 
-refreshUI = function()
-    if not mainFrame then return end
-    if not mainFrame:IsVisible() then return end
-
-    XInfo.reloadBag()
-    XInfo.reloadAuction()
-
-    if autoClean then
-        mainFrame.autoCleanButton:SetText('清理')
-    else
-        mainFrame.autoCleanButton:SetText('不清')
-    end
-
-    if isStarted then
-        mainFrame.startButton:SetText('停止')
-    else
-        mainFrame.startButton:SetText('开始')
-    end
-
-    local labelText = format('%s) ', #taskList)
-    if not curTask then
-        labelText = labelText .. '等待'
-    else
-        if curTask['action'] == 'query' then
-            local item = XAutoAuctionList[curTask['index']]
-            if item == nil then
-                labelText = labelText .. '查询: 无'
-            else
-                labelText = labelText .. format('查询: [%s]%s', curTask['index'], item['itemname'])
-            end
-        elseif curTask['action'] == 'auction' then
-            labelText = labelText .. '拍卖: ' .. curTask['itemname']
-        elseif curTask['action'] == 'cleanlower' then
-            labelText = labelText .. '清理低价'
-        elseif curTask['action'] == 'cleanshort' then
-            labelText = labelText .. '清理短期'
-        end
-    end
-    mainFrame.hintLabel:SetText(labelText)
-
-    mainFrame.title:SetText('自动拍卖 (' .. (displayPageNo + 1) .. '/'
-        .. (math.ceil(#displayList / displayPageSize)) .. ')'
-        .. '    出售中: ' .. XInfo.auctioningCount
-        .. '    已出售: ' .. XInfo.auctionedCount
-        .. '    待收款: ' .. (XUtils.round(XInfo.auctionedMoney / 10000))
-        .. '    背包: ' .. XInfo.emptyBagCount)
-
-    for i = 1, displayPageSize do
-        local frame = displayFrameList[i]
-        local idx = displayPageNo * displayPageSize + i
-        if idx <= #displayList then
-            local item = displayList[idx]
-            frame.index = item.index
-            local itemName = item['itemname']
-            local enabled = item['enabled']
-            if enabled == nil then enabled = false end
-            local star = item['star']
-            if star == nil then star = false end
-            local canCraft = item['cancraft']
-            if canCraft == nil then canCraft = false end
-            local basePrice = item['baseprice']
-            local minPriceOther = item['minpriceother']
-            local lastPriceOther = item['lastpriceother']
-            local stackCount = item['stackcount']
-            local lowerCount = item['lowercount']
-            local priceLowerCount = item['pricelowercount']
-
-            local bagCount = XInfo.getBagItemCount(itemName)
-            local bankCount = XInfo.getBankItemCount(itemName)
-            local mailCount = XInfo.getMailItemCount(itemName)
-
-            local auctionCount = XInfo.getAuctionItemCount(itemName)
-            local validCount = getMyValidCount(itemName)
-
-            local dealRate = XInfo.getAuctionInfoField(itemName, 'dealrate', 99)
-            local dealCount = XInfo.getAuctionInfoField(itemName, 'dealcount', 0)
-
-            local recipe = XInfo.getTradeSkillItem(itemName)
-
-            local itemNameStr = string.sub(itemName, 1, 18);
-            if not enabled then
-                itemNameStr = XUI.Gray .. itemNameStr
-            elseif minPriceOther < basePrice then
-                itemNameStr = XUI.Red .. itemNameStr
-            elseif validCount <= 0 then
-                itemNameStr = XUI.Purple .. itemNameStr
-            elseif validCount < stackCount then
-                itemNameStr = XUI.Yellow .. itemNameStr
-            elseif validCount == stackCount then
-                itemNameStr = XUI.Green .. itemNameStr
-            else
-                itemNameStr = XUI.Cyan .. itemNameStr
-            end
-
-            if star then
-                itemNameStr = XUI.Green .. '*' .. itemNameStr
-            end
-
-            if not recipe then
-                itemNameStr = itemNameStr .. XUI.Red .. '■'
-            end
-
-            local updateTimeStr = XUtils.formatTime(item['updatetime'])
-
-            local bagCountStr = 'B' .. bagCount;
-            if bagCount > 10 then
-                bagCountStr = XUI.Purple .. bagCountStr
-            elseif bagCount > 5 then
-                bagCountStr = XUI.Yellow .. bagCountStr
-            elseif bagCount > 0 then
-                bagCountStr = XUI.Green .. bagCountStr
-            else
-                bagCountStr = XUI.Red .. bagCountStr
-            end
-
-            local mailCountStr = '' .. mailCount;
-            if mailCount > 20 then
-                mailCountStr = XUI.Purple .. mailCountStr
-            elseif mailCount > 10 then
-                mailCountStr = XUI.Red .. mailCountStr
-            elseif mailCount > 5 then
-                mailCountStr = XUI.Yellow .. mailCountStr
-            else
-                mailCountStr = XUI.Green .. mailCountStr
-            end
-
-            local bankCountStr = '' .. bankCount;
-            if bankCount > 200 then
-                bankCountStr = XUI.Cyan .. bankCountStr
-            elseif bankCount > 100 then
-                bankCountStr = XUI.Green .. bankCountStr
-            elseif bankCount > 40 then
-                bankCountStr = XUI.Yellow .. bankCountStr
-            else
-                bankCountStr = XUI.Red .. bankCountStr
-            end
-
-            local auctionCountStr = XUI.getColor_AuctionStackCount(auctionCount, stackCount) ..
-                'A' .. auctionCount
-
-            local validCountStr = 'M' .. validCount
-            if validCount > stackCount then
-                validCountStr = XUI.Cyan .. validCountStr
-            elseif validCount == stackCount then
-                validCountStr = XUI.Green .. validCountStr
-            elseif validCount > 0 then
-                validCountStr = XUI.Yellow .. validCountStr
-            else
-                validCountStr = XUI.Red .. validCountStr
-            end
-
-            local lowerCountStr = 'L' .. lowerCount
-            if lowerCount > 5 then
-                lowerCountStr = XUI.Red .. lowerCountStr
-            elseif lowerCount > 0 then
-                lowerCountStr = XUI.Yellow .. lowerCountStr
-            else
-                lowerCountStr = XUI.White .. lowerCountStr
-            end
-
-            local priceLowerCountStr = 'P' .. priceLowerCount
-            if priceLowerCount > 10 then
-                priceLowerCountStr = XUI.Red .. priceLowerCountStr
-            elseif priceLowerCount > 0 then
-                priceLowerCountStr = XUI.Yellow .. priceLowerCountStr
-            else
-                priceLowerCountStr = XUI.White .. priceLowerCountStr
-            end
-
-            local stackCountStr = 'S' .. stackCount
-            if stackCount > 2 then
-                stackCountStr = XUI.Cyan .. stackCountStr
-            elseif stackCount > 1 then
-                stackCountStr = XUI.Green .. stackCountStr
-            end
-
-            local minPriceOtherStr = XUtils.priceToString(minPriceOther)
-            if minPriceOther < basePrice then
-                minPriceOtherStr = XUI.Red .. minPriceOtherStr
-            elseif minPriceOther < basePrice * dft_basePriceRate then
-                minPriceOtherStr = XUI.Yellow .. minPriceOtherStr
-            elseif minPriceOther < basePrice * dft_basePriceRate * dft_basePriceRate then
-                minPriceOtherStr = XUI.Green .. minPriceOtherStr
-            else
-                minPriceOtherStr = XUI.Cyan .. minPriceOtherStr
-            end
-
-            local basePriceStr = XUI.White .. XUtils.priceToString(basePrice)
-            local lastPriceOtherStr = XUI.White .. XUtils.priceToString(lastPriceOther)
-
-            local dealRateStr = XUI.getColor_DealRate(dealRate) .. 'R' .. XUtils.formatCount(XUtils.round(dealRate))
-            local dealCountStr = XUI.getColor_DealCount(dealCount) .. 'D' .. XUtils.formatCount(dealCount, 3)
-
-            frame.itemIndexButton:SetText(idx)
-            frame.itemNameButton:SetText(itemNameStr)
-
-            frame.labelTime:SetText(updateTimeStr)
-            frame.labelBag:SetText(bagCountStr .. XUI.White .. ' / ' .. mailCountStr .. ' / ' .. bankCountStr
-                .. XUI.White .. ' / ' .. stackCountStr)
-            frame.labelAuction:SetText(auctionCountStr .. XUI.White .. ' / ' .. validCountStr
-                .. XUI.White .. ' / ' .. priceLowerCountStr .. ' / ' .. lowerCountStr .. XUI.White)
-            frame.labelDeal:SetText(dealRateStr .. XUI.White .. ' / ' .. dealCountStr)
-            frame.labelPrice:SetText(minPriceOtherStr .. XUI.White .. ' / ' .. lastPriceOtherStr .. ' / ' .. basePriceStr)
-
-            if enabled then
-                frame.enableButton:SetText(XUI.Green .. '起')
-            else
-                frame.enableButton:SetText(XUI.Red .. '停')
-            end
-
-            if star then
-                frame.starButton:SetText(XUI.Green .. '星')
-            else
-                frame.starButton:SetText(XUI.Red .. '星')
-            end
-
-            if canCraft then
-                frame.itemCanCraftButton:SetText(XUI.Green .. '造')
-            else
-                frame.itemCanCraftButton:SetText(XUI.Red .. '禁')
-            end
-
-            frame:Show()
-        else
-            frame:Hide()
-        end
-    end
-end
-
 filterDisplayList = function()
     if not mainFrame then return end
+    if not scrollView then return end
 
     local filterWord = mainFrame.filterBox:GetText();
     local displayFilter = XAPI.UIDropDownMenu_GetText(mainFrame.filterDropDown)
@@ -1070,6 +413,336 @@ filterDisplayList = function()
         if disFlag then table.insert(dataList, item) end
     end
     displayList = dataList;
+
+    scrollView:ClearContents()
+    for _, item in ipairs(dataList) do
+        local frame = scrollView:CreateFrame(mainFrame:GetWidth() - 20, 30)
+        frame.index = item['index']
+
+        local itemIndexButton = XUI.createButton(frame, 35, '999')
+        itemIndexButton:SetPoint('LEFT', frame, 'LEFT', 0, 0)
+        itemIndexButton:SetScript('OnClick', itemSortClick)
+        frame.itemIndexButton = itemIndexButton
+        itemIndexButton.frame = frame
+
+        local itemMailButton = XUI.createButton(frame, 30, 'U')
+        itemMailButton:SetPoint('LEFT', itemIndexButton, 'RIGHT', 0, 0)
+        itemMailButton:SetScript('OnClick', itemMailClick)
+        frame.itemMailButton = itemMailButton
+        itemMailButton.frame = frame
+
+        local itemReceiveButton = XUI.createButton(frame, 30, 'R')
+        itemReceiveButton:SetPoint('LEFT', itemMailButton, 'RIGHT', 0, 0)
+        itemReceiveButton:SetScript('OnClick', itemReceiveClick)
+        frame.itemReceiveButton = itemReceiveButton
+        itemReceiveButton.frame = frame
+
+        local itemNameButton = XUI.createButton(frame, 160, '')
+        itemNameButton:SetPoint('LEFT', itemReceiveButton, 'RIGHT', 0, 0)
+        itemNameButton:SetScript('OnClick', itemNameClick)
+        itemNameButton:SetScript("OnEnter", function(self)
+            local tindex = self.frame.index
+            local titem = XAutoAuctionList[tindex];
+            if not titem then return end
+            local itemid = XInfo.getAuctionInfoField(titem['itemname'], 'itemid')
+            if itemid > 0 then
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                GameTooltip:SetHyperlink("item:" .. itemid) -- 显示物品信息
+            end
+        end)
+        itemNameButton:SetScript("OnLeave", function(self)
+            GameTooltip:Hide()
+        end)
+        frame.itemNameButton = itemNameButton
+        itemNameButton.frame = frame
+
+        local labelTime = XUI.createLabel(frame, 50, '', 'CENTER')
+        labelTime:SetPoint('LEFT', itemNameButton, 'RIGHT', 3, 0)
+        frame.labelTime = labelTime
+
+        local labelBag = XUI.createLabel(frame, 110, '', 'CENTER')
+        labelBag:SetPoint('LEFT', labelTime, 'RIGHT', 3, 0)
+        frame.labelBag = labelBag
+        labelBag.frame = frame
+
+        local labelAuction = XUI.createLabel(frame, 155, '', 'CENTER')
+        labelAuction:SetPoint('LEFT', labelBag, 'RIGHT', 3, 0)
+        frame.labelAuction = labelAuction
+        labelAuction.frame = frame
+
+        local labelDeal = XUI.createLabel(frame, 90, '', 'CENTER')
+        labelDeal:SetPoint('LEFT', labelAuction, 'RIGHT', 3, 0)
+        frame.labelDeal = labelDeal
+        labelDeal.frame = frame
+
+        local labelPrice = XUI.createLabel(frame, 150, '', 'CENTER')
+        labelPrice:SetPoint('LEFT', labelDeal, 'RIGHT', 3, 0)
+        frame.labelPrice = labelPrice
+        labelPrice.frame = frame
+
+        local deleteButton = XUI.createButton(frame, 30, '删')
+        deleteButton:SetPoint('LEFT', labelPrice, 'RIGHT', 0, 0)
+        deleteButton:SetScript('OnClick', itemDeleteClick)
+        deleteButton.frame = frame
+
+        local rubbishButton = XUI.createButton(frame, 30, '圾')
+        rubbishButton:SetPoint('LEFT', deleteButton, 'RIGHT', 0, 0)
+        rubbishButton:SetScript('OnClick', itemRubbishClick)
+        rubbishButton.frame = frame
+
+        local settingButton = XUI.createButton(frame, 30, '设')
+        settingButton:SetPoint('LEFT', rubbishButton, 'RIGHT', 0, 0)
+        settingButton:SetScript('OnClick', itemSettingClick)
+        settingButton.frame = frame
+
+        local enableButton = XUI.createButton(frame, 30, '')
+        enableButton:SetPoint('LEFT', settingButton, 'RIGHT', 0, 0)
+        enableButton:SetScript('OnClick', itemEnableClick)
+        frame.enableButton = enableButton
+        enableButton.frame = frame
+
+        local starButton = XUI.createButton(frame, 30, '星')
+        starButton:SetPoint('LEFT', enableButton, 'RIGHT', 0, 0)
+        starButton:SetScript('OnClick', itemStarClick)
+        frame.starButton = starButton
+        starButton.frame = frame
+
+        local itemCanCraftButton = XUI.createButton(frame, 30, '造')
+        itemCanCraftButton:SetPoint('LEFT', starButton, 'RIGHT', 0, 0)
+        itemCanCraftButton:SetScript('OnClick', itemCanCraftClick)
+        frame.itemCanCraftButton = itemCanCraftButton
+        itemCanCraftButton.frame = frame
+
+        local itemRefreshButton = XUI.createButton(frame, 30, '刷')
+        itemRefreshButton:SetPoint('LEFT', itemCanCraftButton, 'RIGHT', 0, 0)
+        itemRefreshButton:SetScript('OnClick', itemRefreshClick)
+        itemRefreshButton.frame = frame
+
+        local itemCleanButton = XUI.createButton(frame, 30, '清')
+        itemCleanButton:SetPoint('LEFT', itemRefreshButton, 'RIGHT', 0, 0)
+        itemCleanButton:SetScript('OnClick', itemCleanClick)
+        itemCleanButton.frame = frame
+    end
+end
+
+refreshUI = function()
+    if not mainFrame then return end
+    if not mainFrame:IsVisible() then return end
+    if not scrollView then return end
+
+    XInfo.reloadBag()
+    XInfo.reloadAuction()
+
+    if autoClean then
+        mainFrame.autoCleanButton:SetText('清理')
+    else
+        mainFrame.autoCleanButton:SetText('不清')
+    end
+
+    if isStarted then
+        mainFrame.startButton:SetText('停止')
+    else
+        mainFrame.startButton:SetText('开始')
+    end
+
+    local labelText = format('%s) ', #taskList)
+    if not curTask then
+        labelText = labelText .. '等待'
+    else
+        if curTask['action'] == 'query' then
+            local item = XAutoAuctionList[curTask['index']]
+            if item == nil then
+                labelText = labelText .. '查询: 无'
+            else
+                labelText = labelText .. format('查询: [%s]%s', curTask['index'], item['itemname'])
+            end
+        elseif curTask['action'] == 'auction' then
+            labelText = labelText .. '拍卖: ' .. curTask['itemname']
+        elseif curTask['action'] == 'cleanlower' then
+            labelText = labelText .. '清理低价'
+        elseif curTask['action'] == 'cleanshort' then
+            labelText = labelText .. '清理短期'
+        end
+    end
+    mainFrame.hintLabel:SetText(labelText)
+
+    mainFrame.title:SetText('自动拍卖'
+        .. '    出售中: ' .. XInfo.auctioningCount
+        .. '    已出售: ' .. XInfo.auctionedCount
+        .. '    待收款: ' .. (XUtils.round(XInfo.auctionedMoney / 10000))
+        .. '    背包: ' .. XInfo.emptyBagCount)
+
+    for idx, item in ipairs(displayList) do
+        local frame = scrollView:GetItemFrame(idx)
+        local itemName = item['itemname']
+        local enabled = item['enabled']
+        if enabled == nil then enabled = false end
+        local star = item['star']
+        if star == nil then star = false end
+        local canCraft = item['cancraft']
+        if canCraft == nil then canCraft = false end
+        local basePrice = item['baseprice']
+        local minPriceOther = item['minpriceother']
+        local lastPriceOther = item['lastpriceother']
+        local stackCount = item['stackcount']
+        local lowerCount = item['lowercount']
+        local priceLowerCount = item['pricelowercount']
+
+        local bagCount = XInfo.getBagItemCount(itemName)
+        local bankCount = XInfo.getBankItemCount(itemName)
+        local mailCount = XInfo.getMailItemCount(itemName)
+
+        local auctionCount = XInfo.getAuctionItemCount(itemName)
+        local validCount = getMyValidCount(itemName)
+
+        local dealRate = XInfo.getAuctionInfoField(itemName, 'dealrate', 99)
+        local dealCount = XInfo.getAuctionInfoField(itemName, 'dealcount', 0)
+
+        local recipe = XInfo.getTradeSkillItem(itemName)
+
+        local itemNameStr = string.sub(itemName, 1, 18);
+        if not enabled then
+            itemNameStr = XUI.Gray .. itemNameStr
+        elseif minPriceOther < basePrice then
+            itemNameStr = XUI.Red .. itemNameStr
+        elseif validCount <= 0 then
+            itemNameStr = XUI.Purple .. itemNameStr
+        elseif validCount < stackCount then
+            itemNameStr = XUI.Yellow .. itemNameStr
+        elseif validCount == stackCount then
+            itemNameStr = XUI.Green .. itemNameStr
+        else
+            itemNameStr = XUI.Cyan .. itemNameStr
+        end
+
+        if star then
+            itemNameStr = XUI.Green .. '*' .. itemNameStr
+        end
+
+        if not recipe then
+            itemNameStr = itemNameStr .. XUI.Red .. '■'
+        end
+
+        local updateTimeStr = XUtils.formatTime(item['updatetime'])
+
+        local bagCountStr = 'B' .. bagCount;
+        if bagCount > 10 then
+            bagCountStr = XUI.Purple .. bagCountStr
+        elseif bagCount > 5 then
+            bagCountStr = XUI.Yellow .. bagCountStr
+        elseif bagCount > 0 then
+            bagCountStr = XUI.Green .. bagCountStr
+        else
+            bagCountStr = XUI.Red .. bagCountStr
+        end
+
+        local mailCountStr = '' .. mailCount;
+        if mailCount > 20 then
+            mailCountStr = XUI.Purple .. mailCountStr
+        elseif mailCount > 10 then
+            mailCountStr = XUI.Red .. mailCountStr
+        elseif mailCount > 5 then
+            mailCountStr = XUI.Yellow .. mailCountStr
+        else
+            mailCountStr = XUI.Green .. mailCountStr
+        end
+
+        local bankCountStr = '' .. bankCount;
+        if bankCount > 200 then
+            bankCountStr = XUI.Cyan .. bankCountStr
+        elseif bankCount > 100 then
+            bankCountStr = XUI.Green .. bankCountStr
+        elseif bankCount > 40 then
+            bankCountStr = XUI.Yellow .. bankCountStr
+        else
+            bankCountStr = XUI.Red .. bankCountStr
+        end
+
+        local auctionCountStr = XUI.getColor_AuctionStackCount(auctionCount, stackCount) ..
+            'A' .. auctionCount
+
+        local validCountStr = 'M' .. validCount
+        if validCount > stackCount then
+            validCountStr = XUI.Cyan .. validCountStr
+        elseif validCount == stackCount then
+            validCountStr = XUI.Green .. validCountStr
+        elseif validCount > 0 then
+            validCountStr = XUI.Yellow .. validCountStr
+        else
+            validCountStr = XUI.Red .. validCountStr
+        end
+
+        local lowerCountStr = 'L' .. lowerCount
+        if lowerCount > 5 then
+            lowerCountStr = XUI.Red .. lowerCountStr
+        elseif lowerCount > 0 then
+            lowerCountStr = XUI.Yellow .. lowerCountStr
+        else
+            lowerCountStr = XUI.White .. lowerCountStr
+        end
+
+        local priceLowerCountStr = 'P' .. priceLowerCount
+        if priceLowerCount > 10 then
+            priceLowerCountStr = XUI.Red .. priceLowerCountStr
+        elseif priceLowerCount > 0 then
+            priceLowerCountStr = XUI.Yellow .. priceLowerCountStr
+        else
+            priceLowerCountStr = XUI.White .. priceLowerCountStr
+        end
+
+        local stackCountStr = 'S' .. stackCount
+        if stackCount > 2 then
+            stackCountStr = XUI.Cyan .. stackCountStr
+        elseif stackCount > 1 then
+            stackCountStr = XUI.Green .. stackCountStr
+        end
+
+        local minPriceOtherStr = XUtils.priceToString(minPriceOther)
+        if minPriceOther < basePrice then
+            minPriceOtherStr = XUI.Red .. minPriceOtherStr
+        elseif minPriceOther < basePrice * dft_basePriceRate then
+            minPriceOtherStr = XUI.Yellow .. minPriceOtherStr
+        elseif minPriceOther < basePrice * dft_basePriceRate * dft_basePriceRate then
+            minPriceOtherStr = XUI.Green .. minPriceOtherStr
+        else
+            minPriceOtherStr = XUI.Cyan .. minPriceOtherStr
+        end
+
+        local basePriceStr = XUI.White .. XUtils.priceToString(basePrice)
+        local lastPriceOtherStr = XUI.White .. XUtils.priceToString(lastPriceOther)
+
+        local dealRateStr = XUI.getColor_DealRate(dealRate) .. 'R' .. XUtils.formatCount(XUtils.round(dealRate))
+        local dealCountStr = XUI.getColor_DealCount(dealCount) .. 'D' .. XUtils.formatCount(dealCount, 3)
+
+        frame.itemIndexButton:SetText(idx)
+        frame.itemNameButton:SetText(itemNameStr)
+
+        frame.labelTime:SetText(updateTimeStr)
+        frame.labelBag:SetText(bagCountStr .. XUI.White .. ' / ' .. mailCountStr .. ' / ' .. bankCountStr
+            .. XUI.White .. ' / ' .. stackCountStr)
+        frame.labelAuction:SetText(auctionCountStr .. XUI.White .. ' / ' .. validCountStr
+            .. XUI.White .. ' / ' .. priceLowerCountStr .. ' / ' .. lowerCountStr .. XUI.White)
+        frame.labelDeal:SetText(dealRateStr .. XUI.White .. ' / ' .. dealCountStr)
+        frame.labelPrice:SetText(minPriceOtherStr .. XUI.White .. ' / ' .. lastPriceOtherStr .. ' / ' .. basePriceStr)
+
+        if enabled then
+            frame.enableButton:SetText(XUI.Green .. '起')
+        else
+            frame.enableButton:SetText(XUI.Red .. '停')
+        end
+
+        if star then
+            frame.starButton:SetText(XUI.Green .. '星')
+        else
+            frame.starButton:SetText(XUI.Red .. '星')
+        end
+
+        if canCraft then
+            frame.itemCanCraftButton:SetText(XUI.Green .. '造')
+        else
+            frame.itemCanCraftButton:SetText(XUI.Red .. '禁')
+        end
+    end
 end
 
 start = function()
@@ -1645,6 +1318,342 @@ getMyValidCount = function(itemName)
         end
     end
     return count
+end
+
+addClick = function(this)
+    XUIInputDialog.show(moduleName, function(data)
+        local itemName = nil
+        local basePrice = nil
+        local defaultPrice = nil
+        local stackCount = nil
+        for _, item in ipairs(data) do
+            if item.Name == '宝石名称' then itemName = item.Value end
+            if item.Name == '基准价格' then basePrice = tonumber(item.Value) end
+            if item.Name == '默认价格' then defaultPrice = tonumber(item.Value) end
+            if item.Name == '拍卖数量' then stackCount = tonumber(item.Value) end
+        end
+        if itemName and basePrice and defaultPrice and stackCount then
+            addItem(itemName, basePrice, defaultPrice, stackCount)
+        end
+        filterDisplayList()
+    end, { { Name = '宝石名称' }, { Name = '基准价格' }, { Name = '默认价格' }, { Name = '拍卖数量' } }, '添加')
+end
+
+checkRecipeClick = function(this)
+    if not XInfo.reloadTradeSkill() then
+        return
+    end
+    local list = XInfoTradeSkillList['珠宝加工']
+    local newList = {}
+    local disabledList = {}
+    for itemName, _ in pairs(list) do
+        if XUtils.stringEndsWith(itemName, '赤玉石')
+            or XUtils.stringEndsWith(itemName, '紫黄晶')
+            or XUtils.stringEndsWith(itemName, '王者琥珀')
+            or XUtils.stringEndsWith(itemName, '祖尔之眼')
+            or XUtils.stringEndsWith(itemName, '巨锆石')
+            or XUtils.stringEndsWith(itemName, '恐惧石')
+            or XUtils.stringEndsWith(itemName, '血玉石')
+            or XUtils.stringEndsWith(itemName, '帝黄晶')
+            or XUtils.stringEndsWith(itemName, '秋色石')
+            or XUtils.stringEndsWith(itemName, '森林翡翠')
+            or XUtils.stringEndsWith(itemName, '天蓝石')
+            or XUtils.stringEndsWith(itemName, '曙光猫眼石')
+            or XUtils.stringEndsWith(itemName, '天焰钻石')
+            or XUtils.stringEndsWith(itemName, '大地侵攻钻石') then
+            local existed = false
+            for _, item in ipairs(XAutoAuctionList) do
+                if item['itemname'] == itemName then
+                    if not item['enabled'] then
+                        table.insert(disabledList, itemName)
+                    end
+                    existed = true
+                    break
+                end
+            end
+            if not existed then
+                table.insert(newList, itemName)
+            end
+        end
+    end
+    if #disabledList > 0 then
+        xdebug.warn('以下配方未开启：')
+        for idx, itemName in ipairs(disabledList) do
+            local itemLink = select(2, XAPI.GetItemInfo(itemName))
+            if not itemLink then itemLink = itemName end
+            xdebug.warn(idx .. ': ' .. itemLink)
+        end
+        xdebug.warn()
+    end
+    if #newList > 0 then
+        xdebug.warn('以下配方未添加：')
+        for idx, itemName in ipairs(newList) do
+            local itemLink = select(2, XAPI.GetItemInfo(itemName))
+            if not itemLink then itemLink = itemName end
+            xdebug.warn(idx .. ': ' .. itemLink)
+        end
+        xdebug.warn()
+        XUIConfirmDialog.show(moduleName, '确认', '是否确认添加配方', function()
+            for _, itemName in ipairs(newList) do
+                addItem(itemName, dft_minPrice, dft_minPrice, 1)
+            end
+            xdebug.info('添加成功')
+        end)
+    end
+end
+
+priceAdjustClick = function(this)
+    XUIInputDialog.show(moduleName, function(data)
+        local itemName = nil
+        local basePrice = nil
+        local profitRate = nil
+        local isDealRate = nil
+        for _, item in ipairs(data) do
+            if item.Name == '宝石名称' then itemName = item.Value end
+            if item.Name == '基准价格' then basePrice = tonumber(item.Value) end
+            if item.Name == '利润率' then profitRate = tonumber(item.Value) end
+            if item.Name == '手续费' then isDealRate = tonumber(item.Value) end
+        end
+        setPriceByName(itemName, basePrice, profitRate, isDealRate == 1, true)
+    end, { {
+        Name = '宝石名称',
+        OnEnterPressed = function(_, data)
+            local itemName = nil
+            local basePrice = nil
+            local profitRate = nil
+            local isDealRate = nil
+            for _, item in ipairs(data) do
+                if item.Name == '宝石名称' then itemName = item.Value end
+                if item.Name == '基准价格' then basePrice = tonumber(item.Value) end
+                if item.Name == '利润率' then profitRate = tonumber(item.Value) end
+                if item.Name == '手续费' then isDealRate = tonumber(item.Value) end
+            end
+            setPriceByName(itemName, basePrice, profitRate, isDealRate == 1, false)
+        end
+    }, { Name = '基准价格' }, { Name = '利润率', Value = 0.1 }, { Name = '手续费', Value = 1 } }, '调价')
+end
+
+itemSortClick = function(this)
+    local index = this.frame.index
+    XUISortDialog.show('XAuctionCenter_Sort', XAutoAuctionList, index, function()
+        filterDisplayList()
+    end)
+end
+
+itemMailClick = function(this)
+    local index = this.frame.index
+    local item = XAutoAuctionList[index];
+    if not item then return end
+
+    if not XAPI.IsMailBoxOpen() then
+        xdebug.error('请先打开邮箱')
+        return
+    end
+
+    XInfo.reloadBag()
+    local bagItem = XInfo.getBagItem(item['itemname'])
+    if not bagItem then
+        xdebug.error('背包中未找到该物品')
+        return
+    end
+
+    local batchCount = 5
+    if IsShiftKeyDown() then batchCount = 12 end
+
+    if bagItem['count'] < batchCount then
+        xdebug.error(item['itemname'] .. '数量不足')
+        return
+    end
+
+    for t = 1, 12 do
+        XAPI.ClickSendMailItemButton(t, true)
+    end
+    for pidx = 1, batchCount do
+        local position = bagItem['positions'][pidx];
+        XAPI.C_Container_PickupContainerItem(position[1], position[2])
+
+        XAPI.ClickSendMailItemButton(pidx)
+    end
+    XAPI.SendMail('阿肌', 'P-' .. item['itemname'] .. '-' .. batchCount)
+    xdebug.info(item['itemname'] .. '发送成功')
+    XInfo.reloadBag()
+    XInfo.reloadMail()
+    refreshUI()
+end
+
+itemReceiveClick = function(this)
+    local index = this.frame.index
+    local item = XAutoAuctionList[index];
+    if not item then return end
+
+    if not XAPI.IsMailBoxOpen() then
+        xdebug.error('请先打开邮箱')
+        return
+    end
+
+    local mailCount = XAPI.GetInboxNumItems()
+    if mailCount <= 0 then
+        xdebug.error('没有邮件')
+        return
+    end
+
+    XInfo.reloadBag()
+
+    if XInfo.emptyBagCount <= 0 then
+        xdebug.error('包裹已满')
+        return
+    end
+
+    for midx = 1, mailCount do
+        local mailInfo = { XAPI.GetInboxHeaderInfo(midx) }
+        local subject = mailInfo[4]
+        local itemCount = mailInfo[8]
+        if itemCount then
+            if itemCount > 0 then
+                local _itemName, _itemCount = string.match(subject, 'P%-([^-]*)%-(.*)')
+                if _itemName and _itemCount then
+                    if _itemName == item['itemname'] then
+                        for iidx = 1, 12 do
+                            local _titemName = XAPI.GetInboxItem(midx, iidx)
+                            if _titemName == item['itemname'] then
+                                XAPI.TakeInboxItem(midx, iidx)
+                                break
+                            end
+                        end
+                        break
+                    end
+                end
+            end
+        end
+    end
+
+    xdebug.info('收取' .. item['itemname'])
+    XInfo.reloadBag()
+    XInfo.reloadMail()
+    refreshUI()
+end
+
+itemNameClick = function(this)
+    local index = this.frame.index
+    local item = XAutoAuctionList[index];
+    if not item then return end
+
+    if IsShiftKeyDown() then
+        XAPI.AuctionatorSearchExact(item['itemname'])
+    elseif IsLeftControlKeyDown() then
+        XInfo.printBuyHistory(item['itemname'])
+    else
+        XUIInputDialog.show(moduleName, function(input)
+            local itemName = item['itemname']
+            local count = input[1].Value
+            XCraftQueue.addItem(itemName, count, 'fulfil')
+        end, { { Name = '数量', Value = item['stackcount'] } }, item['itemname'])
+    end
+end
+
+itemDeleteClick = function(this)
+    local index = this.frame.index
+    local item = XAutoAuctionList[index]
+    if not item then return end
+
+    XUIConfirmDialog.show(moduleName, '删除', '是否确定删除：' .. item['itemname'], function()
+        table.remove(XAutoAuctionList, index)
+        filterDisplayList()
+    end)
+end
+
+itemRubbishClick = function(this)
+    local index = this.frame.index
+    local item = XAutoAuctionList[index]
+    if not item then return end
+
+    XUIConfirmDialog.show(moduleName, '确认', '是否确认设为垃圾', function()
+        item['baseprice'] = 1
+        item['stackcount'] = 1
+        refreshUI()
+    end)
+end
+
+itemSettingClick = function(this)
+    local index = this.frame.index
+    local item = XAutoAuctionList[index]
+    if not item then return end
+
+    XUIInputDialog.show(moduleName, function(data)
+        local itemName = nil
+        local basePrice = nil
+        local defaultPrice = nil
+        local stackCount = nil
+        for _, titem in ipairs(data) do
+            if titem.Name == '宝石名称' then itemName = titem.Value end
+            if titem.Name == '基准价格' then basePrice = tonumber(titem.Value) end
+            if titem.Name == '默认价格' then defaultPrice = tonumber(titem.Value) end
+            if titem.Name == '拍卖数量' then stackCount = tonumber(titem.Value) end
+        end
+        if itemName and basePrice and defaultPrice and stackCount then
+            item['itemname'] = itemName
+            item['baseprice'] = basePrice
+            item['defaultprice'] = defaultPrice
+            item['stackcount'] = stackCount
+        end
+        refreshUI()
+    end, {
+        { Name = '宝石名称', Value = item['itemname'] },
+        { Name = '基准价格', Value = item['baseprice'] },
+        { Name = '默认价格', Value = item['defaultprice'] },
+        { Name = '拍卖数量', Value = item['stackcount'] }
+    }, '添加')
+end
+
+itemEnableClick = function(this)
+    local index = this.frame.index
+    local item = XAutoAuctionList[index];
+    if not item then return end
+
+    if item['enabled'] ~= true then
+        item['enabled'] = true
+    else
+        item['enabled'] = false
+    end
+    refreshUI()
+end
+
+itemStarClick = function(this)
+    local index = this.frame.index
+    local item = XAutoAuctionList[index];
+    if not item then return end
+
+    if item['star'] == nil or item['star'] == false then
+        item['star'] = true
+    else
+        item['star'] = false
+    end
+    refreshUI()
+end
+
+itemCanCraftClick = function(this)
+    local index = this.frame.index
+    local item = XAutoAuctionList[index];
+    if not item then return end
+
+    item['cancraft'] = not item['cancraft']
+    refreshUI()
+end
+
+itemRefreshClick = function(this)
+    local index = this.frame.index
+    local item = XAutoAuctionList[index];
+    if not item then return end
+
+    addQueryTaskByIndex(index, IsShiftKeyDown())
+end
+
+itemCleanClick = function(this)
+    local index = this.frame.index
+    local item = XAutoAuctionList[index];
+    if not item then return end
+
+    cleanLower(item['itemname'])
 end
 
 -- Event callback
