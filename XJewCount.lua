@@ -207,3 +207,6 @@ SlashCmdList['XJEWCOUNTCLOSE'] = function()
     if mainFrame then mainFrame:Hide() end
 end
 SLASH_XJEWCOUNTCLOSE1 = '/xjewcount_close'
+
+-- Interface
+XJewCount.toggle = function() XUI.toggleVisible(mainFrame) end

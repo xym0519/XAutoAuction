@@ -65,30 +65,21 @@ XUI.createLabel = function(parent, width, text, align)
     if align == nil then align = 'LEFT' end
     if text == nil then text = '' end
 
-    if debug then
-        label = XAPI.CreateFrame('EditBox', nil, parent)
-        label:SetCursorPosition(0) -- 设置光标位置为开头
-        label:EnableMouse(false)   -- 禁用鼠标交互
-        label:ClearFocus()         -- 清除焦点
-        label:SetAutoFocus(false)  -- 禁止自动获得焦点
-        local bg = label:CreateTexture(nil, 'BACKGROUND')
-        bg:SetAllPoints(label)
-        bg:SetColorTexture(1, 0, 0, 0.5)
-        -- label:SetFontObject(GameFontHighlight)
-        label:SetFontObject(ChatFontNormal)
-    else
-        label = XAPI.CreateFrame('Frame', nil, parent)
-        label.text = label:CreateFontString(nil, 'ARTWORK')
-        label.text:SetJustifyH(align)
-        label.text:SetAllPoints()
-        -- label:SetFontObject(GameFontHighlight)
-        label.text:SetFontObject(ChatFontNormal)
-        label.SetText = function(self, t)
-            label.text:SetText(t)
-        end
+    label = XAPI.CreateFrame('Frame', nil, parent)
+    label.text = label:CreateFontString(nil, 'ARTWORK')
+    label.text:SetJustifyH(align)
+    label.text:SetAllPoints()
+    label.text:SetFontObject(ChatFontNormal)
+    label.SetText = function(self, t)
+        label.text:SetText(t)
     end
     label:SetSize(width, 25)
     label:SetText(text)
+    if debug then
+        local bg = label:CreateTexture(nil, 'BACKGROUND')
+        bg:SetAllPoints(label)
+        bg:SetColorTexture(1, 0, 0, 0.5)
+    end
     return label
 end
 
@@ -212,6 +203,90 @@ XUI.createDropDown = function(parent, width, items, defaultValue, onSelected)
     return dropdown
 end
 
+-- contentWidth = width - 23
+XUI.createScrollView = function(parent, width, height)
+    local debug = false
+
+    local borderWidth = 1
+    local margin = 3
+
+    local frame = XAPI.CreateFrame('Frame', nil, parent)
+    frame:SetSize(width, height)
+
+    local frameBorderTop = frame:CreateTexture(nil, 'OVERLAY')
+    frameBorderTop:SetColorTexture(0.5, 0.5, 0.5, 0.5)
+    frameBorderTop:SetPoint('TOPLEFT', frame, 'TOPLEFT', 0, 0)
+    frameBorderTop:SetPoint('BOTTOMRIGHT', frame, 'TOPRIGHT', 0, -borderWidth)
+
+    local frameBorderBottom = frame:CreateTexture(nil, 'OVERLAY')
+    frameBorderBottom:SetColorTexture(0.5, 0.5, 0.5, 0.5)
+    frameBorderBottom:SetPoint('TOPLEFT', frame, 'BOTTOMLEFT', 0, borderWidth)
+    frameBorderBottom:SetPoint('BOTTOMRIGHT', frame, 'BOTTOMRIGHT', 0, 0)
+
+    local frameBorderLeft = frame:CreateTexture(nil, 'OVERLAY')
+    frameBorderLeft:SetColorTexture(0.5, 0.5, 0.5, 0.5)
+    frameBorderLeft:SetPoint('TOPLEFT', frame, 'TOPLEFT', 0, 0)
+    frameBorderLeft:SetPoint('BOTTOMRIGHT', frame, 'BOTTOMLEFT', borderWidth, 0)
+
+    local frameBorderRight = frame:CreateTexture(nil, 'OVERLAY')
+    frameBorderRight:SetColorTexture(0.5, 0.5, 0.5, 0.5)
+    frameBorderRight:SetPoint('TOPLEFT', frame, 'TOPRIGHT', -borderWidth, 0)
+    frameBorderRight:SetPoint('BOTTOMRIGHT', frame, 'BOTTOMRIGHT', 0, 0)
+
+    local scrollView = XAPI.CreateFrame('ScrollFrame', nil, frame, 'UIPanelScrollFrameTemplate')
+    scrollView:SetPoint('TOPLEFT', borderWidth + margin, -borderWidth - margin)
+    scrollView:SetPoint('BOTTOMRIGHT', -23 - borderWidth - margin, borderWidth + margin)
+
+    local scrollBG = scrollView:CreateTexture(nil, 'BACKGROUND')
+    scrollBG:SetAllPoints(scrollView)
+    scrollBG:SetColorTexture(0, 0, 0)
+
+    local contentView = XAPI.CreateFrame('Frame', nil, scrollView)
+    contentView:SetSize(width - 23, 1)
+
+    scrollView:SetScrollChild(contentView)
+
+    if debug then
+        local frameBG = frame:CreateTexture(nil, 'BACKGROUND')
+        frameBG:SetAllPoints(frame)
+        frameBG:SetColorTexture(0, 0, 1, 0.5)
+
+        scrollBG:SetColorTexture(0, 1, 0, 0.5)
+
+        local contentBG = contentView:CreateTexture(nil, 'BACKGROUND')
+        contentBG:SetAllPoints(contentView)
+        contentBG:SetColorTexture(1, 0, 0, 0.5)
+    end
+
+    frame.scrollView = scrollView
+    frame.contentView = contentView
+    frame.itemFrameList = {}
+
+    frame.CreateFrame = function(this, iwidth, iheight)
+        local itemFrame = XAPI.CreateFrame('Frame', nil, this.contentView)
+        itemFrame:SetSize(iwidth, iheight)
+        if #this.itemFrameList == 0 then
+            itemFrame:SetPoint('TOPLEFT', this.contentView, 'TOPLEFT', 0, 0)
+            this.contentView:SetHeight(iheight)
+        else
+            local lastFrame = this.itemFrameList[#this.itemFrameList];
+            itemFrame:SetPoint('TOPLEFT', lastFrame, 'BOTTOMLEFT', 0, 0)
+            this.contentView:SetHeight(this.contentView:GetHeight() + iheight)
+        end
+        table.insert(this.itemFrameList, itemFrame)
+        return itemFrame
+    end
+    frame.ClearContents = function(this)
+        for _, itemFrame in ipairs(this.itemFrameList) do
+            itemFrame:Hide()
+            itemFrame:ClearAllPoints()
+            itemFrame = nil
+        end
+        this.itemFrameList = {}
+    end
+    return frame
+end
+
 XUI.toggleVisible = function(frame)
     if not frame then return end
 
@@ -258,11 +333,11 @@ end
 -- >40/天: 青 / 10~40/天: 绿 / 3~10: 黄 / <3个: 红
 XUI.getColor_DealCount = function(dealCount)
     local res = XUI.Color_Normal
-    if dealCount > 40*3 then
+    if dealCount > 40 * 3 then
         res = XUI.Color_Great
-    elseif dealCount > 10*3 then
+    elseif dealCount > 10 * 3 then
         res = XUI.Color_Good
-    elseif dealCount > 3*3 then
+    elseif dealCount > 3 * 3 then
         res = XUI.Color_Fair
     else
         res = XUI.Color_Bad

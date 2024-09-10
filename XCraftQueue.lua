@@ -397,6 +397,7 @@ local function onSuccess(...)
         curTask['count'] = curTask['count'] - 1
     end
 
+    XAuctionBoard.addItem(curTask['itemname'], 'craft')
     XAutoAuction.refreshUI()
 end
 
@@ -474,3 +475,5 @@ XCraftQueue.reset = reset
 XCraftQueue.isRunning = function()
     return isRunning
 end
+
+XCraftQueue.toggle = function() XUI.toggleVisible(mainFrame) end
