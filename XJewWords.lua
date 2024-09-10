@@ -142,7 +142,7 @@ initUI = function()
             local idx = displayPageNo * displayPageSize + i
             local item = XJewWordList[idx]
             if not item then return end
-            local itemid = XInfo.getAuctionInfoField(item['itemname'], 'itemid')
+            local itemid = XInfo.getItemId(item['itemname'])
             if itemid > 0 then
                 GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
                 GameTooltip:SetHyperlink("item:" .. itemid) -- 显示物品信息

@@ -15,7 +15,7 @@ createLabel = function(itemName)
     label:SetHeight(18)
     label:SetScript("OnEnter", function(self)
         local titemName = self.itemName
-        local itemId = XInfo.getAuctionInfoField(titemName, 'itemid')
+        local itemId = XInfo.getItemId(titemName)
         if itemId > 0 then
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:SetHyperlink("item:" .. itemId) -- 显示物品信息
