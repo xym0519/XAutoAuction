@@ -385,6 +385,7 @@ local function onSuccess(...)
     if unit ~= 'player' then return end
     if curTask['castid'] ~= castId then return end
 
+    XAuctionBoard.addItem(curTask['itemname'], 'craft')
     if curTask['count'] <= 1 then
         local item = XAuctionCenter.getItem(curTask['itemname'])
         if item then
@@ -397,7 +398,6 @@ local function onSuccess(...)
         curTask['count'] = curTask['count'] - 1
     end
 
-    XAuctionBoard.addItem(curTask['itemname'], 'craft')
     XAutoAuction.refreshUI()
 end
 

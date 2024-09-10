@@ -15,7 +15,7 @@ local addItem
 
 -- Function implemention
 initUI = function()
-    mainFrame = XUI.createFrame(moduleName .. 'Frame', 360, 400)
+    mainFrame = XUI.createFrame(moduleName .. 'Frame', 340, 400)
     mainFrame.title:SetText('拍卖纪录')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
     mainFrame:Hide()
@@ -42,13 +42,13 @@ initUI = function()
     local indexLabel = XUI.createLabel(labelFrame, 40, '序号')
     indexLabel:SetPoint('LEFT', labelFrame, 'LEFT', 8, 0)
 
-    local nameLabel = XUI.createLabel(labelFrame, 120, '名称')
+    local nameLabel = XUI.createLabel(labelFrame, 140, '名称')
     nameLabel:SetPoint('LEFT', indexLabel, 'RIGHT', 5, 0)
 
-    local dealCountLabel = XUI.createLabel(labelFrame, 60, '交易')
+    local dealCountLabel = XUI.createLabel(labelFrame, 40, '交易')
     dealCountLabel:SetPoint('LEFT', nameLabel, 'RIGHT', 5, 0)
 
-    local craftCountLabel = XUI.createLabel(labelFrame, 60, '制造')
+    local craftCountLabel = XUI.createLabel(labelFrame, 40, '制造')
     craftCountLabel:SetPoint('LEFT', dealCountLabel, 'RIGHT', 5, 0)
 
     local scrollView = XUI.createScrollView(mainFrame, mainFrame:GetWidth() - 20,
@@ -77,13 +77,13 @@ refreshUI = function()
         local indexLabel = XUI.createLabel(frame, 40, i)
         indexLabel:SetPoint('LEFT', frame, 'LEFT', 5, 0)
 
-        local nameLabel = XUI.createLabel(frame, 120, dataItem['itemname'])
+        local nameLabel = XUI.createLabel(frame, 140, dataItem['itemname'])
         nameLabel:SetPoint('LEFT', indexLabel, 'RIGHT', 5, 0)
 
-        local dealCountLabel = XUI.createLabel(frame, 60, dataItem['dealcount'])
+        local dealCountLabel = XUI.createLabel(frame, 40, dataItem['dealcount'])
         dealCountLabel:SetPoint('LEFT', nameLabel, 'RIGHT', 5, 0)
 
-        local craftCountLabel = XUI.createLabel(frame, 60, dataItem['craftcount'])
+        local craftCountLabel = XUI.createLabel(frame, 40, dataItem['craftcount'])
         craftCountLabel:SetPoint('LEFT', dealCountLabel, 'RIGHT', 5, 0)
     end
 end

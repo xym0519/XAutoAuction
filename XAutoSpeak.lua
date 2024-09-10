@@ -34,6 +34,7 @@ initUI = function()
     mainFrame.title:SetText('自动喊话')
     mainFrame:SetPoint('TOPRIGHT', UIParent, 'TOPRIGHT', -30, -50)
     mainFrame:Hide()
+    tinsert(UISpecialFrames, mainFrame:GetName())
 
     local startButton = XUI.createButton(mainFrame, 50, '开始')
     startButton:SetPoint('LEFT', mainFrame, 'LEFT', 15, -10)
@@ -360,3 +361,4 @@ SLASH_XAUTOSPEAKSEND1 = '/xautospeak_send'
 -- Interface
 XAutoSpeak.addItem = addItem
 XAutoSpeak.getItem = getItem
+XAutoSpeak.toggle = function() XUI.toggleVisible(mainFrame) end
