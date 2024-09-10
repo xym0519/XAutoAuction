@@ -301,6 +301,17 @@ XInfo.getAuctionInfoField = function(itemName, fieldName, defaultValue)
     return item[fieldName]
 end
 
+XInfo.getItemId = function(itemName)
+    local itemId = XInfo.getAuctionInfoField(itemName, 'itemid', -1)
+    if itemId <= 0 then
+        itemId = XAPI.GetItemInfoInstant(itemName)
+    end
+    if not itemId then
+        itemId = -1
+    end
+    return itemId
+end
+
 -- Material
 XInfo.materialList = { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼', '巨锆石', '恐惧石',
     '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石',
@@ -408,7 +419,7 @@ XInfo.printBuyHistory = function(itemName, count)
         local item = XBuyList[i]
         if item['itemname'] == itemName then
             xdebug.info(XUtils.formatTime(item['time']) ..
-            '    ' .. XUtils.priceToMoneyString(item['price']) .. '    ' .. item['count'])
+                '    ' .. XUtils.priceToMoneyString(item['price']) .. '    ' .. item['count'])
             pcount = pcount + 1
             if pcount > count then return end
         end

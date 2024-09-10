@@ -589,3 +589,16 @@ XAPI.AuctionatorSearchExact = function(search)
         xdebug.error('Auctionator插件未找到')
     end
 end
+
+-- 获取价格
+XAPI.AuctionatorGetAuctionPriceByItemId = function(itemId)
+    if Auctionator then
+        if Auctionator.API.v1.MultiSearchExact then
+            return Auctionator.API.v1.GetAuctionPriceByItemID('XAutoAuction', itemId)
+        else
+            xdebug.error('获取价格接口未找到')
+        end
+    else
+        xdebug.error('Auctionator插件未找到')
+    end
+end

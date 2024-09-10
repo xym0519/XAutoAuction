@@ -444,7 +444,7 @@ filterDisplayList = function()
             local tindex = self.frame.index
             local titem = XAutoAuctionList[tindex];
             if not titem then return end
-            local itemid = XInfo.getAuctionInfoField(titem['itemname'], 'itemid')
+            local itemid = XInfo.getItemId(titem['itemname'])
             if itemid > 0 then
                 GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
                 GameTooltip:SetHyperlink("item:" .. itemid) -- 显示物品信息

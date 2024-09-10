@@ -112,9 +112,23 @@ initUI = function()
             end
         end, { { Name = '物品' }, { Name = '价格' } }, '自动购买设置')
     end)
+    local importButton = XUI.createButton(mainFrame, dft_buttonWidth, '导')
+    importButton:SetPoint('LEFT', settingButton, 'RIGHT', dft_buttonGap, 0)
+    importButton:SetScript('OnClick', function()
+        XUIConfirmDialog.show(moduleName, '确认', '确认从Auctionator导入', function()
+            for _, item in ipairs(XAutoBuyList) do
+                if item['enabled'] then
+                    local itemId = XInfo.getAuctionInfoField(item['itemname'], 'itemid')
+                    local price = XAPI.AuctionatorGetAuctionPriceByItemId(itemId)
+                    item['minbuyoutprice'] = price
+                end
+            end
+            refreshUI()
+        end)
+    end)
 
     local hintLabel = XUI.createLabel(mainFrame, 170, '')
-    hintLabel:SetPoint('LEFT', settingButton, 'RIGHT', 10, 0)
+    hintLabel:SetPoint('LEFT', importButton, 'RIGHT', 10, 0)
     mainFrame.hintLabel = hintLabel
 
     local lastWidget = preButton
@@ -171,7 +185,7 @@ initUI = function()
             local idx = displayPageNo * displayPageSize + i
             local item = XAutoBuyList[idx]
             if not item then return end
-            local itemid = XInfo.getAuctionInfoField(item['itemname'], 'itemid')
+            local itemid = XInfo.getItemId(item['itemname'])
             if itemid > 0 then
                 GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
                 GameTooltip:SetHyperlink("item:" .. itemid) -- 显示物品信息
