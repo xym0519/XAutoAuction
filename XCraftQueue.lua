@@ -107,16 +107,6 @@ initUI = function()
 
         local countLabel = XUI.createLabel(frame, 170, '')
         countLabel:SetPoint('LEFT', nameLabel, 'RIGHT', 5, 0)
-        countLabel:SetScript("OnEnter", function(self)
-            local idx = displayPageNo * displayPageSize + i
-            local item = craftQueue[idx]
-
-            if not item then return end
-            XAuctionItemToolTip.Show(item['itemname'], self, 'ANCHOR_RIGHT')
-        end)
-        countLabel:SetScript("OnLeave", function(self)
-            GameTooltip:Hide()
-        end)
         frame.countLabel = countLabel
 
         local deleteButton = XUI.createButton(frame, 25, 'D')

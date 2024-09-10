@@ -574,57 +574,21 @@ initUI = function()
 
         local labelBag = XUI.createLabel(frame, 110, '')
         labelBag:SetPoint('LEFT', labelTime, 'RIGHT', 3, 0)
-        labelBag:SetScript("OnEnter", function(self)
-            local idx = self.frame.index
-            local item = XAutoAuctionList[idx];
-            if not item then return end
-            XAuctionItemToolTip.Show(item['itemname'], self, 'ANCHOR_RIGHT', { 1 })
-        end)
-        labelBag:SetScript("OnLeave", function(self)
-            GameTooltip:Hide()
-        end)
         frame.labelBag = labelBag
         labelBag.frame = frame
 
         local labelAuction = XUI.createLabel(frame, 155, '')
         labelAuction:SetPoint('LEFT', labelBag, 'RIGHT', 3, 0)
-        labelAuction:SetScript("OnEnter", function(self)
-            local idx = self.frame.index
-            local item = XAutoAuctionList[idx];
-            if not item then return end
-            XAuctionItemToolTip.Show(item['itemname'], self, 'ANCHOR_RIGHT', { 2 })
-        end)
-        labelAuction:SetScript("OnLeave", function(self)
-            GameTooltip:Hide()
-        end)
         frame.labelAuction = labelAuction
         labelAuction.frame = frame
 
         local labelDeal = XUI.createLabel(frame, 90, '')
         labelDeal:SetPoint('LEFT', labelAuction, 'RIGHT', 3, 0)
-        labelDeal:SetScript("OnEnter", function(self)
-            local idx = self.frame.index
-            local item = XAutoAuctionList[idx];
-            if not item then return end
-            XAuctionItemToolTip.Show(item['itemname'], self, 'ANCHOR_RIGHT', { 3 })
-        end)
-        labelDeal:SetScript("OnLeave", function(self)
-            GameTooltip:Hide()
-        end)
         frame.labelDeal = labelDeal
         labelDeal.frame = frame
 
         local labelPrice = XUI.createLabel(frame, 150, '')
         labelPrice:SetPoint('LEFT', labelDeal, 'RIGHT', 3, 0)
-        labelPrice:SetScript("OnEnter", function(self)
-            local idx = self.frame.index
-            local item = XAutoAuctionList[idx];
-            if not item then return end
-            XAuctionItemToolTip.Show(item['itemname'], self, 'ANCHOR_RIGHT', { 4 })
-        end)
-        labelPrice:SetScript("OnLeave", function(self)
-            GameTooltip:Hide()
-        end)
         frame.labelPrice = labelPrice
         labelPrice.frame = frame
 
@@ -1128,7 +1092,13 @@ addItem = function(itemName, basePrice, defaultPrice, stackCount)
         baseprice = basePrice,
         defaultprice = defaultPrice,
         stackcount = stackCount,
-        cancraft = true
+        cancraft = true,
+
+        myvalidlist = {},
+        lowercount = 0,
+        pricelowcount = 0,
+        minpriceother = 0,
+        lastpriceother = 0,
     }
     resetItem(item)
     table.insert(XAutoAuctionList, item)
@@ -1290,7 +1260,7 @@ end
 
 checkImportant = function(item)
     local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0)
-    if item['star'] or dealCount >= 40 * 3 then
+    if item['star'] or dealCount >= 30 * 3 then
         return true
     end
     return false

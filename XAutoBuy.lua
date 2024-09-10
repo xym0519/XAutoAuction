@@ -167,7 +167,21 @@ initUI = function()
                     '自动购买设置')
             end
         end)
+        itemNameButton:SetScript("OnEnter", function(self)
+            local idx = displayPageNo * displayPageSize + i
+            local item = XAutoBuyList[idx]
+            if not item then return end
+            local itemid = XInfo.getAuctionInfoField(item['itemname'], 'itemid')
+            if itemid > 0 then
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                GameTooltip:SetHyperlink("item:" .. itemid) -- 显示物品信息
+            end
+        end)
+        itemNameButton:SetScript("OnLeave", function(self)
+            GameTooltip:Hide()
+        end)
         frame.itemNameButton = itemNameButton
+
 
         local label = XUI.createLabel(frame, 50, '')
         label:SetPoint('LEFT', itemNameButton, 'RIGHT', 8, 0)
