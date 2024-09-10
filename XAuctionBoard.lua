@@ -39,16 +39,16 @@ initUI = function()
     labelFrame:SetSize(mainFrame:GetWidth() - 20, 30)
     labelFrame:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 10, -60)
 
-    local indexLabel = XUI.createLabel(labelFrame, 40, '序号')
+    local indexLabel = XUI.createLabel(labelFrame, 40, '序号', 'CENTER')
     indexLabel:SetPoint('LEFT', labelFrame, 'LEFT', 8, 0)
 
-    local nameLabel = XUI.createLabel(labelFrame, 140, '名称')
+    local nameLabel = XUI.createLabel(labelFrame, 140, '名称', 'CENTER')
     nameLabel:SetPoint('LEFT', indexLabel, 'RIGHT', 5, 0)
 
-    local dealCountLabel = XUI.createLabel(labelFrame, 40, '交易')
+    local dealCountLabel = XUI.createLabel(labelFrame, 40, '交易', 'CENTER')
     dealCountLabel:SetPoint('LEFT', nameLabel, 'RIGHT', 5, 0)
 
-    local craftCountLabel = XUI.createLabel(labelFrame, 40, '制造')
+    local craftCountLabel = XUI.createLabel(labelFrame, 40, '制造', 'CENTER')
     craftCountLabel:SetPoint('LEFT', dealCountLabel, 'RIGHT', 5, 0)
 
     local scrollView = XUI.createScrollView(mainFrame, mainFrame:GetWidth() - 20,
@@ -74,16 +74,16 @@ refreshUI = function()
 
     for i, dataItem in ipairs(dataList) do
         local frame = scrollView:CreateFrame(mainFrame:GetWidth() - 20, 30)
-        local indexLabel = XUI.createLabel(frame, 40, i)
+        local indexLabel = XUI.createLabel(frame, 40, i, 'CENTER')
         indexLabel:SetPoint('LEFT', frame, 'LEFT', 5, 0)
 
-        local nameLabel = XUI.createLabel(frame, 140, dataItem['itemname'])
+        local nameLabel = XUI.createLabel(frame, 140, dataItem['itemname'], 'CENTER')
         nameLabel:SetPoint('LEFT', indexLabel, 'RIGHT', 5, 0)
 
-        local dealCountLabel = XUI.createLabel(frame, 40, dataItem['dealcount'])
+        local dealCountLabel = XUI.createLabel(frame, 40, dataItem['dealcount'], 'CENTER')
         dealCountLabel:SetPoint('LEFT', nameLabel, 'RIGHT', 5, 0)
 
-        local craftCountLabel = XUI.createLabel(frame, 40, dataItem['craftcount'])
+        local craftCountLabel = XUI.createLabel(frame, 40, dataItem['craftcount'], 'CENTER')
         craftCountLabel:SetPoint('LEFT', dealCountLabel, 'RIGHT', 5, 0)
     end
 end
