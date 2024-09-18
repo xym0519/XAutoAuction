@@ -11,7 +11,7 @@ local dft_basePriceRate = 1.5
 local dft_roundInterval = 3
 local dft_taskInterval = 1
 local dft_taskTimeout = 30
-local dft_filterList = { '全部', '星星', '优质', '可售', '有效', '价低', '无效', '垃圾', '不做', '邮寄', '收件', '量大' }
+local dft_filterList = { '全部', '星星', '优质', '可售', '有效', '潜力', '价低', '无效', '垃圾', '不做', '邮寄', '收件', '量大' }
 local dft_deltaPrice = 10
 local dft_postdelay = 2
 local dft_autoCleanInterval = 60
@@ -82,6 +82,8 @@ local priceAdjustClick
 local itemSortClick
 local itemMailClick
 local itemReceiveClick
+local itemToBankClick
+local itemToBagClick
 local itemNameClick
 local itemDeleteClick
 local itemRubbishClick
@@ -118,7 +120,7 @@ resetData = function()
 end
 
 initUI = function()
-    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 1120, 500)
+    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 1180, 500)
     mainFrame:SetFrameStrata('HIGH')
     mainFrame.title:SetText('自动拍卖')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
@@ -197,8 +199,26 @@ initUI = function()
         cleanShort()
     end)
 
+    local allToBankButton = XUI.createButton(mainFrame, dft_buttonWidth, '全存')
+    allToBankButton:SetPoint('LEFT', cleanShortButton, 'RIGHT', dft_sectionGap, 0)
+    allToBankButton:SetScript('OnClick', function()
+        XUtils.moveToBank(nil, nil, nil, false)
+        cleanShort()
+    end)
+
+    local allToBagButton = XUI.createButton(mainFrame, dft_buttonWidth, '全取')
+    allToBagButton:SetPoint('LEFT', allToBankButton, 'RIGHT', dft_buttonGap, 0)
+    allToBagButton:SetScript('OnClick', function()
+        local itemNames = {}
+        for _, item in ipairs(XAutoAuctionList) do
+            table.insert(itemNames, item['itemname'])
+        end
+        XUtils.moveToBag(itemNames, nil, nil, false)
+        cleanShort()
+    end)
+
     local refreshButton = XUI.createButton(mainFrame, dft_buttonWidth, '刷新')
-    refreshButton:SetPoint('LEFT', cleanShortButton, 'RIGHT', dft_sectionGap, 0)
+    refreshButton:SetPoint('LEFT', allToBagButton, 'RIGHT', dft_sectionGap, 0)
     refreshButton:SetScript('OnClick', function()
         XAutoAuction.refreshUI()
     end)
@@ -342,12 +362,14 @@ filterDisplayList = function()
         if canCraft == nil then canCraft = true end
         local minPriceOther = item['minpriceother']
         local basePrice = item['baseprice']
+        local stackCount = item['stackcount']
         local materialBuyPrice = XAutoBuy.getItemField(itemName, 'price', 0)
         local bagCount = XInfo.getBagItemCount(itemName)
         local mailCount = XInfo.getMailItemCount(itemName)
-        local itemTotalCount = XInfo.getItemTotalCount(itemName)
+        local auctionCount = XInfo.getAuctionItemCount(itemName)
         local dealCount = XInfo.getAuctionInfoField(itemName, 'dealcount', 0)
         local dealRate = XInfo.getAuctionInfoField(itemName, 'dealrate', 99)
+        local important = checkImportant(item)
 
         local disFlag = false
         if displayFilter == '全部' then
@@ -360,7 +382,7 @@ filterDisplayList = function()
             end
         elseif displayFilter == '优质' then
             if enabled then
-                if star or checkImportant(item) then
+                if star or important then
                     disFlag = true
                 end
             end
@@ -383,7 +405,7 @@ filterDisplayList = function()
                 disFlag = true
             end
         elseif displayFilter == '量大' then
-            if itemTotalCount >= 20 then
+            if auctionCount >= 10 then
                 disFlag = true
             end
         elseif displayFilter == '邮寄' then
@@ -402,6 +424,10 @@ filterDisplayList = function()
             end
         elseif displayFilter == '不做' then
             if not canCraft then
+                disFlag = true
+            end
+        elseif displayFilter == '潜力' then
+            if (not important) and (dealCount / 3 / stackCount >= 10) then
                 disFlag = true
             end
         end
@@ -437,8 +463,20 @@ filterDisplayList = function()
         frame.itemReceiveButton = itemReceiveButton
         itemReceiveButton.frame = frame
 
+        local itemToBankButton = XUI.createButton(frame, 30, 'O')
+        itemToBankButton:SetPoint('LEFT', itemReceiveButton, 'RIGHT', 0, 0)
+        itemToBankButton:SetScript('OnClick', itemToBankClick)
+        frame.itemToBankButton = itemToBankButton
+        itemToBankButton.frame = frame
+
+        local itemToBagButton = XUI.createButton(frame, 30, 'I')
+        itemToBagButton:SetPoint('LEFT', itemToBankButton, 'RIGHT', 0, 0)
+        itemToBagButton:SetScript('OnClick', itemToBagClick)
+        frame.itemToBagButton = itemToBagButton
+        itemToBagButton.frame = frame
+
         local itemNameButton = XUI.createButton(frame, 160, '')
-        itemNameButton:SetPoint('LEFT', itemReceiveButton, 'RIGHT', 0, 0)
+        itemNameButton:SetPoint('LEFT', itemToBagButton, 'RIGHT', 0, 0)
         itemNameButton:SetScript('OnClick', itemNameClick)
         itemNameButton:SetScript("OnEnter", function(self)
             local tindex = self.frame.index
@@ -691,7 +729,11 @@ refreshUI = function()
         end
 
         local stackCountStr = 'S' .. stackCount
-        if stackCount > 2 then
+        if stackCount > 4 then
+            stackCountStr = XUI.Purple .. stackCountStr
+        elseif stackCount > 3 then
+            stackCountStr = XUI.Red .. stackCountStr
+        elseif stackCount > 2 then
             stackCountStr = XUI.Cyan .. stackCountStr
         elseif stackCount > 1 then
             stackCountStr = XUI.Green .. stackCountStr
@@ -1295,7 +1337,7 @@ setPriceByName = function(itemName, basePrice, profitRate, isDealRate, confirm)
                         if dealRate == 99 then dealRate = 1 end
                         local price = basePrice / (1 - profitRate)
                         if isDealRate then
-                            price = price + dealRate * vendorPrice * XAPI.FeeRate
+                            price = price + (dealRate - 1) * vendorPrice * XAPI.FeeRate
                         end
                         if confirm then
                             item['baseprice'] = price
@@ -1445,39 +1487,10 @@ itemMailClick = function(this)
     local item = XAutoAuctionList[index];
     if not item then return end
 
-    if not XAPI.IsMailBoxOpen() then
-        xdebug.error('请先打开邮箱')
-        return
-    end
+    local count = 5
+    if IsShiftKeyDown() then count = 12 end
 
-    XInfo.reloadBag()
-    local bagItem = XInfo.getBagItem(item['itemname'])
-    if not bagItem then
-        xdebug.error('背包中未找到该物品')
-        return
-    end
-
-    local batchCount = 5
-    if IsShiftKeyDown() then batchCount = 12 end
-
-    if bagItem['count'] < batchCount then
-        xdebug.error(item['itemname'] .. '数量不足')
-        return
-    end
-
-    for t = 1, 12 do
-        XAPI.ClickSendMailItemButton(t, true)
-    end
-    for pidx = 1, batchCount do
-        local position = bagItem['positions'][pidx];
-        XAPI.C_Container_PickupContainerItem(position[1], position[2])
-
-        XAPI.ClickSendMailItemButton(pidx)
-    end
-    XAPI.SendMail('阿肌', 'P-' .. item['itemname'] .. '-' .. batchCount)
-    xdebug.info(item['itemname'] .. '发送成功')
-    XInfo.reloadBag()
-    XInfo.reloadMail()
+    XUtils.sendMail(item['itemname'], count)
     refreshUI()
 end
 
@@ -1486,50 +1499,33 @@ itemReceiveClick = function(this)
     local item = XAutoAuctionList[index];
     if not item then return end
 
-    if not XAPI.IsMailBoxOpen() then
-        xdebug.error('请先打开邮箱')
-        return
+    XUtils.receiveMail(item['itemname'])
+    refreshUI()
+end
+
+itemToBankClick = function(this)
+    local index = this.frame.index
+    local item = XAutoAuctionList[index];
+    if not item then return end
+
+    if IsShiftKeyDown() then
+        XUtils.moveToBank(item['itemname'])
+    else
+        XUtils.moveToBank(item['itemname'], 1)
     end
+    refreshUI()
+end
 
-    local mailCount = XAPI.GetInboxNumItems()
-    if mailCount <= 0 then
-        xdebug.error('没有邮件')
-        return
+itemToBagClick = function(this)
+    local index = this.frame.index
+    local item = XAutoAuctionList[index];
+    if not item then return end
+
+    if IsShiftKeyDown() then
+        XUtils.moveToBag(item['itemname'])
+    else
+        XUtils.moveToBag(item['itemname'], 1)
     end
-
-    XInfo.reloadBag()
-
-    if XInfo.emptyBagCount <= 0 then
-        xdebug.error('包裹已满')
-        return
-    end
-
-    for midx = 1, mailCount do
-        local mailInfo = { XAPI.GetInboxHeaderInfo(midx) }
-        local subject = mailInfo[4]
-        local itemCount = mailInfo[8]
-        if itemCount then
-            if itemCount > 0 then
-                local _itemName, _itemCount = string.match(subject, 'P%-([^-]*)%-(.*)')
-                if _itemName and _itemCount then
-                    if _itemName == item['itemname'] then
-                        for iidx = 1, 12 do
-                            local _titemName = XAPI.GetInboxItem(midx, iidx)
-                            if _titemName == item['itemname'] then
-                                XAPI.TakeInboxItem(midx, iidx)
-                                break
-                            end
-                        end
-                        break
-                    end
-                end
-            end
-        end
-    end
-
-    xdebug.info('收取' .. item['itemname'])
-    XInfo.reloadBag()
-    XInfo.reloadMail()
     refreshUI()
 end
 
@@ -2084,6 +2080,9 @@ local function onUpdate()
                 break
             end
         end
+        if nextTaskIndex == -1 then
+            starQueryIndex = 1
+        end
         queryStarFlag = not queryStarFlag
     end
 
@@ -2119,6 +2118,10 @@ local function onUpdate()
     end
 
     addQueryTaskByIndex(nextTaskIndex)
+    curTask = taskList[1]
+    table.remove(taskList, 1)
+    curTask['starttime'] = time()
+    processQueryTask(curTask)
 end
 
 -- Events

@@ -5,6 +5,7 @@ local moduleName = 'XInfo'
 XInfoBagList = {}
 XInfoBankList = {}
 XInfo.emptyBagCount = 0
+XInfo.emptyBankCount = 0
 
 XInfo.reloadCount = function()
     XInfo.reloadBag()
@@ -47,11 +48,34 @@ XInfo.getBankItemCount = function(itemName)
     return item['count']
 end
 
-local lastBagUpdateTime = 0
-local lastBankUpdateTime = 0
+local itemStackCountCache = {}
+XInfo.isItemFullStack = function(bagId, slotId)
+    local bagItem = XAPI.C_Container_GetContainerItemInfo(bagId, slotId)
+    if not bagItem then return false end
+
+    local count = bagItem['stackCount']
+    local itemId = bagItem['itemID']
+
+    local stackCount = itemStackCountCache[itemId]
+    if stackCount then
+        return count >= stackCount
+    end
+
+    local itemInfo = { XAPI.GetItemInfo(itemId) }
+    if itemInfo then
+        stackCount = itemInfo[8]
+        itemStackCountCache[itemId] = stackCount
+    end
+    if not stackCount then stackCount = 1 end
+
+    return count >= stackCount
+end
+
+-- local lastBagUpdateTime = 0
+-- local lastBankUpdateTime = 0
 function ReloadBagBank(type)
-    if type == 'bag' and time() - lastBagUpdateTime < 1 then return end
-    if type == 'bank' and time() - lastBankUpdateTime < 1 then return end
+    -- if type == 'bag' and time() - lastBagUpdateTime < 1 then return end
+    -- if type == 'bank' and time() - lastBankUpdateTime < 1 then return end
     if type == 'bank' then
         if not XAPI.IsBankOpen() then
             return
@@ -72,6 +96,7 @@ function ReloadBagBank(type)
 
     local list = {}
     local emptyBagCount = 0
+    local emptyBankCount = 0
 
     for _, i in ipairs(slotIdList) do
         local slotCount = XAPI.C_Container_GetContainerNumSlots(i)
@@ -83,13 +108,15 @@ function ReloadBagBank(type)
                 local count = itemInfo.stackCount
                 if list[itemName] then
                     list[itemName]['count'] = list[itemName]['count'] + count
-                    table.insert(list[itemName]['positions'], { i, j })
+                    table.insert(list[itemName]['positions'], { i, j, count })
                 else
-                    list[itemName] = { count = count, positions = { { i, j } } }
+                    list[itemName] = { count = count, positions = { { i, j, count } } }
                 end
             else
                 if isBag then
                     emptyBagCount = emptyBagCount + 1
+                else
+                    emptyBankCount = emptyBankCount + 1
                 end
             end
         end
@@ -98,10 +125,11 @@ function ReloadBagBank(type)
     if type == 'bag' then
         XInfoBagList = list
         XInfo.emptyBagCount = emptyBagCount
-        lastBagUpdateTime = time()
+        -- lastBagUpdateTime = time()
     else
         XInfoBankList = list
-        lastBankUpdateTime = time()
+        XInfo.emptyBankCount = emptyBankCount
+        -- lastBankUpdateTime = time()
     end
 end
 
@@ -115,9 +143,9 @@ end
 
 -- Mail Items
 XInfoMailList = {}
-local lastMailUpdateTime = 0
+-- local lastMailUpdateTime = 0
 XInfo.reloadMail = function()
-    if time() - lastMailUpdateTime < 1 then return end
+    -- if time() - lastMailUpdateTime < 1 then return end
     if not XAPI.IsMailBoxOpen() then
         return
     end
@@ -143,7 +171,7 @@ XInfo.reloadMail = function()
         end
     end
     XInfoMailList = list
-    lastMailUpdateTime = time()
+    -- lastMailUpdateTime = time()
 end
 
 XInfo.getMailItem = function(itemName)
@@ -170,12 +198,12 @@ XInfo.getAuctionItem = function(itemName)
     return nil
 end
 
-local lastAuctionUpdateTime = 0
+-- local lastAuctionUpdateTime = 0
 XInfo.auctioningCount = 0
 XInfo.auctionedCount = 0
 XInfo.auctionedMoney = 0
 XInfo.reloadAuction = function()
-    if time() - lastAuctionUpdateTime < 1 then return end
+    -- if time() - lastAuctionUpdateTime < 1 then return end
     if not XAPI.IsAuctionFrameOpen() then return end
 
     local list = {}
@@ -224,7 +252,7 @@ XInfo.reloadAuction = function()
     XInfo.auctionedCount = tAuctionedCount
     XInfo.auctionedMoney = tAuctionedMoney
 
-    lastAuctionUpdateTime = time()
+    -- lastAuctionUpdateTime = time()
 end
 
 XInfo.getAuctionItemCount = function(itemName)

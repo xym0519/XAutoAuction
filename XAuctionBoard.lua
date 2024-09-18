@@ -5,9 +5,6 @@ local moduleName = 'XAuctionBoard'
 local mainFrame = nil
 XAuctionBoard = CreateFrame("Frame")
 
-local dataList = {}
-local displayFrameList = {}
-
 -- Function definition
 local initUI
 local refreshUI
@@ -25,8 +22,10 @@ initUI = function()
     local cleanButton = XUI.createButton(mainFrame, 60, '清除')
     cleanButton:SetPoint("TOPLEFT", mainFrame, "TOPLEFT", 15, -30)
     cleanButton:SetScript("OnClick", function()
-        dataList = {}
-        refreshUI()
+        XUIConfirmDialog.show(moduleName, '确认', '确认清除', function()
+            XAuctionBoardList = {}
+            refreshUI()
+        end)
     end)
 
     local refreshButton = XUI.createButton(mainFrame, 60, '刷新')
@@ -61,7 +60,7 @@ refreshUI = function()
     if not mainFrame then return end
     local totalDealCount = 0
     local totalCraftCount = 0
-    for _, item in ipairs(dataList) do
+    for _, item in ipairs(XAuctionBoardList) do
         totalDealCount = totalDealCount + item['dealcount']
         totalCraftCount = totalCraftCount + item['craftcount']
     end
@@ -72,7 +71,7 @@ refreshUI = function()
     local scrollView = mainFrame.scrollView
     scrollView:ClearContents()
 
-    for i, dataItem in ipairs(dataList) do
+    for i, dataItem in ipairs(XAuctionBoardList) do
         local frame = scrollView:CreateFrame(mainFrame:GetWidth() - 20, 30)
         local indexLabel = XUI.createLabel(frame, 40, i, 'CENTER')
         indexLabel:SetPoint('LEFT', frame, 'LEFT', 5, 0)
@@ -126,7 +125,7 @@ addItem = function(itemName, type, count)
 
     local existed = false
 
-    for _, item in ipairs(dataList) do
+    for _, item in ipairs(XAuctionBoardList) do
         if item['itemname'] == itemName then
             if type == 'deal' then
                 item['dealcount'] = item['dealcount'] + count
@@ -140,13 +139,13 @@ addItem = function(itemName, type, count)
 
     if not existed then
         if type == 'deal' then
-            table.insert(dataList, { itemname = itemName, dealcount = count, craftcount = 0 })
+            table.insert(XAuctionBoardList, { itemname = itemName, dealcount = count, craftcount = 0 })
         elseif type == 'craft' then
-            table.insert(dataList, { itemname = itemName, dealcount = 0, craftcount = count })
+            table.insert(XAuctionBoardList, { itemname = itemName, dealcount = 0, craftcount = count })
         end
     end
 
-    table.sort(dataList, function(a, b)
+    table.sort(XAuctionBoardList, function(a, b)
         if a['dealcount'] == b['dealcount'] then
             return a['craftcount'] > b['craftcount']
         else

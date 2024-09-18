@@ -421,14 +421,18 @@ end
 
 XUI.getColor_AuctionStackCount = function(auctionCount, stackCount)
     local res = XUI.Color_Normal
-    if auctionCount > stackCount * 3 then
+    if auctionCount >= 15  then
         res = XUI.Color_Worst
-    elseif auctionCount >= stackCount * 2 or auctionCount <= 0 then
+    elseif auctionCount >= 10 then
         res = XUI.Color_Bad
-    elseif auctionCount > stackCount or auctionCount < stackCount then
+    elseif auctionCount >= stackCount * 2 then
         res = XUI.Color_Fair
-    else
+    elseif auctionCount >= stackCount then
         res = XUI.Color_Good
+    elseif auctionCount > 0 then
+        res = XUI.Color_Poor
+    else
+        res = XUI.Color_Bad
     end
     return res
 end

@@ -186,3 +186,191 @@ end
 XUtils.round = function(v)
     return math.floor(v + 0.5);
 end
+
+XUtils.sendMail = function(itemName, stackCount, fullStack, receiver)
+    if receiver == nil then receiver = '阿肌' end
+    if fullStack == nil then fullStack = true end
+
+    if not XAPI.IsMailBoxOpen() then
+        xdebug.error('请先打开邮箱')
+        return
+    end
+
+    XInfo.reloadBag()
+    local bagItem = XInfo.getBagItem(itemName)
+    if not bagItem then
+        xdebug.error('背包中未找到该物品')
+        return
+    end
+
+    if #bagItem['positions'] < stackCount then
+        xdebug.error(itemName .. '数量不足')
+        return
+    end
+
+    for idx = 1, 12 do
+        XAPI.ClickSendMailItemButton(idx, true)
+    end
+    local targetPositions = {}
+    for idx = 1, #bagItem['positions'] do
+        local position = bagItem['positions'][idx];
+        if fullStack then
+            if XInfo.isItemFullStack(position[1], position[2]) then
+                table.insert(targetPositions, position)
+            end
+        else
+            table.insert(targetPositions, position)
+        end
+        if #targetPositions >= stackCount then
+            break
+        end
+    end
+    if #targetPositions < stackCount then
+        xdebug.error(itemName .. '数量不足')
+        return
+    end
+
+    if stackCount > 12 then stackCount = 12 end
+    for idx = 1, stackCount do
+        local position = targetPositions[idx]
+        XAPI.C_Container_PickupContainerItem(position[1], position[2])
+        XAPI.ClickSendMailItemButton(idx)
+    end
+
+    XAPI.SendMail('阿肌', 'P-' .. itemName .. '-' .. stackCount)
+    xdebug.info(itemName .. '发送成功')
+    XInfo.reloadBag()
+    XInfo.reloadMail()
+end
+
+XUtils.receiveMail = function(itemName)
+    if not XAPI.IsMailBoxOpen() then
+        xdebug.error('请先打开邮箱')
+        return
+    end
+
+    local mailCount = XAPI.GetInboxNumItems()
+    if mailCount <= 0 then
+        xdebug.error('没有邮件')
+        return
+    end
+
+    XInfo.reloadBag()
+
+    if XInfo.emptyBagCount <= 0 then
+        xdebug.error('包裹已满')
+        return
+    end
+
+    for idx = 1, mailCount do
+        local mailInfo = { XAPI.GetInboxHeaderInfo(idx) }
+        local itemCount = mailInfo[8]
+        if itemCount then
+            if itemCount > 0 then
+                local found = false
+                for iidx = 1, 12 do
+                    local _itemName = XAPI.GetInboxItem(idx, iidx)
+                    if _itemName == itemName then
+                        found = true
+                        XAPI.TakeInboxItem(idx, iidx)
+                        break
+                    end
+                end
+                if found then break end
+            end
+        end
+    end
+
+    xdebug.info('收取' .. itemName)
+    XInfo.reloadBag()
+    XInfo.reloadMail()
+end
+
+function MoveToBagBank(itemNames, direcion, stackCount, exceptions, fullStack)
+    if not XAPI.IsBankOpen() then
+        xdebug.error('请先打开银行')
+        return
+    end
+    XInfo.reloadBag()
+    XInfo.reloadBank()
+
+    if itemNames == nil then itemNames = {} end
+    if type(itemNames) == "string" then itemNames = { itemNames } end
+    if exceptions == nil then exceptions = { '炉石', '简易研磨器' } end
+    if fullStack == nil then fullStack = true end
+
+    local sourceItems = {}
+    if direcion == 'tobank' then
+        sourceItems = XInfoBagList
+    else
+        sourceItems = XInfoBankList
+    end
+    local sourcePositions = {}
+
+    local targetEmptyCount = 0
+    if direcion == 'tobank' then
+        targetEmptyCount = XInfo.emptyBankCount
+    else
+        targetEmptyCount = XInfo.emptyBagCount
+    end
+
+    for _itemName, item in pairs(sourceItems) do
+        if not XUtils.inArray(_itemName, exceptions) then
+            if #itemNames == 0 or XUtils.inArray(_itemName, itemNames) then
+                for _, position in ipairs(item['positions']) do
+                    if fullStack then
+                        if XInfo.isItemFullStack(position[1], position[2]) then
+                            table.insert(sourcePositions, position)
+                        end
+                    else
+                        table.insert(sourcePositions, position)
+                    end
+                end
+            end
+        end
+        if stackCount then
+            if #sourcePositions >= stackCount then
+                break
+            end
+        end
+        if #sourcePositions >= targetEmptyCount then
+            break
+        end
+    end
+
+    if stackCount then
+        if #sourcePositions < stackCount then
+            if #itemNames == 1 then
+                xdebug.error(itemNames[1] .. '数量不足')
+            else
+                xdebug.error('物品数量不足')
+            end
+            return
+        end
+    end
+
+    local count = stackCount
+    if not count then count = #sourcePositions end
+    if count > targetEmptyCount then count = targetEmptyCount end
+    for i = 1, count do
+        local position = sourcePositions[i]
+        if position then
+            XAPI.C_Container_UseContainerItem(position[1], position[2])
+        end
+    end
+    if #itemNames == 1 then
+        xdebug.info(itemNames[1] .. '放入银行成功')
+    else
+        xdebug.info('物品放入银行成功')
+    end
+    XInfo.reloadBag()
+    XInfo.reloadBank()
+end
+
+XUtils.moveToBag = function(itemNames, stackCount, exceptions, fullStack)
+    MoveToBagBank(itemNames, 'tobag', stackCount, exceptions, fullStack)
+end
+
+XUtils.moveToBank = function(itemNames, stackCount, exceptions, fullStack)
+    MoveToBagBank(itemNames, 'tobank', stackCount, exceptions, fullStack)
+end

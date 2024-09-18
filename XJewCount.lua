@@ -10,12 +10,61 @@ local createLabel
 
 -- Function implemention
 createLabel = function(itemName)
-    local label = XUI.createLabel(mainFrame, 120)
-    label.itemName = itemName
+    local frame = XAPI.CreateFrame('Frame', nil, mainFrame)
+    frame:SetSize(180, 30)
+    frame.itemName = itemName
+
+    local sendMailButton = XUI.createButton(frame, 30, 'U')
+    sendMailButton:SetPoint('LEFT', frame, 'LEFT', 0, 0)
+    sendMailButton:SetScript('OnClick', function(self)
+        local count = 1
+        if IsShiftKeyDown() then
+            XInfo.reloadBag()
+            local item = XInfo.getBagItem(self.frame.itemName)
+            if item then count = #item['positions'] - 1 end
+        end
+        XUtils.sendMail(self.frame.itemName, count)
+        refreshUI()
+    end)
+    sendMailButton.frame = frame
+
+    local receiveMailButton = XUI.createButton(frame, 30, 'R')
+    receiveMailButton:SetPoint('LEFT', sendMailButton, 'RIGHT', 0, 0)
+    receiveMailButton:SetScript('OnClick', function(self)
+        XUtils.receiveMail(self.frame.itemName)
+        refreshUI()
+    end)
+    receiveMailButton.frame = frame
+
+    local toBankButton = XUI.createButton(frame, 30, 'O')
+    toBankButton:SetPoint('LEFT', receiveMailButton, 'RIGHT', 0, 0)
+    toBankButton:SetScript('OnClick', function(self)
+        if IsShiftKeyDown() then
+            XUtils.moveToBank(self.frame.itemName, nil, nil, false)
+        else
+            XUtils.moveToBank(self.frame.itemName, 1)
+        end
+        refreshUI()
+    end)
+    toBankButton.frame = frame
+
+    local toBagButton = XUI.createButton(frame, 30, 'I')
+    toBagButton:SetPoint('LEFT', toBankButton, 'RIGHT', 0, 0)
+    toBagButton:SetScript('OnClick', function(self)
+        if IsShiftKeyDown() then
+            XUtils.moveToBag(self.frame.itemName, nil, nil, false)
+        else
+            XUtils.moveToBag(self.frame.itemName, 1)
+        end
+        refreshUI()
+    end)
+    toBagButton.frame = frame
+
+    local label = XUI.createLabel(mainFrame, 110)
+    label:SetPoint('LEFT', toBagButton, 'RIGHT', 10, 0)
     label:SetHeight(18)
     label:SetScript("OnEnter", function(self)
-        local titemName = self.itemName
-        local itemId = XInfo.getItemId(titemName)
+        local itemId = XInfo.getItemId(self.frame.itemName)
         if itemId > 0 then
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:SetHyperlink("item:" .. itemId) -- 显示物品信息
@@ -24,25 +73,25 @@ createLabel = function(itemName)
     label:SetScript("OnLeave", function(self)
         GameTooltip:Hide()
     end)
-    label.Refresh = function(self)
-        local titemName = self.itemName
-        local bagCount = XInfo.getBagItemCount(titemName)
-        local totalCount = XInfo.getItemTotalCount(titemName)
+    label.frame = frame
+    frame.label = label
 
-        titemName = string.sub(titemName, 1, 3)
-
+    frame.Refresh = function(self)
+        local bagCount = XInfo.getBagItemCount(self.itemName)
         local bagCountStr = XUI.getColor_BagCount(bagCount) .. bagCount
-
+        local totalCount = XInfo.getItemTotalCount(self.itemName)
         local totalCountStr = XUI.getColor_TotalCount(totalCount) .. totalCount
 
-        local content = titemName .. '： ' .. bagCountStr .. XUI.White .. ' / ' .. totalCountStr
-        self:SetText(content)
+        local sitemName = string.sub(self.itemName, 1, 3)
+        local content = sitemName .. '： ' .. bagCountStr .. XUI.White .. ' / ' .. totalCountStr
+
+        self.label:SetText(content)
     end
-    return label
+    return frame
 end
 
 initUI = function()
-    mainFrame = XUI.createFrame('XJewCountMainFrame', 270, 170)
+    mainFrame = XUI.createFrame('XJewCountMainFrame', 520, 220)
     mainFrame.title:SetText('原石数量')
     mainFrame:SetPoint('BOTTOM', UIParent, 'BOTTOM', 0, 60)
     mainFrame:Hide()
@@ -130,7 +179,7 @@ initUI = function()
     table.insert(labels, ppLabel)
 
     local brLabel = createLabel('血玉石')
-    brLabel:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 140, -30)
+    brLabel:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 260, -30)
     table.insert(labels, brLabel)
 
     local boLabel = createLabel('帝黄晶')
@@ -154,13 +203,13 @@ initUI = function()
     table.insert(labels, bpLabel)
 
 
-    local tyLabel = createLabel('天焰钻石')
-    tyLabel:SetPoint('TOPLEFT', ppLabel, 'BOTTOMLEFT', 0, 0)
-    table.insert(labels, tyLabel)
+    -- local tyLabel = createLabel('天焰钻石')
+    -- tyLabel:SetPoint('TOPLEFT', ppLabel, 'BOTTOMLEFT', 0, 0)
+    -- table.insert(labels, tyLabel)
 
-    local ddLabel = createLabel('大地侵攻钻石')
-    ddLabel:SetPoint('TOPLEFT', bpLabel, 'BOTTOMLEFT', 0, 0)
-    table.insert(labels, ddLabel)
+    -- local ddLabel = createLabel('大地侵攻钻石')
+    -- ddLabel:SetPoint('TOPLEFT', bpLabel, 'BOTTOMLEFT', 0, 0)
+    -- table.insert(labels, ddLabel)
 
     refreshUI()
 end

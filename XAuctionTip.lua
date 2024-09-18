@@ -33,10 +33,7 @@ GameTooltip:HookScript('OnTooltipSetItem', function(self)
 
     self:AddLine(' ')
     self:AddLine('---------- 数量信息 ----------')
-    self:AddDoubleLine('背包', bagCountStr)
-    self:AddDoubleLine('银行', bankCountStr)
-    self:AddDoubleLine('邮件', mailCountStr)
-    self:AddDoubleLine('拍卖', auctionCountStr)
+    self:AddDoubleLine('背银邮拍', bagCountStr .. ' / ' .. bankCountStr .. ' / ' .. mailCountStr .. ' / ' .. auctionCountStr)
     self:AddDoubleLine('材料', materialCountStr)
 
     local basePrice = 0
@@ -54,13 +51,46 @@ GameTooltip:HookScript('OnTooltipSetItem', function(self)
     local materialCostPrice = XInfo.getAuctionInfoField(materialName, 'costprice', 0)
     local materialCostPriceStr = XUtils.priceToMoneyString(materialCostPrice)
 
+    local profit = minPriceOther * XAPI.ProfitRate - materialCostPrice
+    local profitStr = XUtils.priceToMoneyString(profit)
+    if profit > 20000 then
+        profitStr = XUI.Color_Great .. profitStr
+    elseif profit > 10000 then
+        profitStr = XUI.Color_Good .. profitStr
+    elseif profit > 5000 then
+        profitStr = XUI.Color_Fair .. profitStr
+    elseif profit > 0 then
+        profitStr = XUI.Color_Poor .. profitStr
+    else
+        profitStr = XUI.Color_Bad .. profitStr
+    end
+
+    local profitCur = minPriceOther * XAPI.ProfitRate - materialBuyoutPrice
+    local profitCurStr = XUtils.priceToMoneyString(profitCur)
+    if profitCur > 20000 then
+        profitCurStr = XUI.Color_Great .. profitCurStr
+    elseif profitCur > 10000 then
+        profitCurStr = XUI.Color_Good .. profitCurStr
+    elseif profitCur > 5000 then
+        profitCurStr = XUI.Color_Fair .. profitCurStr
+    elseif profitCur > 0 then
+        profitCurStr = XUI.Color_Poor .. profitCurStr
+    else
+        profitCurStr = XUI.Color_Bad .. profitCurStr
+    end
+
     self:AddLine(' ')
     self:AddLine('---------- 价格信息 ----------')
     self:AddDoubleLine('当前价格', minPriceOtherStr)
     self:AddDoubleLine('到手价格', XUI.Cyan .. XUtils.priceToMoneyString(minPriceOther * XAPI.ProfitRate))
-    self:AddDoubleLine('材料现价', materialBuyoutPriceStr)
+    self:AddLine(' ')
     self:AddDoubleLine('材料均价', materialCostPriceStr)
-    self:AddDoubleLine('最低售价', XUI.Cyan .. XUtils.priceToMoneyString(materialCostPrice / XAPI.ProfitRate))
+    self:AddDoubleLine('最低售价', XUtils.priceToMoneyString(materialCostPrice / XAPI.ProfitRate))
+    self:AddDoubleLine('综合利润', profitStr)
+    self:AddLine(' ')
+    self:AddDoubleLine('材料现价', materialBuyoutPriceStr)
+    self:AddDoubleLine('最低售价', XUtils.priceToMoneyString(materialBuyoutPrice / XAPI.ProfitRate))
+    self:AddDoubleLine('当前利润', profitCurStr)
 
     local dealRate = XInfo.getAuctionInfoField(itemName, 'dealrate', 99)
     local dealRateStr = XUI.getColor_DealRate(dealRate) .. dealRate

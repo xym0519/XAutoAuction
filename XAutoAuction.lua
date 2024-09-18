@@ -7,6 +7,7 @@ XAutoBuyList = {}
 XSpeakWordList = {}
 XJewWordList = {}
 XJewWordSetting = {}
+XAuctionBoardList = {}
 XFrameLevel = 10
 XSellBuyFlag = true
 

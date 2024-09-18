@@ -241,6 +241,17 @@ XAPI.C_Container_SplitContainerItem = function(...)
     C_Container.SplitContainerItem(...)
 end
 
+-- 使用物品
+-- https://wowpedia.fandom.com/wiki/API_C_Container.UseContainerItem
+-- Arguments: (containerIndex, slotIndex [, unitToken, reagentBankOpen])
+--   containerIndex: number
+--   slotIndex: number
+--   unitToken: string?
+--   reagentBankOpen: boolean? = false
+XAPI.C_Container_UseContainerItem = function(...)
+    return C_Container.UseContainerItem(...)
+end
+
 -- 获取容器内槽位数量
 -- https://wowpedia.fandom.com/wiki/API_C_Container.GetContainerNumSlots
 -- Arguments: (containerIndex)
