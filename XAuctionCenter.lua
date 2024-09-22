@@ -1837,7 +1837,7 @@ processQueryTask = function(task)
             if XAPI.C_Item_DoesItemExist(task['location']) then
                 XAPI.C_Item_UnlockItem(task['location'])
             end
-            XAPI.C_Item_LockItem(task['location'])
+            -- XAPI.C_Item_LockItem(task['location'])
             task['status'] = 'posting'
             return
         end
