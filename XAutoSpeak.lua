@@ -362,3 +362,4 @@ SLASH_XAUTOSPEAKSEND1 = '/xautospeak_send'
 XAutoSpeak.addItem = addItem
 XAutoSpeak.getItem = getItem
 XAutoSpeak.toggle = function() XUI.toggleVisible(mainFrame) end
+XAutoSpeak.getRunning = function() return isRunning end

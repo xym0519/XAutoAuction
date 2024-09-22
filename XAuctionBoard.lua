@@ -58,20 +58,53 @@ end
 
 refreshUI = function()
     if not mainFrame then return end
-    local totalDealCount = 0
-    local totalCraftCount = 0
-    for _, item in ipairs(XAuctionBoardList) do
-        totalDealCount = totalDealCount + item['dealcount']
-        totalCraftCount = totalCraftCount + item['craftcount']
-    end
-    mainFrame.title:SetText('拍卖记录'
-        .. '    成交: ' .. totalDealCount
-        .. '    制造: ' .. totalCraftCount)
 
     local scrollView = mainFrame.scrollView
     scrollView:ClearContents()
 
-    for i, dataItem in ipairs(XAuctionBoardList) do
+    local itemMap = {};
+    local itemList = {}
+    local totalDealCount = 0
+    local totalCraftCount = 0
+    for _, dataItem in ipairs(XAuctionBoardList) do
+        totalDealCount = totalDealCount + dataItem['dealcount']
+        totalCraftCount = totalCraftCount + dataItem['craftcount']
+        local materialName = XInfo.getMaterialName(dataItem['itemname'])
+        if materialName ~= nil then
+            local tItem = itemMap[materialName]
+            if tItem == nil then
+                tItem = {
+                    itemname = materialName,
+                    dealcount = dataItem['dealcount'],
+                    craftcount = dataItem['craftcount']
+                }
+                itemMap[materialName] = tItem
+                table.insert(itemList, tItem)
+            else
+                tItem['dealcount'] = tItem['dealcount'] + dataItem['dealcount']
+                tItem['craftcount'] = tItem['craftcount'] + dataItem['craftcount']
+            end
+        end
+    end
+
+    table.sort(itemList, function(a, b)
+        if a['dealcount'] == b['dealcount'] then
+            return a['craftcount'] > b['craftcount']
+        else
+            return a['dealcount'] > b['dealcount']
+        end
+    end)
+    table.insert(itemList, { itemname = XUI.Green .. '----------', dealcount = 0, craftcount = 0 })
+
+    mainFrame.title:SetText('拍卖记录'
+        .. '    成交: ' .. totalDealCount
+        .. '    制造: ' .. totalCraftCount)
+
+    for _, dataItem in ipairs(XAuctionBoardList) do
+        table.insert(itemList, dataItem)
+    end
+
+    for i, dataItem in ipairs(itemList) do
         local frame = scrollView:CreateFrame(mainFrame:GetWidth() - 20, 30)
         local indexLabel = XUI.createLabel(frame, 40, i, 'CENTER')
         indexLabel:SetPoint('LEFT', frame, 'LEFT', 5, 0)

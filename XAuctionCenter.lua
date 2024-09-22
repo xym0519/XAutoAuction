@@ -94,6 +94,10 @@ local itemCanCraftClick
 local itemRefreshClick
 local itemCleanClick
 
+local processAuctionTask
+local processQueryTask
+local processCleanLowerTask
+
 -- Function implemention
 initData = function()
     if not XAutoAuctionList then return end
@@ -139,9 +143,10 @@ initUI = function()
     jewCountButton:SetPoint('RIGHT', craftQueueButton, 'LEFT', -3, 0)
     jewCountButton:SetScript('OnClick', XJewCount.toggle)
 
-    local autoSpeakButton = XUI.createButton(mainFrame, dft_buttonWidth, '喊话')
+    local autoSpeakButton = XUI.createButton(mainFrame, dft_buttonWidth, XUI.Red .. '喊话')
     autoSpeakButton:SetPoint('RIGHT', jewCountButton, 'LEFT', -3, 0)
     autoSpeakButton:SetScript('OnClick', XAutoSpeak.toggle)
+    mainFrame.autoSpeakButton = autoSpeakButton
 
     local startButton = XUI.createButton(mainFrame, dft_buttonWidth, '开始')
     startButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -30)
@@ -581,6 +586,12 @@ refreshUI = function()
         mainFrame.startButton:SetText('停止')
     else
         mainFrame.startButton:SetText('开始')
+    end
+
+    if XAutoSpeak.getRunning() then
+        mainFrame.autoSpeakButton:SetText(XUI.Green .. '喊话')
+    else
+        mainFrame.autoSpeakButton:SetText(XUI.Red .. '喊话')
     end
 
     local labelText = format('%s) ', #taskList)
@@ -1728,11 +1739,15 @@ local function processQueryTask_Auction(task)
         return
     end
 
-    insertAuctionTaskByIndex(task['index'], price, subcount)
     finishTask()
+    insertAuctionTaskByIndex(task['index'], price, subcount)
+    curTask = taskList[1]
+    table.remove(taskList, 1)
+    curTask['starttime'] = time()
+    processAuctionTask(curTask)
 end
 
-local function processQueryTask(task)
+processQueryTask = function(task)
     XInfo.reloadAuction()
     local index = task['index']
     local item = XAutoAuctionList[index]
@@ -1845,7 +1860,7 @@ local function processQueryTask(task)
     end
 end
 
-local function processAuctionTask(task)
+processAuctionTask = function(task)
     local index = task['index']
     local item = XAutoAuctionList[index]
     if not item then
@@ -1907,7 +1922,7 @@ local function processAuctionTask(task)
     end
 end
 
-local function processCleanLowerTask(task)
+processCleanLowerTask = function(task)
     lastAutoCleanTime = time()
 
     if not XAPI.IsAuctionFrameOpen() then
