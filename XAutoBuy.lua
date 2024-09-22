@@ -536,13 +536,7 @@ end
 
 local function onUpdate()
     if not confirmFrame then return end
-    if XAutoAuction.XSellBuyFlag then return end
-    if not isStarted then
-        if not XAutoAuction.XSellBuyFlag then
-            XAutoAuction.XSellBuyFlag = true
-        end
-        return
-    end
+    if not isStarted then return end
 
     if isQuerying then
         if time() - queryStartTime > dft_taskTimeout then
@@ -680,9 +674,6 @@ local function onUpdate()
     queryIndex = 1
     queryPage = 0
     queryFound = nil
-    if not XAutoAuction.XSellBuyFlag then
-        XAutoAuction.XSellBuyFlag = not XAutoAuction.XSellBuyFlag
-    end
     refreshUI()
 end
 

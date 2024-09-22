@@ -9,7 +9,6 @@ XJewWordList = {}
 XJewWordSetting = {}
 XAuctionBoardList = {}
 XFrameLevel = 10
-XSellBuyFlag = true
 
 -- Register system events
 XAutoAuctionFrame:RegisterEvent('ADDON_LOADED')
