@@ -920,6 +920,12 @@ addQueryTaskByIndex = function(index, force)
         return
     end
 
+    XInfo.reloadBag()
+    local bagCount = XInfo.getBagItemCount(item['itemname'])
+    if bagCount <= 0 then
+        return
+    end
+
     local idx = 0
     for _index, task in pairs(taskList) do
         if task['action'] == 'query' then
@@ -1357,7 +1363,7 @@ setPriceByName = function(itemName, basePrice, profitRate, isDealRate, confirm)
                         end
                         if confirm then
                             item['baseprice'] = price
-                            item['defaultprice'] = price * 2
+                            item['defaultprice'] = price * 3
                         end
                         xdebug.info(item['itemname'] .. ':  ' .. XUtils.priceToMoneyString(price))
                     end
@@ -1796,6 +1802,9 @@ processQueryTask = function(task)
             end
             if price > dft_maxPrice then
                 price = dft_maxPrice
+            end
+            if price > item['defaultprice'] then
+                price = item['defaultprice']
             end
             if price < item['baseprice'] then
                 finishTask()
