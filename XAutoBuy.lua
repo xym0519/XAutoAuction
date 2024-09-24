@@ -42,7 +42,7 @@ local finishCurTask
 
 -- Function implemention
 initUI = function()
-    mainFrame = XUI.createFrame('XAutoBuyMainFrame', 540, 425)
+    mainFrame = XUI.createFrame('XAutoBuyMainFrame', 590, 425)
     mainFrame.title:SetText('自动购买')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
     mainFrame:Hide()
@@ -81,8 +81,9 @@ initUI = function()
     resetButton:SetPoint('LEFT', startButton, 'RIGHT', dft_buttonGap, 0)
     resetButton:SetScript('OnClick', function()
         for _, item in ipairs(XAutoBuyList) do
-            item.minprice = dft_minPrice
-            item.minbuyoutprice = dft_minPrice
+            item['minprice'] = dft_minPrice
+            item['minbuyoutprice'] = dft_minPrice
+            item['updatetime'] = 0
         end
         stopBuy()
         queryIndex = 1
@@ -121,6 +122,7 @@ initUI = function()
                     local itemId = XInfo.getAuctionInfoField(item['itemname'], 'itemid')
                     local price = XAPI.AuctionatorGetAuctionPriceByItemId(itemId)
                     item['minbuyoutprice'] = price
+                    item['updatetime'] = time()
                 end
             end
             refreshUI()
@@ -196,9 +198,12 @@ initUI = function()
         end)
         frame.itemNameButton = itemNameButton
 
+        local labelt = XUI.createLabel(frame, 50, '')
+        labelt:SetPoint('LEFT', itemNameButton, 'RIGHT', 8, 0)
+        frame.labelt = labelt
 
         local label = XUI.createLabel(frame, 50, '')
-        label:SetPoint('LEFT', itemNameButton, 'RIGHT', 8, 0)
+        label:SetPoint('LEFT', labelt, 'RIGHT', 0, 0)
         frame.label = label
 
         local label2 = XUI.createLabel(frame, 55, '')
@@ -369,8 +374,11 @@ refreshUI = function()
             local bagCountStr = XUtils.formatCount2(bagCount)
             local bankCountStr = XUtils.formatCount2(bankCount)
 
+            local updateTimeStr = XUtils.formatTime(item['updatetime'])
+
             frame.indexButton:SetText(idx)
             frame.itemNameButton:SetText(string.sub(itemName, 1, 18))
+            frame.labelt:SetText(updateTimeStr)
             frame.label:SetText(bagCountStr .. XUI.White .. '/' .. bankCountStr)
             frame.label2:SetText(priceStr)
             frame.label3:SetText(minPriceStr)
@@ -409,7 +417,10 @@ addItem = function(itemName, price)
     if getItem(itemName) then return end
     local item = {
         itemname = itemName,
-        price = price
+        price = price,
+        minbuyoutprice = dft_minPrice,
+        minprice = dft_minPrice,
+        updatetime = 0
     }
     table.insert(XAutoBuyList, item)
     refreshUI()
@@ -570,6 +581,7 @@ local function onUpdate()
                 XExternal.addScanHistory(itemName, time(), buyoutPrice)
 
                 if itemName == item['itemname'] then
+                    item.updatetime = time()
                     local nextBidPrice = 0
                     if bidPrice == 0 then
                         nextBidPrice = bidStart

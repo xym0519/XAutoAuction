@@ -18,6 +18,9 @@ XAPI.FeeRate = 0.15
 XAPI.TaxRate = 0.05
 XAPI.ProfitRate = 1 - XAPI.TaxRate
 
+-- 问号图标
+XAPI.Texture_QuestionMark = 'Interface/Icons/INV_Misc_QuestionMark'
+
 -- 界面 & 操作
 -- 清除鼠标选中物体
 -- https://wowpedia.fandom.com/wiki/API_ClearCursor
@@ -152,6 +155,17 @@ end
 --   7. subclassID: number : ItemType - The numeric ID of itemSubType
 XAPI.GetItemInfoInstant = function(...)
     return GetItemInfoInstant(...)
+end
+
+-- 获取物品图标
+-- https://wowpedia.fandom.com/wiki/API_GetItemIcon
+-- Arguments: (itemID)
+--   itemID: number - The ID of the item to query e.g. 23405 for Inv chest leather 09 [Farstrider's Tunic].
+-- Returns:
+--   icon: number : FileID - Icon texture used by the item.
+-- Details: Unlike GetItemInfo(), this function does not require the item to be readily available from the item cache.
+XAPI.GetItemIcon = function(...)
+    return GetItemIcon(...)
 end
 
 -- 创建ItemLocationMixin

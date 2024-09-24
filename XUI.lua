@@ -97,6 +97,25 @@ XUI.createLabel = function(parent, width, text, align)
     return label
 end
 
+XUI.createIcon = function(parent, width, height, texture)
+    if not texture then texture = XAPI.Texture_QuestionMark end
+    local frame = nil
+
+    frame = XAPI.CreateFrame('Frame', nil, parent)
+    frame:SetSize(width,height)
+    local icon = frame:CreateTexture(nil, 'BACKGROUND')
+    icon:SetAllPoints(frame)
+    icon:SetTexture(texture)
+
+    return frame
+end
+
+XUI.createItemIcon = function(parent, width, height, itemName)
+    local itemId = XInfo.getItemId(itemName)
+    local texture = XAPI.GetItemIcon(itemId)
+    return XUI.createIcon(parent, width, height, texture)
+end
+
 XUI.createEditbox = function(parent, width)
     local debug = false
     local editBox = XAPI.CreateFrame('EditBox', nil, parent, 'InputBoxTemplate')
@@ -421,11 +440,13 @@ end
 
 XUI.getColor_AuctionStackCount = function(auctionCount, stackCount)
     local res = XUI.Color_Normal
-    if auctionCount >= 15  then
+    if auctionCount >= 20  then
         res = XUI.Color_Worst
-    elseif auctionCount >= 10 then
+    elseif auctionCount >= 15 then
         res = XUI.Color_Bad
-    elseif auctionCount >= stackCount * 2 then
+    elseif auctionCount >= 10 then
+        res = XUI.Color_Poor
+    elseif auctionCount > stackCount * 2 then
         res = XUI.Color_Fair
     elseif auctionCount >= stackCount then
         res = XUI.Color_Good

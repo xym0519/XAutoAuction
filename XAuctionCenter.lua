@@ -4,6 +4,7 @@ local moduleName = 'XAuctionCenter'
 -- Variable definition
 local mainFrame = nil
 local scrollView = nil
+local materialFrames = {}
 
 local dft_minPrice = 9999999
 local dft_maxPrice = 2180000
@@ -15,6 +16,7 @@ local dft_deltaPrice = 10
 local dft_postdelay = 2
 local dft_oldInterval = 1800
 local dft_maxCraftCount = 20
+local dft_materialTaskInterval = 60
 
 local dft_buttonWidth = 45
 local dft_buttonGap = 1
@@ -27,9 +29,13 @@ local taskList = {}
 local curTask = nil
 local lastTaskFinishTime = 0
 
-local queryIndex = 0
-local starQueryIndex = 0
+local queryIndex = 1
+local starQueryIndex = 1
 local queryStarFlag = true
+
+local materialList = {}
+local lastMaterialTaskTime = time()
+local materialQueryIndex = 1
 
 local cleaningItems = {}
 
@@ -86,10 +92,14 @@ local itemRefreshClick
 local itemCleanClick
 
 local processQueryTask
+local processMaterialQueryTask
 
 -- Function implemention
 initData = function()
-    -- do nothing
+    materialList = {}
+    for _, itemName in ipairs(XInfo.materialListS) do
+        table.insert(materialList, { itemname = itemName, price = dft_minPrice })
+    end
 end
 
 resetData = function()
@@ -101,9 +111,12 @@ resetData = function()
     curTask = nil
     lastTaskFinishTime = 0
 
-    queryIndex = 0
-    starQueryIndex = 0
+    queryIndex = 1
+    starQueryIndex = 1
     queryStarFlag = true
+
+    materialQueryIndex = 1
+    lastMaterialTaskTime = time()
 end
 
 initUI = function()
@@ -295,6 +308,39 @@ initUI = function()
     local priceAdjustButton = XUI.createButton(mainFrame, dft_buttonWidth, '调价')
     priceAdjustButton:SetPoint('LEFT', checkRecipeButton, 'RIGHT', dft_buttonGap, 0)
     priceAdjustButton:SetScript('OnClick', priceAdjustClick)
+
+    local preFrame = priceAdjustButton
+    for _, item in ipairs(materialList) do
+        local materialItemFrame = XAPI.CreateFrame('Frame', nil, mainFrame)
+        materialItemFrame:SetSize(63, 30)
+        if preFrame == priceAdjustButton then
+            materialItemFrame:SetPoint('LEFT', preFrame, 'RIGHT', dft_sectionGap, 0)
+        else
+            materialItemFrame:SetPoint('LEFT', preFrame, 'RIGHT', 3, 0)
+        end
+        materialItemFrame.itemName = item['itemname']
+
+        local icon = XUI.createItemIcon(materialItemFrame, 25, 25, item['itemname'])
+        icon:SetPoint('LEFT', materialItemFrame, 'LEFT', 0, 0)
+
+        local countLabel = XUI.createLabel(materialItemFrame, 30, '', 'LEFT')
+        countLabel:SetPoint('LEFT', icon, 'RIGHT', 3, 0)
+
+        materialItemFrame:SetScript("OnEnter", function(self)
+            local itemid = XInfo.getItemId(self.itemName)
+            if itemid > 0 then
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                GameTooltip:SetHyperlink("item:" .. itemid) -- 显示物品信息
+            end
+        end)
+        materialItemFrame:SetScript("OnLeave", function(self)
+            GameTooltip:Hide()
+        end)
+
+        materialFrames[item['itemname']] = countLabel
+
+        preFrame = materialItemFrame
+    end
 
     local labelFrame = XAPI.CreateFrame('Frame', nil, mainFrame)
     labelFrame:SetSize(mainFrame:GetWidth() - 20, 30)
@@ -577,6 +623,8 @@ refreshUI = function()
             else
                 labelText = labelText .. '拍卖: ' .. curTask['itemname']
             end
+        elseif curTask['action'] == 'material' then
+            labelText = labelText .. format('查询: %s', curTask['itemname'])
         end
     end
     mainFrame.hintLabel:SetText(labelText)
@@ -772,6 +820,13 @@ refreshUI = function()
             frame.itemCanCraftButton:SetText(XUI.Red .. '禁')
         end
     end
+
+    for _, item in ipairs(materialList) do
+        local label = materialFrames[item['itemname']]
+        if label then
+            label:SetText(math.floor(item['price'] / 10000))
+        end
+    end
 end
 
 start = function()
@@ -818,6 +873,25 @@ startNextTask = function()
         processQueryTask(curTask)
         refreshUI()
         return
+    end
+
+    if lastMaterialTaskTime + dft_materialTaskInterval < time() then
+        lastMaterialTaskTime = time()
+        if #materialList > 0 then
+            local item = materialList[materialQueryIndex]
+            if item then
+                curTask = {
+                    action = 'material',
+                    itemname = item['itemname'],
+                    starttime = time(),
+                    timeout = dft_taskTimeout
+                }
+                refreshUI()
+                processMaterialQueryTask(curTask)
+                materialQueryIndex = (materialQueryIndex % #materialList) + 1
+                return
+            end
+        end
     end
 
     local task = getNextQueryTask()
@@ -978,8 +1052,8 @@ getNextQueryTask = function()
     local nextTaskIndex = -1
 
     if queryStarFlag then
-        for idx = 1, #XAutoAuctionList do
-            local index = (starQueryIndex + idx) % (#XAutoAuctionList + 1)
+        for idx = 0, #XAutoAuctionList - 1 do
+            local index = ((starQueryIndex + idx) % #XAutoAuctionList) + 1
             local item = XAutoAuctionList[index]
             if item ~= nil then
                 if item['enabled'] and item['star'] then
@@ -993,8 +1067,8 @@ getNextQueryTask = function()
     end
 
     if nextTaskIndex == -1 then
-        for idx = 1, #XAutoAuctionList do
-            local index = (queryIndex + idx) % (#XAutoAuctionList + 1)
+        for idx = 0, #XAutoAuctionList - 1 do
+            local index = ((queryIndex + idx) % #XAutoAuctionList) + 1
             local item = XAutoAuctionList[index]
             if item ~= nil then
                 if item['enabled'] and (not item['star']) then
@@ -1677,7 +1751,7 @@ end
 -- Event callback
 local function onQueryItemListUpdate(...)
     if not curTask then return end
-    if curTask['action'] ~= 'query' then return end
+    if curTask['action'] ~= 'query' and curTask['action'] ~= 'material' then return end
     if curTask['status'] ~= 'querying' then return end
 
     local batchCount, totalCount = XAPI.GetNumAuctionItems('list')
@@ -1870,6 +1944,62 @@ processQueryTask = function(task)
     end
 end
 
+processMaterialQueryTask = function(task)
+    if not task['status'] then
+        if not XAPI.CanSendAuctionQuery() then return end
+        task['status'] = 'querying'
+        XAPI.QueryAuctionItems(task['itemname'], nil, nil, 0, nil, nil, false, true)
+        return
+    elseif task['status'] == 'querying' then
+        return
+    elseif task['status'] == 'loaded' then
+        local itemIndex = 1
+        local minBuyoutPrice = dft_minPrice
+        while true do
+            local res = { XAPI.GetAuctionItemInfo('list', itemIndex) }
+            local itemName = res[1]
+            local stackCount = res[3]
+            local buyoutPrice = res[10]
+            local seller = res[14]
+            local itemId = res[17]
+
+            if not itemName then break end
+            if itemName == task['itemname'] then
+                buyoutPrice = buyoutPrice / stackCount
+
+                XExternal.updateItemInfo(itemName, itemId)
+                XExternal.addScanHistory(itemName, time(), buyoutPrice)
+
+                if buyoutPrice ~= nil and buyoutPrice > 0 then
+                    if buyoutPrice <= minBuyoutPrice then
+                        if not XInfo.isMe(seller) then
+                            minBuyoutPrice = buyoutPrice
+                        end
+                    end
+                end
+            end
+            itemIndex = itemIndex + 1
+        end
+        for _, item in ipairs(materialList) do
+            if task['itemname'] == item['itemname'] then
+                item['price'] = minBuyoutPrice
+                break
+            end
+        end
+
+        for _, item in ipairs(XAutoBuyList) do
+            if task['itemname'] == item['itemname'] then
+                item['minbuyoutprice'] = minBuyoutPrice
+                item['updatetime'] = time()
+                break
+            end
+        end
+
+        finishTask()
+        startNextTask()
+    end
+end
+
 local function onUpdate()
     if not isStarted then return end
     refreshUI()
@@ -1884,7 +2014,11 @@ local function onUpdate()
             return
         end
 
-        processQueryTask(curTask)
+        if curTask['action'] == 'query' then
+            processQueryTask(curTask)
+        elseif curTask['action'] == 'material' then
+            processMaterialQueryTask(curTask)
+        end
         refreshUI()
         return
     end

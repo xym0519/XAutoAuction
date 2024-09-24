@@ -10,9 +10,12 @@ local createLabel
 
 -- Function implemention
 createLabel = function(itemName)
+    local itemId = XInfo.getItemId(itemName)
+
     local frame = XAPI.CreateFrame('Frame', nil, mainFrame)
     frame:SetSize(180, 30)
     frame.itemName = itemName
+    frame.itemId = itemId
 
     local sendMailButton = XUI.createButton(frame, 30, 'U')
     sendMailButton:SetPoint('LEFT', frame, 'LEFT', 0, 0)
@@ -60,20 +63,27 @@ createLabel = function(itemName)
     end)
     toBagButton.frame = frame
 
-    local label = XUI.createLabel(mainFrame, 110)
-    label:SetPoint('LEFT', toBagButton, 'RIGHT', 10, 0)
+    local itemFrame = XAPI.CreateFrame('Frame', nil, mainFrame)
+    itemFrame:SetSize(110, 30)
+    itemFrame:SetPoint('LEFT', toBagButton, 'RIGHT', 3, 0)
+
+    local icon = XUI.createItemIcon(itemFrame, 30, 30, itemName)
+    icon:SetPoint('LEFT', itemFrame, 'LEFT', 0, 0)
+
+    local label = XUI.createLabel(itemFrame, 70)
+    label:SetPoint('LEFT', icon, 'RIGHT', 10, 0)
     label:SetHeight(18)
-    label:SetScript("OnEnter", function(self)
-        local itemId = XInfo.getItemId(self.frame.itemName)
-        if itemId > 0 then
+
+    itemFrame:SetScript("OnEnter", function(self)
+        if self.frame.itemId > 0 then
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetHyperlink("item:" .. itemId) -- 显示物品信息
+            GameTooltip:SetHyperlink("item:" .. self.frame.itemId) -- 显示物品信息
         end
     end)
-    label:SetScript("OnLeave", function(self)
+    itemFrame:SetScript("OnLeave", function(self)
         GameTooltip:Hide()
     end)
-    label.frame = frame
+    itemFrame.frame = frame
     frame.label = label
 
     frame.Refresh = function(self)
@@ -82,8 +92,7 @@ createLabel = function(itemName)
         local totalCount = XInfo.getItemTotalCount(self.itemName)
         local totalCountStr = XUI.getColor_TotalCount(totalCount) .. totalCount
 
-        local sitemName = string.sub(self.itemName, 1, 3)
-        local content = sitemName .. '： ' .. bagCountStr .. XUI.White .. ' / ' .. totalCountStr
+        local content = bagCountStr .. XUI.White .. ' / ' .. totalCountStr
 
         self.label:SetText(content)
     end
@@ -91,7 +100,7 @@ createLabel = function(itemName)
 end
 
 initUI = function()
-    mainFrame = XUI.createFrame('XJewCountMainFrame', 520, 220)
+    mainFrame = XUI.createFrame('XJewCountMainFrame', 520, 250)
     mainFrame.title:SetText('原石数量')
     mainFrame:SetPoint('BOTTOM', UIParent, 'BOTTOM', 0, 60)
     mainFrame:Hide()
@@ -202,7 +211,14 @@ initUI = function()
     bpLabel:SetPoint('TOPLEFT', bbLabel, 'BOTTOMLEFT', 0, 0)
     table.insert(labels, bpLabel)
 
+    -- other
+    local xtLabel = createLabel('萨隆邪铁矿石')
+    xtLabel:SetPoint('TOPLEFT', bpLabel, 'BOTTOMLEFT', 0, 0)
+    table.insert(labels, xtLabel)
 
+    local stLabel = createLabel('泰坦神铁矿石')
+    stLabel:SetPoint('TOPLEFT', ppLabel, 'BOTTOMLEFT', 0, 0)
+    table.insert(labels, stLabel)
     -- local tyLabel = createLabel('天焰钻石')
     -- tyLabel:SetPoint('TOPLEFT', ppLabel, 'BOTTOMLEFT', 0, 0)
     -- table.insert(labels, tyLabel)
