@@ -67,7 +67,7 @@ createLabel = function(itemName)
     itemFrame:SetSize(110, 30)
     itemFrame:SetPoint('LEFT', toBagButton, 'RIGHT', 3, 0)
 
-    local icon = XUI.createItemIcon(itemFrame, 30, 30, itemName)
+    local icon = XUI.createItemIcon(itemFrame, 25, 25, itemName)
     icon:SetPoint('LEFT', itemFrame, 'LEFT', 0, 0)
 
     local label = XUI.createLabel(itemFrame, 70)
@@ -82,6 +82,11 @@ createLabel = function(itemName)
     end)
     itemFrame:SetScript("OnLeave", function(self)
         GameTooltip:Hide()
+    end)
+    itemFrame:SetScript('OnMouseDown', function(self)
+        if IsLeftControlKeyDown() then
+            XInfo.printBuyHistory(self.frame.itemName)
+        end
     end)
     itemFrame.frame = frame
     frame.label = label

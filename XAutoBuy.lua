@@ -42,7 +42,7 @@ local finishCurTask
 
 -- Function implemention
 initUI = function()
-    mainFrame = XUI.createFrame('XAutoBuyMainFrame', 590, 425)
+    mainFrame = XUI.createFrame('XAutoBuyMainFrame', 625, 425)
     mainFrame.title:SetText('自动购买')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
     mainFrame:Hide()
@@ -156,8 +156,12 @@ initUI = function()
         end)
         frame.indexButton = indexButton
 
+        local icon = XUI.createIcon(frame, 25, 25)
+        icon:SetPoint('LEFT', indexButton, 'RIGHT', 3, 0)
+        frame.icon = icon
+
         local itemNameButton = XUI.createButton(frame, 160, '')
-        itemNameButton:SetPoint('LEFT', indexButton, 'RIGHT', 3, 0)
+        itemNameButton:SetPoint('LEFT', icon, 'RIGHT', 3, 0)
         itemNameButton:SetScript('OnClick', function()
             local idx = displayPageNo * displayPageSize + i
             displaySettingItem = XAutoBuyList[idx]
@@ -339,6 +343,7 @@ refreshUI = function()
         if idx <= #XAutoBuyList then
             local item = XAutoBuyList[idx]
             local itemName = item['itemname']
+            local itemId = XInfo.getItemId(itemName)
 
             local price = item['price']
             local priceStr = XUI.White .. XUtils.priceToString(price)
@@ -377,6 +382,7 @@ refreshUI = function()
             local updateTimeStr = XUtils.formatTime(item['updatetime'])
 
             frame.indexButton:SetText(idx)
+            frame.icon:SetTexture(XAPI.GetItemIcon(itemId))
             frame.itemNameButton:SetText(string.sub(itemName, 1, 18))
             frame.labelt:SetText(updateTimeStr)
             frame.label:SetText(bagCountStr .. XUI.White .. '/' .. bankCountStr)

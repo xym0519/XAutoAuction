@@ -120,7 +120,7 @@ resetData = function()
 end
 
 initUI = function()
-    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 1230, 500)
+    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 1260, 500)
     mainFrame:SetFrameStrata('HIGH')
     mainFrame.title:SetText('自动拍卖')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
@@ -134,6 +134,7 @@ initUI = function()
     local craftQueueButton = XUI.createButton(mainFrame, dft_buttonWidth, '制造')
     craftQueueButton:SetPoint('RIGHT', auctionBoardButton, 'LEFT', -3, 0)
     craftQueueButton:SetScript('OnClick', XCraftQueue.toggle)
+    mainFrame.craftQueueButton = craftQueueButton
 
     local jewCountButton = XUI.createButton(mainFrame, dft_buttonWidth, '材料')
     jewCountButton:SetPoint('RIGHT', craftQueueButton, 'LEFT', -3, 0)
@@ -337,6 +338,12 @@ initUI = function()
             GameTooltip:Hide()
         end)
 
+        materialItemFrame:SetScript('OnMouseDown', function(self)
+            if IsLeftControlKeyDown() then
+                XInfo.printBuyHistory(self.itemName)
+            end
+        end)
+
         materialFrames[item['itemname']] = countLabel
 
         preFrame = materialItemFrame
@@ -350,7 +357,7 @@ initUI = function()
     indexLabel:SetPoint('LEFT', labelFrame, 'LEFT', 8, 0)
 
     local nameLabel = XUI.createLabel(labelFrame, 155, '名称', 'CENTER')
-    nameLabel:SetPoint('LEFT', indexLabel, 'RIGHT', 120, 0)
+    nameLabel:SetPoint('LEFT', indexLabel, 'RIGHT', 150, 0)
 
     local timeLabel = XUI.createLabel(labelFrame, 50, '时间', 'CENTER')
     timeLabel:SetPoint('LEFT', nameLabel, 'RIGHT', 3, 0)
@@ -474,6 +481,17 @@ filterDisplayList = function()
     for _, item in ipairs(dataList) do
         local frame = scrollView:CreateFrame(mainFrame:GetWidth() - 20, 30)
         frame.index = item['index']
+        frame:SetScript('OnEnter', function(self)
+            self.bg:Show()
+        end)
+        frame:SetScript('OnLeave', function(self)
+            self.bg:Hide()
+        end)
+        local frameBG = frame:CreateTexture(nil, 'BACKGROUND')
+        frameBG:SetAllPoints(frame)
+        frameBG:SetColorTexture(1, 1, 1, 0.2)
+        frameBG:Hide()
+        frame.bg = frameBG
 
         local itemIndexButton = XUI.createButton(frame, 35, '999')
         itemIndexButton:SetPoint('LEFT', frame, 'LEFT', 0, 0)
@@ -505,8 +523,12 @@ filterDisplayList = function()
         frame.itemToBagButton = itemToBagButton
         itemToBagButton.frame = frame
 
+        local icon = XUI.createIcon(frame, 25, 25)
+        icon:SetPoint('LEFT', itemToBagButton, 'RIGHT', 3, 0)
+        frame.icon = icon
+
         local itemNameButton = XUI.createButton(frame, 160, '')
-        itemNameButton:SetPoint('LEFT', itemToBagButton, 'RIGHT', 0, 0)
+        itemNameButton:SetPoint('LEFT', icon, 'RIGHT', 2, 0)
         itemNameButton:SetScript('OnClick', itemNameClick)
         itemNameButton:SetScript("OnEnter", function(self)
             local tindex = self.frame.index
@@ -607,10 +629,16 @@ refreshUI = function()
         mainFrame.startButton:SetText('开始')
     end
 
-    if XAutoSpeak.getRunning() then
+    if XAutoSpeak.isRunning() then
         mainFrame.autoSpeakButton:SetText(XUI.Green .. '喊话')
     else
         mainFrame.autoSpeakButton:SetText(XUI.Red .. '喊话')
+    end
+
+    if XCraftQueue.isRunning() then
+        mainFrame.craftQueueButton:SetText(XUI.Green .. '制造')
+    else
+        mainFrame.craftQueueButton:SetText(XUI.Red .. '制造')
     end
 
     local labelText = format('%s) ', #taskList)
@@ -638,6 +666,7 @@ refreshUI = function()
     for idx, item in ipairs(displayList) do
         local frame = scrollView:GetItemFrame(idx)
         local itemName = item['itemname']
+        local itemId = XInfo.getItemId(itemName)
         local enabled = item['enabled']
         if enabled == nil then enabled = false end
         local star = item['star']
@@ -790,6 +819,7 @@ refreshUI = function()
         local dealCountStr = XUI.getColor_DealCount(dealCount) .. 'D' .. dealCount
 
         frame.itemIndexButton:SetText(idx)
+        frame.icon:SetTexture(XAPI.GetItemIcon(itemId))
         frame.itemNameButton:SetText(itemNameStr)
 
         frame.labelTime:SetText(updateTimeStr)
@@ -824,7 +854,13 @@ refreshUI = function()
     for _, item in ipairs(materialList) do
         local label = materialFrames[item['itemname']]
         if label then
-            label:SetText(math.floor(item['price'] / 10000))
+            local tprice = item['price']
+            if tprice > 1000000 then
+                tprice = math.floor(tprice / 10000)
+            else
+                tprice = math.floor(tprice / 1000) / 10
+            end
+            label:SetText(tprice)
         end
     end
 end

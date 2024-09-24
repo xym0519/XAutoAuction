@@ -102,10 +102,14 @@ XUI.createIcon = function(parent, width, height, texture)
     local frame = nil
 
     frame = XAPI.CreateFrame('Frame', nil, parent)
-    frame:SetSize(width,height)
+    frame:SetSize(width, height)
     local icon = frame:CreateTexture(nil, 'BACKGROUND')
     icon:SetAllPoints(frame)
     icon:SetTexture(texture)
+    frame.icon = icon
+    frame.SetTexture = function(self, _texture)
+        self.icon:SetTexture(_texture)
+    end
 
     return frame
 end
@@ -440,7 +444,7 @@ end
 
 XUI.getColor_AuctionStackCount = function(auctionCount, stackCount)
     local res = XUI.Color_Normal
-    if auctionCount >= 20  then
+    if auctionCount >= 20 then
         res = XUI.Color_Worst
     elseif auctionCount >= 15 then
         res = XUI.Color_Bad

@@ -87,9 +87,10 @@ initUI = function()
 
         frame:Hide()
 
-        local nameLabel = XUI.createLabel(frame, 70, '')
-        nameLabel:SetPoint('LEFT', frame, 'LEFT', 15, 0)
-        nameLabel:SetScript("OnEnter", function(self)
+        local nameFrame = XAPI.CreateFrame('Frame', nil, frame)
+        nameFrame:SetSize(70, 30)
+        nameFrame:SetPoint('LEFT', frame, 'LEFT', 15, 0)
+        nameFrame:SetScript("OnEnter", function(self)
             local idx = displayPageNo * displayPageSize + i
             local item = craftQueue[idx]
 
@@ -100,13 +101,20 @@ initUI = function()
                 GameTooltip:SetHyperlink("item:" .. itemid) -- 显示物品信息
             end
         end)
-        nameLabel:SetScript("OnLeave", function(self)
+        nameFrame:SetScript("OnLeave", function(self)
             GameTooltip:Hide()
         end)
+
+        local icon = XUI.createIcon(nameFrame, 25, 25)
+        icon:SetPoint('LEFT', nameFrame, 'LEFT', 0, 0)
+        frame.icon = icon
+
+        local nameLabel = XUI.createLabel(frame, 40, '')
+        nameLabel:SetPoint('LEFT', icon, 'RIGHT', 5, 0)
         frame.nameLabel = nameLabel
 
         local countLabel = XUI.createLabel(frame, 170, '')
-        countLabel:SetPoint('LEFT', nameLabel, 'RIGHT', 5, 0)
+        countLabel:SetPoint('LEFT', nameFrame, 'RIGHT', 5, 0)
         frame.countLabel = countLabel
 
         local deleteButton = XUI.createButton(frame, 25, 'D')
@@ -212,9 +220,11 @@ refreshUI = function()
 
             local auctionCount = XInfo.getAuctionItemCount(item['itemname'])
 
-            local name1 = string.sub(item['itemname'], 1, 6)
-            local name2 = string.sub(string.sub(item['itemname'], -9), 1, 6)
-            frame.nameLabel:SetText(name1 .. name2, 1, 12)
+            local name = string.sub(item['itemname'], 1, 6)
+            local texture = XAPI.GetItemIcon(XInfo.getItemId(item['itemname']))
+            if not texture then texture = XAPI.Texture_QuestionMark end
+            frame.icon:SetTexture(texture)
+            frame.nameLabel:SetText(name)
             frame.countLabel:SetText(XUtils.formatCount(item['count'], 1) ..
                 XUI.White .. ' / ' .. mailCountStr .. XUI.White .. ' / ' .. 'A' .. auctionCount
                 .. ' / ' .. 'T' .. itemTotalCount .. XUI.White .. ' / ' .. materialCount)

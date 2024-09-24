@@ -17,7 +17,7 @@ local addItem
 
 -- Function implemention
 initUI = function()
-    mainFrame = XUI.createFrame('XJewWordsMainFrame', 1050, 495)
+    mainFrame = XUI.createFrame('XJewWordsMainFrame', 1075, 495)
     mainFrame.title:SetText('珠宝文案')
     mainFrame:SetPoint('RIGHT', UIParent, 'RIGHT', -80, 0)
     mainFrame:Hide()
@@ -153,9 +153,13 @@ initUI = function()
         end)
         frame.itemNameButton = itemNameButton
 
+        local icon = XUI.createIcon(frame, 25, 25)
+        icon:SetPoint('LEFT', itemNameButton, 'RIGHT', 3, 0)
+        frame.icon = icon
+
         local countEditBox = XUI.createEditbox(frame, 30)
         countEditBox.index = i
-        countEditBox:SetPoint('LEFT', itemNameButton, 'RIGHT', 10, 0)
+        countEditBox:SetPoint('LEFT', icon, 'RIGHT', 10, 0)
         countEditBox:SetScript('OnTabPressed', function(self)
             local index = self.index + 1
             if index > #displayFrameList then index = 1 end
@@ -371,6 +375,7 @@ refreshUI = function()
         if idx <= #XJewWordList then
             local item = XJewWordList[idx]
             local itemName = item['itemname']
+            local itemId = XInfo.getItemId(itemName)
             local price1 = item['price1']
             local price2 = 0;
             local auctionMinPrice = 0
@@ -413,6 +418,7 @@ refreshUI = function()
             end
 
             frame.indexButton:SetText(idx)
+            frame.icon:SetTexture(XAPI.GetItemIcon(itemId))
             frame.itemNameButton:SetText(itemName)
             frame.countEditBox:SetText(ccountStr)
             frame.countLabel:SetText(totalCountStr)

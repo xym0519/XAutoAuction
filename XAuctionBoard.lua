@@ -12,7 +12,7 @@ local addItem
 
 -- Function implemention
 initUI = function()
-    mainFrame = XUI.createFrame(moduleName .. 'Frame', 340, 400)
+    mainFrame = XUI.createFrame(moduleName .. 'Frame', 370, 400)
     mainFrame.title:SetText('拍卖纪录')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
     mainFrame:Hide()
@@ -42,7 +42,7 @@ initUI = function()
     indexLabel:SetPoint('LEFT', labelFrame, 'LEFT', 8, 0)
 
     local nameLabel = XUI.createLabel(labelFrame, 140, '名称', 'CENTER')
-    nameLabel:SetPoint('LEFT', indexLabel, 'RIGHT', 5, 0)
+    nameLabel:SetPoint('LEFT', indexLabel, 'RIGHT', 35, 0)
 
     local dealCountLabel = XUI.createLabel(labelFrame, 40, '交易', 'CENTER')
     dealCountLabel:SetPoint('LEFT', nameLabel, 'RIGHT', 5, 0)
@@ -109,8 +109,11 @@ refreshUI = function()
         local indexLabel = XUI.createLabel(frame, 40, i, 'CENTER')
         indexLabel:SetPoint('LEFT', frame, 'LEFT', 5, 0)
 
+        local icon = XUI.createItemIcon(frame, 25, 25, dataItem['itemname'])
+        icon:SetPoint('LEFT', indexLabel, 'RIGHT', 5, 0)
+
         local nameLabel = XUI.createLabel(frame, 140, dataItem['itemname'], 'CENTER')
-        nameLabel:SetPoint('LEFT', indexLabel, 'RIGHT', 5, 0)
+        nameLabel:SetPoint('LEFT', icon, 'RIGHT', 5, 0)
         nameLabel:SetScript("OnEnter", function(self)
             local titemName = self.itemName
             local itemId = XInfo.getItemId(titemName)
