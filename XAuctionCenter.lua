@@ -16,7 +16,7 @@ local dft_deltaPrice = 10
 local dft_postdelay = 2
 local dft_oldInterval = 1800
 local dft_maxCraftCount = 20
-local dft_materialTaskInterval = 60
+local dft_materialTaskInterval = 30
 
 local dft_buttonWidth = 45
 local dft_buttonGap = 1
@@ -56,6 +56,7 @@ local resetItemByName
 local getItem
 local addQueryTaskByIndex
 local addQueryTaskByItemName
+local addMaterialQueryTaskByItemName
 local getNextQueryTask
 
 local checkImportant
@@ -339,7 +340,10 @@ initUI = function()
         end)
 
         materialItemFrame:SetScript('OnMouseDown', function(self)
-            if IsLeftControlKeyDown() then
+            if IsLeftShiftKeyDown() then
+                addMaterialQueryTaskByItemName(self.itemName)
+                refreshUI()
+            elseif IsLeftControlKeyDown() then
                 XInfo.printBuyHistory(self.itemName)
             end
         end)
@@ -906,7 +910,11 @@ startNextTask = function()
         table.remove(taskList, 1)
         curTask['starttime'] = time()
 
-        processQueryTask(curTask)
+        if curTask['action'] == 'query' then
+            processQueryTask(curTask)
+        elseif curTask['action'] == 'material' then
+            processMaterialQueryTask(curTask)
+        end
         refreshUI()
         return
     end
@@ -916,14 +924,13 @@ startNextTask = function()
         if #materialList > 0 then
             local item = materialList[materialQueryIndex]
             if item then
-                curTask = {
-                    action = 'material',
-                    itemname = item['itemname'],
-                    starttime = time(),
-                    timeout = dft_taskTimeout
-                }
-                refreshUI()
+                addMaterialQueryTaskByItemName(item['itemname'])
+                curTask = taskList[1]
+                table.remove(taskList, 1)
+                curTask['starttime'] = time()
+
                 processMaterialQueryTask(curTask)
+                refreshUI()
                 materialQueryIndex = (materialQueryIndex % #materialList) + 1
                 return
             end
@@ -1082,6 +1089,16 @@ addQueryTaskByItemName = function(itemName, force)
             return
         end
     end
+end
+
+addMaterialQueryTaskByItemName = function(itemName)
+    local task = {
+        action = 'material',
+        itemname = itemName,
+        starttime = time(),
+        timeout = dft_taskTimeout
+    }
+    table.insert(taskList, 1, task)
 end
 
 getNextQueryTask = function()
@@ -1403,12 +1420,8 @@ printList = function()
         local task = taskList[i]
         if task['action'] == 'query' then
             xdebug.info('[' .. i .. ']查询: ' .. XAutoAuctionList[task['index']]['itemname'])
-        elseif task['action'] == 'auction' then
-            xdebug.info('[' .. i .. ']拍卖: ' .. task['itemname'])
-        elseif task['action'] == 'cleanlower' then
-            xdebug.info('[' .. i .. ']清理低价')
-        elseif task['action'] == 'cleanshort' then
-            xdebug.info('[' .. i .. ']清理短期')
+        elseif task['action'] == 'material' then
+            xdebug.info('[' .. i .. ']查询: ' .. task['itemname'])
         else
             xdebug.info('[' .. i .. ']不支持的任务类型')
         end
@@ -1416,12 +1429,8 @@ printList = function()
     if curTask then
         if curTask['action'] == 'query' then
             xdebug.info('当前任务：查询: ' .. XAutoAuctionList[curTask['index']]['itemname'])
-        elseif curTask['action'] == 'auction' then
-            xdebug.info('当前任务：拍卖: ' .. curTask['itemname'])
-        elseif curTask['action'] == 'cleanlower' then
-            xdebug.info('当前任务：清理低价')
-        elseif curTask['action'] == 'cleanshort' then
-            xdebug.info('当前任务：清理短期')
+        elseif curTask['action'] == 'material' then
+            xdebug.info('当前任务：查询: ' .. curTask['itemname'])
         else
             xdebug.info('当前任务：不支持的任务类型')
         end
