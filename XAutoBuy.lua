@@ -375,9 +375,9 @@ refreshUI = function()
             end
 
             local bagCount = XInfo.getBagItemCount(itemName)
+            local bagCountStr = XUI.getColor_MaterialCount(bagCount) .. bagCount
             local bankCount = XInfo.getBankItemCount(itemName)
-            local bagCountStr = XUtils.formatCount2(bagCount)
-            local bankCountStr = XUtils.formatCount2(bankCount)
+            local bankCountStr = XUI.getColor_MaterialCount(bankCount) .. bankCount
 
             local updateTimeStr = XUtils.formatTime(item['updatetime'])
 

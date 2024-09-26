@@ -414,7 +414,7 @@ refreshUI = function()
             local ccount = item['ccount']
             local totalCount = XInfo.getItemTotalCount(itemName)
 
-            local totalCountStr = XUI.getColor_TotalCount(totalCount) .. totalCount
+            local totalCountStr = XUI.getColor_MaterialTotalCount(totalCount) .. totalCount
 
             local price1Str = '喊' .. price1
             local price2Str = '扫' .. price2

@@ -207,7 +207,7 @@ refreshUI = function()
             local item = craftQueue[idx];
 
             local materialCountNum = XInfo.getMaterialBagCount(item['itemname'])
-            local materialCount = XUI.getColor_BagCount(materialCountNum) ..
+            local materialCount = XUI.getColor_MaterialCount(materialCountNum) ..
                 'M' .. XUtils.formatCount(materialCountNum, 2)
 
             local itemTotalCount = XInfo.getItemTotalCount(item['itemname'])

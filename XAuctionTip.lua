@@ -19,17 +19,17 @@ GameTooltip:HookScript('OnTooltipSetItem', function(self)
     if item then stackCount = item['stackcount'] end
 
     local bagCount = XInfo.getBagItemCount(itemName)
-    local bagCountStr = XUI.getColor_BagCount(bagCount) .. bagCount
+    local bagCountStr = XUI.getColor_BagStackCount(bagCount, stackCount) .. bagCount
     local bankCount = XInfo.getBankItemCount(itemName)
-    local bankCountStr = XUI.getColor_BagCount(bankCount) .. bankCount
+    local bankCountStr = XUI.getColor_BankCount(bankCount) .. bankCount
     local mailCount = XInfo.getMailItemCount(itemName)
-    local mailCountStr = XUI.getColor_BagCount(mailCount) .. mailCount
+    local mailCountStr = XUI.getColor_MailCount(mailCount) .. mailCount
     local auctionCount = XInfo.getAuctionItemCount(itemName)
     local auctionCountStr = XUI.getColor_AuctionStackCount(auctionCount, stackCount) .. auctionCount
 
     local materialName = XInfo.getMaterialName(itemName)
     local materialCount = XInfo.getMaterialTotalCount(materialName)
-    local materialCountStr = XUI.getColor_TotalCount(materialCount) .. materialCount
+    local materialCountStr = XUI.getColor_MaterialTotalCount(materialCount) .. materialCount
 
     self:AddLine(' ')
     self:AddLine('---------- 数量信息 ----------')

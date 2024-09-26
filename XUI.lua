@@ -398,39 +398,15 @@ XUI.getColor_DealCount = function(dealCount)
     return res
 end
 
--- >3组: 青 / 2-3组: 绿 / 1-2组: 黄 / <1组: 红
-XUI.getColor_BagCount = function(bagCount)
-    local res = XUI.Color_Normal
-    if bagCount >= 60 then
-        res = XUI.Color_Great
-    elseif bagCount >= 40 then
-        res = XUI.Color_Good
-    elseif bagCount >= 20 then
-        res = XUI.Color_Fair
-    else
-        res = XUI.Color_Bad
-    end
-    return res
-end
-
--- >10组: 青 / 5-10组: 绿 / 2-5组: 黄 / <2组: 红
-XUI.getColor_TotalCount = function(totalCount)
-    local res = XUI.Color_Normal
-    if totalCount >= 200 then
-        res = XUI.Color_Great
-    elseif totalCount >= 100 then
-        res = XUI.Color_Good
-    elseif totalCount >= 40 then
-        res = XUI.Color_Fair
-    else
-        res = XUI.Red
-    end
-    return res
-end
-
 XUI.getColor_BagStackCount = function(bagCount, stackCount)
     local res = XUI.Color_Normal
-    if bagCount >= stackCount * 2 then
+    if bagCount >= 20 then
+        res = XUI.Color_Worst
+    elseif bagCount >= 15 then
+        res = XUI.Color_Bad
+    elseif bagCount >= 10 then
+        res = XUI.Color_Poor
+    elseif bagCount >= stackCount * 2 then
         res = XUI.Color_Great
     elseif bagCount >= stackCount then
         res = XUI.Color_Good
@@ -451,13 +427,93 @@ XUI.getColor_AuctionStackCount = function(auctionCount, stackCount)
     elseif auctionCount >= 10 then
         res = XUI.Color_Poor
     elseif auctionCount > stackCount * 2 then
-        res = XUI.Color_Fair
+        res = XUI.Color_Great
     elseif auctionCount >= stackCount then
         res = XUI.Color_Good
     elseif auctionCount > 0 then
+        res = XUI.Color_Fair
+    else
+        res = XUI.Color_Bad
+    end
+    return res
+end
+
+XUI.getColor_AuctionValidStackCount = function(auctionCount, stackCount)
+    local res = XUI.Color_Normal
+    if auctionCount > stackCount * 2 then
+        res = XUI.Color_Great
+    elseif auctionCount >= stackCount then
+        res = XUI.Color_Good
+    elseif auctionCount > 0 then
+        res = XUI.Color_Fair
+    else
+        res = XUI.Color_Bad
+    end
+    return res
+end
+
+XUI.getColor_BankCount = function(count)
+    local res = XUI.Color_Normal
+    if count > 20 then
+        res = XUI.Color_Worst
+    elseif count > 10 then
+        res = XUI.Color_Bad
+    elseif count > 5 then
+        res = XUI.Color_Poor
+    elseif count > 0 then
+        res = XUI.Color_Fair
+    else
+        res = XUI.Color_Good
+    end
+    return res
+end
+
+XUI.getColor_MailCount = function(count)
+    local res = XUI.Color_Normal
+    if count > 20 then
+        res = XUI.Color_Worst
+    elseif count > 12 then
+        res = XUI.Color_Bad
+    elseif count > 5 then
+        res = XUI.Color_Poor
+    elseif count > 0 then
+        res = XUI.Color_Fair
+    else
+        res = XUI.Color_Good
+    end
+    return res
+end
+
+XUI.getColor_TotalStackCount = XUI.getColor_BagStackCount
+
+XUI.getColor_MaterialCount = function(count)
+    local res = XUI.Color_Normal
+    if count >= 60 then
+        res = XUI.Color_Great
+    elseif count >= 40 then
+        res = XUI.Color_Good
+    elseif count >= 20 then
+        res = XUI.Color_Fair
+    elseif count > 0 then
         res = XUI.Color_Poor
     else
         res = XUI.Color_Bad
+    end
+    return res
+end
+
+XUI.getColor_MaterialTotalCount = function(count)
+    local res = XUI.Color_Normal
+    if count >= 1000 then
+        res = XUI.Color_Great
+    elseif count >= 500 then
+        res = XUI.Color_Good
+    elseif count >= 200 then
+        res = XUI.Color_Fair
+    elseif count >= 60 then
+        res = XUI.Color_Poor
+    else
+        res = XUI.Red
     end
     return res
 end

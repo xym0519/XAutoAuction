@@ -129,16 +129,7 @@ refreshUI = function()
         end)
         nameLabel.itemName = dataItem['itemname']
 
-        local dealCountStr = dataItem['dealcount'] .. ''
-        if dataItem['dealcount'] >= 40 then
-            dealCountStr = XUI.Color_Great .. dealCountStr
-        elseif dataItem['dealcount'] >= 20 then
-            dealCountStr = XUI.Color_Good .. dealCountStr
-        elseif dataItem['dealcount'] >= 0 then
-            dealCountStr = XUI.Color_Fair .. dealCountStr
-        else
-            dealCountStr = XUI.Color_Bad .. dealCountStr
-        end
+        local dealCountStr = XUI.getColor_DealCount(dataItem['dealcount'] * 3) .. dataItem['dealcount']
         local dealCountLabel = XUI.createLabel(frame, 40, dealCountStr, 'CENTER')
         dealCountLabel:SetPoint('LEFT', nameLabel, 'RIGHT', 5, 0)
 

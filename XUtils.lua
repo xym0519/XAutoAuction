@@ -24,45 +24,46 @@ XUtils.formatTimeLeft = function(seconds)
         ':' .. XUtils.padStringLeft(seconds % 60, 2, '0')
 end
 
-XUtils.formatCount = function(count, length)
-    if length == nil then
-        length = 2
-    end
+-- XUtils.formatCount = function(count, length, padding)
+--     if padding == nil then padding = ' ' end
+--     if length == nil then
+--         length = 2
+--     end
 
-    local maxCount = 1
-    for i = 1, length do
-        maxCount = maxCount * 10
-    end
-    maxCount = maxCount - 1
+--     local maxCount = 1
+--     for i = 1, length do
+--         maxCount = maxCount * 10
+--     end
+--     maxCount = maxCount - 1
 
-    local scount = count .. ''
-    if count > maxCount then
-        scount = maxCount .. ''
-    else
-        while (string.len(scount) < length) do
-            scount = '0' .. scount;
-        end
-    end
-    return scount
-end
+--     local scount = count .. ''
+--     if count > maxCount then
+--         scount = maxCount .. ''
+--     else
+--         while (string.len(scount) < length) do
+--             scount = padding .. scount;
+--         end
+--     end
+--     return scount
+-- end
 
-XUtils.formatCount2 = function(count)
-    local countStr = tostring(count)
-    local length = #countStr;
-    local result = countStr:sub(1, 1)
+-- XUtils.formatCount2 = function(count)
+--     local countStr = tostring(count)
+--     local length = #countStr;
+--     local result = countStr:sub(1, 1)
 
-    if (length == 1) then
-        result = XUI.Red .. result
-    elseif (length == 2) then
-        result = XUI.Yellow .. result
-    elseif (length == 3) then
-        result = XUI.Green .. result
-    else
-        result = XUI.Cyan .. result
-    end
+--     if (length == 1) then
+--         result = XUI.Red .. result
+--     elseif (length == 2) then
+--         result = XUI.Yellow .. result
+--     elseif (length == 3) then
+--         result = XUI.Green .. result
+--     else
+--         result = XUI.Cyan .. result
+--     end
 
-    return result
-end
+--     return result
+-- end
 
 XUtils.itemIDfromLink = function(itemLink)
     if (itemLink == nil) then
@@ -161,6 +162,7 @@ XUtils.stringContains = function(s, sub)
 end
 
 XUtils.padStringRight = function(str, length, char)
+    if char == nil then char = ' ' end
     while (string.len(str) < length) do
         str = str .. char;
     end
@@ -168,6 +170,7 @@ XUtils.padStringRight = function(str, length, char)
 end
 
 XUtils.padStringLeft = function(str, length, char)
+    if char == nil then char = '  ' end
     while (string.len(str) < length) do
         str = char .. str;
     end
