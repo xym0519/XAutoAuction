@@ -602,6 +602,19 @@ end
 
 
 -- Auctionator
+-- 简单搜索
+XAPI.AuctionatorSearch = function(search)
+    if Auctionator then
+        if Auctionator.API.v1.MultiSearch then
+            return Auctionator.API.v1.MultiSearch('XAutoAuction', { search })
+        else
+            xdebug.error('简单搜索接口未找到')
+        end
+    else
+        xdebug.error('Auctionator插件未找到')
+    end
+end
+
 -- 精确搜索
 XAPI.AuctionatorSearchExact = function(search)
     if Auctionator then

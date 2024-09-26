@@ -9,6 +9,8 @@ XAuctionBoard = CreateFrame("Frame")
 local initUI
 local refreshUI
 local addItem
+local getItem
+local getItemCount
 
 -- Function implemention
 initUI = function()
@@ -192,6 +194,27 @@ addItem = function(itemName, type, count)
     refreshUI()
 end
 
+getItem = function(itemName)
+    for _, item in ipairs(XAuctionBoardList) do
+        if item['itemname'] == itemName then
+            return item
+        end
+    end
+
+    return nil
+end
+
+getItemCount = function(itemName, type)
+    if type == nil then type = 'dealcount' end
+    local item = getItem(itemName)
+    if item then
+        local count = item[type]
+        if not count then count = 0 end
+        return count
+    end
+    return 0
+end
+
 -- Event callback
 
 
@@ -227,4 +250,6 @@ SLASH_XAUCTIONBOARDHIDE1 = '/xauctionboard_hide'
 
 -- Interface
 XAuctionBoard.addItem = addItem
+XAuctionBoard.getItem = getItem
+XAuctionBoard.getItemCount = getItemCount
 XAuctionBoard.toggle = function() XUI.toggleVisible(mainFrame) end

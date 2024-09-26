@@ -84,7 +84,12 @@ createLabel = function(itemName)
         GameTooltip:Hide()
     end)
     itemFrame:SetScript('OnMouseDown', function(self)
-        if IsLeftControlKeyDown() then
+        if IsLeftAltKeyDown() then
+            XAPI.AuctionatorSearchExact(self.frame.itemName)
+        elseif IsLeftShiftKeyDown() then
+            XAuctionCenter.addMaterialQueryTaskByItemName(self.frame.itemName)
+            refreshUI()
+        elseif IsLeftControlKeyDown() then
             XInfo.printBuyHistory(self.frame.itemName)
         end
     end)

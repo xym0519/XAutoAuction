@@ -347,6 +347,7 @@ XInfo.materialList = { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼',
 XInfo.materialListS = { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石' }
 XInfo.materialListB = { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼', '巨锆石', '恐惧石' }
 XInfo.materialListO = { '天焰钻石', '大地侵攻钻石' }
+XInfo.mineList = { '萨隆邪铁矿石', '泰坦神铁矿石' }
 XInfo.getMaterialName = function(itemName)
     local materialName = nil
     for i = 1, #XInfo.materialList do
