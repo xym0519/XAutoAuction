@@ -207,8 +207,8 @@ refreshUI = function()
             local item = craftQueue[idx];
 
             local materialCountNum = XInfo.getMaterialBagCount(item['itemname'])
-            local materialCount = XUI.getColor_MaterialCount(materialCountNum) ..
-                'M' .. XUtils.formatCount(materialCountNum, 2)
+            local materialCount = XUI.getColor_MaterialCount(materialCountNum)
+                .. 'M' .. materialCountNum
 
             local itemTotalCount = XInfo.getItemTotalCount(item['itemname'])
 
@@ -225,8 +225,8 @@ refreshUI = function()
             if not texture then texture = XAPI.Texture_QuestionMark end
             frame.icon:SetTexture(texture)
             frame.nameLabel:SetText(name)
-            frame.countLabel:SetText(XUtils.formatCount(item['count'], 1) ..
-                XUI.White .. ' / ' .. mailCountStr .. XUI.White .. ' / ' .. 'A' .. auctionCount
+            frame.countLabel:SetText(item['count']
+                .. XUI.White .. ' / ' .. mailCountStr .. XUI.White .. ' / ' .. 'A' .. auctionCount
                 .. ' / ' .. 'T' .. itemTotalCount .. XUI.White .. ' / ' .. materialCount)
             frame:Show()
         else

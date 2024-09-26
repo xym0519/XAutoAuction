@@ -377,10 +377,10 @@ initUI = function()
     local auctionLabel = XUI.createLabel(labelFrame, 180, '卖/我/今/低/底', 'CENTER')
     auctionLabel:SetPoint('LEFT', bagLabel, 'RIGHT', 3, 0)
 
-    local dealLabel = XUI.createLabel(labelFrame, 90, '率/次', 'CENTER')
+    local dealLabel = XUI.createLabel(labelFrame, 80, '率/次', 'CENTER')
     dealLabel:SetPoint('LEFT', auctionLabel, 'RIGHT', 3, 0)
 
-    local priceLabel = XUI.createLabel(labelFrame, 150, '现/上/高/基', 'CENTER')
+    local priceLabel = XUI.createLabel(labelFrame, 210, '现/上/高/基', 'CENTER')
     priceLabel:SetPoint('LEFT', dealLabel, 'RIGHT', 3, 0)
 
     scrollView = XUI.createScrollView(mainFrame, mainFrame:GetWidth() - 20,
@@ -451,7 +451,7 @@ filterDisplayList = function()
                 disFlag = true
             end
         elseif displayFilter == '量大' then
-            if auctionCount >= 10 then
+            if auctionCount >= 10 and minPriceOther >= basePrice  then
                 disFlag = true
             end
         elseif displayFilter == '邮寄' then
@@ -581,12 +581,12 @@ filterDisplayList = function()
         frame.labelAuction = labelAuction
         labelAuction.frame = frame
 
-        local labelDeal = XUI.createLabel(frame, 90, '', 'CENTER')
+        local labelDeal = XUI.createLabel(frame, 80, '', 'CENTER')
         labelDeal:SetPoint('LEFT', labelAuction, 'RIGHT', 3, 0)
         frame.labelDeal = labelDeal
         labelDeal.frame = frame
 
-        local labelPrice = XUI.createLabel(frame, 200, '', 'CENTER')
+        local labelPrice = XUI.createLabel(frame, 210, '', 'CENTER')
         labelPrice:SetPoint('LEFT', labelDeal, 'RIGHT', 3, 0)
         frame.labelPrice = labelPrice
         labelPrice.frame = frame
@@ -757,14 +757,10 @@ refreshUI = function()
 
         local updateTimeStr = XUtils.formatTime(item['updatetime'])
 
-        local bagCountStr = XUI.getColor_BagStackCount(bagCount, stackCount)
-            .. XUtils.padStringLeft(bagCount, 2)
-        local mailCountStr = XUI.getColor_MailCount(mailCount)
-            .. XUtils.padStringLeft(mailCount, 2)
-        local bankCountStr = XUI.getColor_BankCount(bankCount)
-            .. XUtils.padStringLeft(bankCount, 2)
-        local totalCountStr = XUI.getColor_TotalStackCount(totalCount, stackCount)
-            .. XUtils.padStringLeft(totalCount, 2)
+        local bagCountStr = XUI.getColor_BagStackCount(bagCount, stackCount) .. 'B' .. bagCount
+        local mailCountStr = XUI.getColor_MailCount(mailCount) .. mailCount
+        local bankCountStr = XUI.getColor_BankCount(bankCount) .. bankCount
+        local totalCountStr = XUI.getColor_TotalStackCount(totalCount, stackCount) .. 'T' .. totalCount
         local stackCountStr = 'S' .. stackCount
         if stackCount > 4 then
             stackCountStr = XUI.Color_Worst .. stackCountStr
@@ -776,13 +772,10 @@ refreshUI = function()
             stackCountStr = XUI.Color_Good .. stackCountStr
         end
 
-        local auctionCountStr = XUI.getColor_AuctionStackCount(auctionCount, stackCount)
-            .. XUtils.padStringLeft('A' .. auctionCount, 3)
-        local validCountStr = XUI.getColor_AuctionValidStackCount(validCount, stackCount)
-            .. XUtils.padStringLeft('M' .. validCount, 2)
-        local cDealCountStr = XUI.getColor_DealCount(cDealCount * 3)
-            .. XUtils.padStringLeft(cDealCount, 2)
-        local lowerCountStr = XUtils.padStringLeft(lowerCount, 2)
+        local auctionCountStr = XUI.getColor_AuctionStackCount(auctionCount, stackCount) .. 'A' .. auctionCount
+        local validCountStr = XUI.getColor_AuctionValidStackCount(validCount, stackCount) .. 'M' .. validCount
+        local cDealCountStr = XUI.getColor_DealCount(cDealCount * 3) .. cDealCount
+        local lowerCountStr = lowerCount .. ''
         if lowerCount > 5 then
             lowerCountStr = XUI.Color_Bad .. lowerCountStr
         elseif lowerCount > 0 then
@@ -790,7 +783,7 @@ refreshUI = function()
         else
             lowerCountStr = XUI.Color_Normal .. lowerCountStr
         end
-        local priceLowerCountStr = XUtils.padStringLeft(priceLowerCount, 2)
+        local priceLowerCountStr = priceLowerCount .. ''
         if priceLowerCount > 10 then
             priceLowerCountStr = XUI.Color_Bad .. priceLowerCountStr
         elseif priceLowerCount > 0 then
@@ -799,10 +792,10 @@ refreshUI = function()
             priceLowerCountStr = XUI.Color_Normal .. priceLowerCountStr
         end
 
-        local dealRateStr = XUI.getColor_DealRate(dealRate) .. XUtils.padStringLeft('R' .. XUtils.round(dealRate), 2)
-        local dealCountStr = XUI.getColor_DealCount(dealCount) .. XUtils.padStringLeft('D' .. dealCount, 4)
+        local dealRateStr = XUI.getColor_DealRate(dealRate) .. 'R' .. XUtils.round(dealRate)
+        local dealCountStr = XUI.getColor_DealCount(dealCount) .. 'D' .. dealCount
 
-        local minPriceOtherStr = XUtils.padStringLeft(XUtils.priceToString(minPriceOther), 5)
+        local minPriceOtherStr = XUtils.priceToString(minPriceOther)
         if minPriceOther < basePrice then
             minPriceOtherStr = XUI.Red .. minPriceOtherStr
         elseif minPriceOther < basePrice * dft_basePriceRate then
@@ -812,24 +805,25 @@ refreshUI = function()
         else
             minPriceOtherStr = XUI.Cyan .. minPriceOtherStr
         end
-        local lastPriceOtherStr = XUI.White .. XUtils.padStringLeft(XUtils.priceToString(lastPriceOther), 5)
+        local lastPriceOtherStr = XUI.White .. XUtils.priceToString(lastPriceOther)
 
-        local maxPriceOtherStr  = XUtils.padStringLeft(XUtils.priceToString(maxPriceOther), 5)
+        local maxPriceOtherStr  = XUtils.priceToString(maxPriceOther)
         if maxPriceOther > minPriceOther * 1.3 then
             maxPriceOtherStr = XUI.Color_Great .. maxPriceOtherStr
         elseif maxPriceOther > minPriceOther * 1.1 then
             maxPriceOtherStr = XUI.Color_Good .. maxPriceOtherStr
         end
 
-        local basePriceStr = XUI.White .. XUtils.padStringLeft(XUtils.priceToString(basePrice), 5)
+        local basePriceStr = XUI.White .. XUtils.priceToString(basePrice)
 
         frame.itemIndexButton:SetText(idx)
         frame.icon:SetTexture(XAPI.GetItemIcon(itemId))
         frame.itemNameButton:SetText(itemNameStr)
 
         frame.labelTime:SetText(updateTimeStr)
-        frame.labelBag:SetText(bagCountStr .. XUI.White .. ' / ' .. mailCountStr .. ' / ' .. bankCountStr
-            .. XUI.White .. ' / ' .. totalCountStr .. XUI.White .. ' / ' .. stackCountStr)
+        frame.labelBag:SetText(mailCountStr .. ' / ' .. bankCountStr
+            .. XUI.White .. ' / ' .. stackCountStr .. XUI.White .. ' / '
+            .. bagCountStr .. XUI.White .. ' / ' .. totalCountStr)
         frame.labelAuction:SetText(auctionCountStr .. XUI.White .. ' / ' .. validCountStr
             .. XUI.White .. ' / ' .. cDealCountStr
             .. XUI.White .. ' / ' .. priceLowerCountStr

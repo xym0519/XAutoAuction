@@ -98,9 +98,9 @@ createLabel = function(itemName)
 
     frame.Refresh = function(self)
         local bagCount = XInfo.getBagItemCount(self.itemName)
-        local bagCountStr = XUI.getColor_MaterialCount(bagCount) .. XUtils.padStringLeft(bagCount, 3)
+        local bagCountStr = XUI.getColor_MaterialCount(bagCount) .. bagCount
         local totalCount = XInfo.getItemTotalCount(self.itemName)
-        local totalCountStr = XUI.getColor_MaterialTotalCount(totalCount) .. XUtils.padStringLeft(totalCount, 4)
+        local totalCountStr = XUI.getColor_MaterialTotalCount(totalCount) .. totalCount
 
         local content = bagCountStr .. XUI.White .. ' / ' .. totalCountStr
 
