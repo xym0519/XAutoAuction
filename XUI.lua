@@ -103,7 +103,7 @@ XUI.createIcon = function(parent, width, height, texture)
 
     frame = XAPI.CreateFrame('Frame', nil, parent)
     frame:SetSize(width, height)
-    local icon = frame:CreateTexture(nil, 'BACKGROUND')
+    local icon = frame:CreateTexture(nil, 'ARTWORK')
     icon:SetAllPoints(frame)
     icon:SetTexture(texture)
     frame.icon = icon
