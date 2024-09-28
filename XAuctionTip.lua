@@ -48,7 +48,7 @@ GameTooltip:HookScript('OnTooltipSetItem', function(self)
     end
     local materialBuyoutPrice = XAutoBuy.getItemField(materialName, 'minbuyoutprice', 9999999)
     local materialBuyoutPriceStr = XUtils.priceToMoneyString(materialBuyoutPrice)
-    local materialCostPrice = XInfo.getAuctionInfoField(materialName, 'costprice', 0)
+    local materialCostPrice = XInfo.getItemInfoField(materialName, 'costprice', 0)
     local materialCostPriceStr = XUtils.priceToMoneyString(materialCostPrice)
 
     local profit = minPriceOther * XAPI.ProfitRate - materialCostPrice
@@ -92,9 +92,9 @@ GameTooltip:HookScript('OnTooltipSetItem', function(self)
     self:AddDoubleLine('最低售价', XUtils.priceToMoneyString(materialBuyoutPrice / XAPI.ProfitRate))
     self:AddDoubleLine('当前利润', profitCurStr)
 
-    local dealRate = XInfo.getAuctionInfoField(itemName, 'dealrate', 99)
+    local dealRate = XInfo.getItemInfoField(itemName, 'dealrate', 99)
     local dealRateStr = XUI.getColor_DealRate(dealRate) .. dealRate
-    local dealCount = XInfo.getAuctionInfoField(itemName, 'dealcount', 0)
+    local dealCount = XInfo.getItemInfoField(itemName, 'dealcount', 0)
     local dealCountStr = XUI.getColor_DealCount(dealCount) .. dealCount
 
     self:AddLine(' ')

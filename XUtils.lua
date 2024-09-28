@@ -240,7 +240,7 @@ XUtils.sendMail = function(itemName, stackCount, fullStack, receiver)
         XAPI.ClickSendMailItemButton(idx)
     end
 
-    XAPI.SendMail('阿肌', 'P-' .. itemName .. '-' .. stackCount)
+    XAPI.SendMail(receiver, 'P-' .. itemName .. '-' .. stackCount)
     xdebug.info(itemName .. '发送成功')
     XInfo.reloadBag()
     XInfo.reloadMail()

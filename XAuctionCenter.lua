@@ -400,6 +400,7 @@ filterDisplayList = function()
     for i, item in ipairs(XAutoAuctionList) do
         item.index = i
         local itemName = item['itemname']
+        local materialName = XInfo.getMaterialName(itemName)
         local enabled = item['enabled']
         if enabled == nil then enabled = false end
         local star = item['star']
@@ -413,8 +414,8 @@ filterDisplayList = function()
         local bagCount = XInfo.getBagItemCount(itemName)
         local mailCount = XInfo.getMailItemCount(itemName)
         local auctionCount = XInfo.getAuctionItemCount(itemName)
-        local dealCount = XInfo.getAuctionInfoField(itemName, 'dealcount', 0)
-        local dealRate = XInfo.getAuctionInfoField(itemName, 'dealrate', 99)
+        local dealCount = XInfo.getItemInfoField(itemName, 'dealcount', 0)
+        local dealRate = XInfo.getItemInfoField(itemName, 'dealrate', 99)
         local important = checkImportant(item)
 
         local disFlag = false
@@ -723,8 +724,8 @@ refreshUI = function()
         local auctionCount = XInfo.getAuctionItemCount(itemName)
         local validCount = getMyValidCount(itemName)
 
-        local dealRate = XInfo.getAuctionInfoField(itemName, 'dealrate', 99)
-        local dealCount = XInfo.getAuctionInfoField(itemName, 'dealcount', 0)
+        local dealRate = XInfo.getItemInfoField(itemName, 'dealrate', 99)
+        local dealCount = XInfo.getItemInfoField(itemName, 'dealcount', 0)
 
         local recipe = XInfo.getTradeSkillItem(itemName)
 
@@ -1012,7 +1013,7 @@ addQueryTaskByIndex = function(index, force)
     if not item then return end
 
     local important = XAuctionCenter.checkImportantByName(item['itemname'])
-    local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0)
+    local dealCount = XInfo.getItemInfoField(item['itemname'], 'dealcount', 0)
 
     if force then
         resetItem(item)
@@ -1141,7 +1142,7 @@ getNextQueryTask = function()
 end
 
 checkImportant = function(item)
-    local dealCount = XInfo.getAuctionInfoField(item['itemname'], 'dealcount', 0)
+    local dealCount = XInfo.getItemInfoField(item['itemname'], 'dealcount', 0)
     if item['star'] or dealCount >= 30 * 3 then
         return true
     end
@@ -1465,8 +1466,8 @@ setPriceByName = function(itemName, basePrice, profitRate, isDealRate, confirm)
             if XUtils.stringContains(item['itemname'], itemName) then
                 if item['enabled'] ~= nil and item['enabled'] then
                     if all or (not item['star']) then
-                        local vendorPrice = XInfo.getAuctionInfoField(item['itemname'], 'vendorprice', 0)
-                        local dealRate = XInfo.getAuctionInfoField(item['itemname'], 'dealrate', 99)
+                        local vendorPrice = XInfo.getItemInfoField(item['itemname'], 'vendorprice', 0)
+                        local dealRate = XInfo.getItemInfoField(item['itemname'], 'dealrate', 99)
                         if dealRate == 99 then dealRate = 1 end
                         local price = basePrice / (1 - profitRate)
                         if isDealRate then

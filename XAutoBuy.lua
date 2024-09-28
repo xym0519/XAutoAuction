@@ -119,7 +119,7 @@ initUI = function()
         XUIConfirmDialog.show(moduleName, '确认', '确认从Auctionator导入', function()
             for _, item in ipairs(XAutoBuyList) do
                 if item['enabled'] then
-                    local itemId = XInfo.getAuctionInfoField(item['itemname'], 'itemid')
+                    local itemId = XInfo.getItemInfoField(item['itemname'], 'itemid')
                     local price = XAPI.AuctionatorGetAuctionPriceByItemId(itemId)
                     item['minbuyoutprice'] = price
                     item['updatetime'] = time()

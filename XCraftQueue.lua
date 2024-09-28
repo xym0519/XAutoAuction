@@ -261,7 +261,7 @@ addItem = function(itemName, count, type)
     if not found then
         local index = 0
         local important = XAuctionCenter.checkImportantByName(itemName)
-        local dealCount = XInfo.getAuctionInfoField(itemName, 'dealcount', 0)
+        local dealCount = XInfo.getItemInfoField(itemName, 'dealcount', 0)
 
         for idx, item in pairs(craftQueue) do
             if important then

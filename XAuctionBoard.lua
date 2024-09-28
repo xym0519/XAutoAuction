@@ -182,6 +182,12 @@ addItem = function(itemName, type, count)
         end
     end)
 
+    if type == 'deal' then
+        local item = XInfo.getItemInfo(itemName)
+        if item then
+            item['dealcount'] = item['dealcount'] + count
+        end
+    end
     refreshUI()
 end
 

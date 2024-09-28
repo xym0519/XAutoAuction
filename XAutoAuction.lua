@@ -18,6 +18,7 @@ XAutoAuctionFrame:RegisterEvent('AUCTION_HOUSE_SHOW')
 XAutoAuctionFrame:RegisterEvent('AUCTION_ITEM_LIST_UPDATE')
 
 XAutoAuctionFrame:RegisterEvent('CHAT_MSG_SYSTEM')
+XAutoAuctionFrame:RegisterEvent('CHAT_MSG_WHISPER')
 
 XAutoAuctionFrame:RegisterEvent('BAG_UPDATE')
 XAutoAuctionFrame:RegisterEvent('GET_ITEM_INFO_RECEIVED')

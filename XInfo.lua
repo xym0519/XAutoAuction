@@ -49,6 +49,20 @@ XInfo.getBankItemCount = function(itemName)
 end
 
 local itemStackCountCache = {}
+XInfo.getStackCount = function(itemName)
+    local stackCount = itemStackCountCache[itemName]
+    if stackCount then return stackCount end
+
+    local itemInfo = { XAPI.GetItemInfo(itemName) }
+    if itemInfo then
+        stackCount = itemInfo[8]
+        itemStackCountCache[itemName] = stackCount
+        return stackCount
+    else
+        return 0
+    end
+end
+
 XInfo.isItemFullStack = function(bagId, slotId)
     local bagItem = XAPI.C_Container_GetContainerItemInfo(bagId, slotId)
     if not bagItem then return false end
@@ -56,18 +70,7 @@ XInfo.isItemFullStack = function(bagId, slotId)
     local count = bagItem['stackCount']
     local itemId = bagItem['itemID']
 
-    local stackCount = itemStackCountCache[itemId]
-    if stackCount then
-        return count >= stackCount
-    end
-
-    local itemInfo = { XAPI.GetItemInfo(itemId) }
-    if itemInfo then
-        stackCount = itemInfo[8]
-        itemStackCountCache[itemId] = stackCount
-    end
-    if not stackCount then stackCount = 1 end
-
+    local stackCount = XInfo.getStackCount(bagItem['itemName'])
     return count >= stackCount
 end
 
@@ -304,7 +307,7 @@ XInfo.reloadTradeSkill = function(type)
 end
 
 -- Auction Info
-XInfo.getAuctionInfo = function(itemName)
+XInfo.getItemInfo = function(itemName)
     if XAuctionInfoList then
         if XAuctionInfoList[itemName] then
             return XAuctionInfoList[itemName]
@@ -313,9 +316,9 @@ XInfo.getAuctionInfo = function(itemName)
     return nil
 end
 
-XInfo.getAuctionInfoField = function(itemName, fieldName, defaultValue)
+XInfo.getItemInfoField = function(itemName, fieldName, defaultValue)
     itemName = strtrim(itemName)
-    local item = XInfo.getAuctionInfo(itemName)
+    local item = XInfo.getItemInfo(itemName)
     if not item then return defaultValue end;
 
     -- local fields = { 'itemid', 'itemname', 'itemlink', 'quality', 'level', 'icon',
@@ -329,8 +332,15 @@ XInfo.getAuctionInfoField = function(itemName, fieldName, defaultValue)
     return item[fieldName]
 end
 
+XInfo.setItemInfoField = function(itemName, fieldName, value)
+    itemName = strtrim(itemName)
+    local item = XInfo.getItemInfo(itemName)
+    if not item then return end;
+    item[fieldName] = value
+end
+
 XInfo.getItemId = function(itemName)
-    local itemId = XInfo.getAuctionInfoField(itemName, 'itemid', -1)
+    local itemId = XInfo.getItemInfoField(itemName, 'itemid', -1)
     if itemId <= 0 then
         itemId = XAPI.GetItemInfoInstant(itemName)
     end
@@ -420,16 +430,6 @@ XInfo.getMaterialTotalCount = function(itemName)
     else
         return 0
     end
-end
-
-XInfo.getMaterialPrice = function(itemName)
-    local price = 0
-    local materialName = XInfo.getMaterialName(itemName)
-    if materialName then
-        local autoBuyItem = XAutoBuy.getItem(materialName)
-        if autoBuyItem then price = autoBuyItem['price'] end
-    end
-    return price
 end
 
 -- Character

@@ -5,6 +5,7 @@ local moduleName = 'XAutoSpeak'
 local mainFrame = nil
 local settingFrame = nil
 local editFrame = nil
+local hintFrame = nil
 
 local dft_interval = 90
 local dft_buttonWidth = 60
@@ -77,6 +78,21 @@ initUI = function()
 
     initUI_Setting()
     initUI_Edit()
+
+    hintFrame = XAPI.CreateFrame('Frame', nil, UIParent)
+    hintFrame:SetSize(200, 50)
+    hintFrame:SetPoint('TOPRIGHT', UIParent, 'TOPRIGHT', 0, 0)
+    hintFrame:SetFrameStrata('DIALOG')
+    hintFrame:Hide()
+    hintFrame.text = hintFrame:CreateFontString(nil, 'ARTWORK')
+    hintFrame.text:SetJustifyH('CENTER')
+    hintFrame.text:SetAllPoints()
+    hintFrame.text:SetFontObject(ChatFontNormal)
+    hintFrame.text:SetText('新消息')
+    hintFrame.hintBg = hintFrame:CreateTexture(nil, 'BACKGROUND')
+    hintFrame.hintBg:SetAllPoints(hintFrame)
+    hintFrame.hintBg:SetColorTexture(1, 1, 0, 0.9)
+    hintFrame:SetScript('OnMouseDown', function(self) self:Hide() end)
 end
 
 initUI_Setting = function()
@@ -334,6 +350,12 @@ end
 XAutoAuction.registerEventCallback(moduleName, 'ADDON_LOADED', function()
     initUI()
 end)
+
+XAutoAuction.registerEventCallback(moduleName, 'CHAT_MSG_WHISPER', function(self, event, message, sender, ...)
+    if not hintFrame then return end
+    hintFrame:Show()
+end)
+
 XAutoAuction.registerUIUpdateCallback(moduleName, onUIUpdate)
 XAutoAuction.registerUpdateCallback(moduleName, onUpdate)
 

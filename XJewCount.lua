@@ -26,7 +26,11 @@ createLabel = function(itemName)
             local item = XInfo.getBagItem(self.frame.itemName)
             if item then count = #item['positions'] - 1 end
         end
-        XUtils.sendMail(self.frame.itemName, count)
+        local receiver = '阿肌'
+        if XUtils.inArray(self.frame.itemName, XInfo.mineList) then
+            receiver = '默法'
+        end
+        XUtils.sendMail(self.frame.itemName, count, true, receiver)
         refreshUI()
     end)
     sendMailButton.frame = frame
@@ -132,7 +136,7 @@ initUI = function()
                 if itemBag then
                     local itemName = itemBag.itemName
                     local count = itemBag.stackCount
-                    local stackCount = 20
+                    local stackCount = XInfo.getStackCount(itemName)
                     if XUtils.inArray(itemName, XInfo.materialList) then
                         if count < stackCount then
                             local subCount = stackCount - count
@@ -171,6 +175,32 @@ initUI = function()
             end
         end
         xdebug.info('补充完成')
+    end)
+
+    local shrinkButton = XUI.createButton(mainFrame, 25, '-')
+    shrinkButton:SetHeight(20)
+    shrinkButton:SetPoint('RIGHT', fulfilStackButton, 'LEFT', -3, 0)
+    shrinkButton:SetScript('OnClick', function()
+        local list = {}
+        for i = 0, XAPI.NUM_BAG_SLOTS do
+            local bagSlotCount = XAPI.C_Container_GetContainerNumSlots(i)
+            for j = 1, bagSlotCount do
+                if not XInfo.isItemFullStack(i, j) then
+                    local itemBag = XAPI.C_Container_GetContainerItemInfo(i, j)
+                    if itemBag then
+                        local itemName = itemBag.itemName
+                        if list[itemName] then
+                            XAPI.C_Container_PickupContainerItem(i, j)
+                            XAPI.C_Container_PickupContainerItem(list[itemName]['x'], list[itemName]['y'])
+                            list[itemName] = nil
+                        else
+                            list[itemName] = { x = i, y = j }
+                        end
+                    end
+                end
+            end
+        end
+        xdebug.info('整理完成')
     end)
 
     local prLabel = createLabel('赤玉石')
