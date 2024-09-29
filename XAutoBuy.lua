@@ -3,10 +3,7 @@ local moduleName = 'XAutoBuy'
 
 -- Variable definition
 local mainFrame = nil
-local confirmFrame = nil
 
-local dft_interval = 3
-local dft_taskTimeout = 30
 local dft_minPrice = 9999999
 
 local dft_buttonWidth = 40
@@ -17,32 +14,16 @@ local displayFrameList = {}
 local displayPageSize = 10
 local displaySettingItem = nil
 
-local isStarted = false
-
-local isQuerying = false
-local queryStartTime = 0
-local queryIndex = 1
-local queryPage = 0
-local queryFound = nil
-local queryResultProcessed = true
-local queryRound = 1
-local buyingItem = nil
-
 -- Function definition
 local initUI
-local initUI_Confirm
 local refreshUI
 local getItem
 local getItemField
 local addItem
-local startBuy
-local stopBuy
-local confirmBuy
-local finishCurTask
 
 -- Function implemention
 initUI = function()
-    mainFrame = XUI.createFrame('XAutoBuyMainFrame', 625, 425)
+    mainFrame = XUI.createFrame('XAutoBuyMainFrame', 570, 425)
     mainFrame.title:SetText('自动购买')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
     mainFrame:Hide()
@@ -66,27 +47,13 @@ initUI = function()
         end
     end)
 
-    local startButton = XUI.createButton(mainFrame, dft_buttonWidth, '起')
-    startButton:SetPoint('LEFT', nextButton, 'RIGHT', dft_buttonGap, 0)
-    startButton:SetScript('OnClick', function()
-        if isStarted then
-            stopBuy()
-        else
-            startBuy()
-        end
-    end)
-    mainFrame.startButton = startButton
-
     local resetButton = XUI.createButton(mainFrame, dft_buttonWidth, '清')
-    resetButton:SetPoint('LEFT', startButton, 'RIGHT', dft_buttonGap, 0)
+    resetButton:SetPoint('LEFT', nextButton, 'RIGHT', dft_buttonGap, 0)
     resetButton:SetScript('OnClick', function()
         for _, item in ipairs(XAutoBuyList) do
-            item['minprice'] = dft_minPrice
             item['minbuyoutprice'] = dft_minPrice
             item['updatetime'] = 0
         end
-        stopBuy()
-        queryIndex = 1
         refreshUI()
     end)
 
@@ -113,6 +80,7 @@ initUI = function()
             end
         end, { { Name = '物品' }, { Name = '价格' } }, '自动购买设置')
     end)
+
     local importButton = XUI.createButton(mainFrame, dft_buttonWidth, '导')
     importButton:SetPoint('LEFT', settingButton, 'RIGHT', dft_buttonGap, 0)
     importButton:SetScript('OnClick', function()
@@ -120,7 +88,7 @@ initUI = function()
             for _, item in ipairs(XAutoBuyList) do
                 if item['enabled'] then
                     local itemId = XInfo.getItemInfoField(item['itemname'], 'itemid')
-                    local price = XAPI.AuctionatorGetAuctionPriceByItemId(itemId)
+                    local price = XAPI.Auctionator_GetAuctionPriceByItemId(itemId)
                     item['minbuyoutprice'] = price
                     item['updatetime'] = time()
                 end
@@ -128,10 +96,6 @@ initUI = function()
             refreshUI()
         end)
     end)
-
-    local hintLabel = XUI.createLabel(mainFrame, 170, '')
-    hintLabel:SetPoint('LEFT', importButton, 'RIGHT', 10, 0)
-    mainFrame.hintLabel = hintLabel
 
     local lastWidget = preButton
     for i = 1, displayPageSize do
@@ -214,12 +178,8 @@ initUI = function()
         label2:SetPoint('LEFT', label, 'RIGHT', 0, 0)
         frame.label2 = label2
 
-        local label3 = XUI.createLabel(frame, 55, '')
-        label3:SetPoint('LEFT', label2, 'RIGHT', 0, 0)
-        frame.label3 = label3
-
         local label4 = XUI.createLabel(frame, 55, '')
-        label4:SetPoint('LEFT', label3, 'RIGHT', 0, 0)
+        label4:SetPoint('LEFT', label2, 'RIGHT', 0, 0)
         frame.label4 = label4
 
         local deleteButton = XUI.createButton(frame, 32, '删')
@@ -296,46 +256,14 @@ initUI = function()
     refreshUI()
 end
 
-initUI_Confirm = function()
-    confirmFrame = XUI.createFrame('XAutoBuyMainFrame_Confirm', 200, 70)
-    confirmFrame.title:SetText('自动购买')
-    confirmFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
-    confirmFrame:Hide()
-
-    local confirmButton = XUI.createButton(confirmFrame, 80, '购买')
-    confirmButton:SetPoint('TOPLEFT', confirmFrame, 'TOPLEFT', 15, -30)
-    confirmButton:SetScript('OnClick', function()
-        confirmBuy()
-    end)
-
-    local cancelButton = XUI.createButton(confirmFrame, 80, '取消')
-    cancelButton:SetPoint('LEFT', confirmButton, 'RIGHT', 12, 0)
-    cancelButton:SetScript('OnClick', function()
-        finishCurTask()
-        buyingItem = nil
-        queryResultProcessed = true
-        confirmFrame:Hide()
-    end)
-end
-
 refreshUI = function()
     if not mainFrame then return end
     if not mainFrame:IsVisible() then return end
 
     mainFrame.title:SetText('自动购买 (' .. (displayPageNo + 1) .. '/'
-        .. (math.ceil(#XAutoBuyList / displayPageSize)) .. ')    Querying: '
-        .. queryIndex .. '    Round: ' .. queryRound)
+        .. (math.ceil(#XAutoBuyList / displayPageSize)) .. ')')
 
     XInfo.reloadBag()
-    if isStarted then
-        mainFrame.startButton:SetText('停')
-        if XAutoBuyList[queryIndex] then
-            mainFrame.hintLabel:SetText(XAutoBuyList[queryIndex]['itemname'] .. '(' .. queryPage .. ')')
-        end
-    else
-        mainFrame.startButton:SetText('起')
-        mainFrame.hintLabel:SetText('等待')
-    end
 
     for i = 1, displayPageSize do
         local frame = displayFrameList[i]
@@ -347,19 +275,6 @@ refreshUI = function()
 
             local price = item['price']
             local priceStr = XUI.White .. XUtils.priceToString(price)
-
-            local minPrice = dft_minPrice
-            if item['minprice'] then minPrice = item['minprice'] end
-            local minPriceStr = XUI.White .. XUtils.priceToString(minPrice)
-            if minPrice <= price then
-                minPriceStr = XUI.White .. XUtils.priceToString(minPrice)
-            elseif minPrice <= price * 1.2 then
-                minPriceStr = XUI.Yellow .. XUtils.priceToString(minPrice)
-            elseif minPrice <= price * 1.5 then
-                minPriceStr = XUI.Orange .. XUtils.priceToString(minPrice)
-            else
-                minPriceStr = XUI.Red .. XUtils.priceToString(minPrice)
-            end
 
             local minBuyoutPrice = dft_minPrice
             if item['minbuyoutprice'] then minBuyoutPrice = item['minbuyoutprice'] end
@@ -387,7 +302,6 @@ refreshUI = function()
             frame.labelt:SetText(updateTimeStr)
             frame.label:SetText(bagCountStr .. XUI.White .. '/' .. bankCountStr)
             frame.label2:SetText(priceStr)
-            frame.label3:SetText(minPriceStr)
             frame.label4:SetText(minBuyoutPriceStr)
 
             if item['enabled'] ~= true then
@@ -432,286 +346,15 @@ addItem = function(itemName, price)
     refreshUI()
 end
 
-startBuy = function()
-    isStarted = true
-    isQuerying = false
-    queryStartTime = 0
-    queryPage = 0
-    queryFound = nil
-    queryResultProcessed = true
-    buyingItem = nil
-    refreshUI()
-end
-
-stopBuy = function()
-    isStarted = false
-    isQuerying = false
-    queryStartTime = 0
-    queryPage = 0
-    queryFound = nil
-    queryResultProcessed = true
-    buyingItem = nil
-    refreshUI()
-    XUIConfirmDialog.close('XAutoBuy_Buy')
-end
-
-finishCurTask = function()
-    isQuerying = false
-    queryStartTime = 0
-    queryIndex = queryIndex + 1
-    queryPage = 0
-    queryFound = nil
-    queryResultProcessed = true
-end
-
-confirmBuy = function()
-    if not confirmFrame then return end
-    if buyingItem == nil then return end
-
-    local index = 1
-    local found = false
-    while true do
-        local res = { XAPI.GetAuctionItemInfo('list', index) }
-        local timeLeft = XAPI.GetAuctionItemTimeLeft('list', index)
-        local itemName = res[1]
-        local stackCount = res[3]
-        local bidStart = res[8]
-        local bidIncrease = res[9]
-        local buyoutPrice = res[10]
-        local bidPrice = res[11]
-        local isMine = res[12]
-        local seller = res[14]
-
-        if not itemName then break end
-
-        if itemName == buyingItem['itemname'] then
-            local nextBidPrice = 0
-            if bidPrice == 0 then
-                nextBidPrice = bidStart
-            else
-                nextBidPrice = bidPrice + bidIncrease
-            end
-
-            if (timeLeft < 3 and nextBidPrice / stackCount <= buyingItem['price'])
-                or (buyoutPrice > 0 and buyoutPrice / stackCount <= buyingItem['price']) then
-                if (not XInfo.isMe(seller)) and (not isMine) then
-                    found = true
-                end
-            end
-
-            if (not XInfo.isMe(seller)) and (not isMine) then
-                if buyoutPrice / stackCount <= buyingItem['price'] and buyoutPrice > 0 then
-                    xdebug.info('Buyout: ' .. itemName .. ' (' .. stackCount .. ')'
-                        .. '    ' .. XUtils.priceToMoneyString(buyoutPrice / stackCount))
-                    XAPI.PlaceAuctionBid('list', index, buyoutPrice)
-                    break
-                elseif timeLeft < 3 and nextBidPrice / stackCount <= buyingItem['price'] then
-                    xdebug.info('Bid: ' .. itemName .. ' (' .. stackCount .. ')'
-                        .. '    ' .. XUtils.priceToMoneyString(nextBidPrice / stackCount))
-                    XAPI.PlaceAuctionBid('list', index, nextBidPrice)
-                    break
-                end
-            end
-        end
-        index = index + 1
-    end
-
-    if not found then
-        queryPage = queryPage - 1
-        if queryPage < 0 then queryPage = 0 end
-        confirmFrame:Hide()
-        buyingItem = nil
-        queryResultProcessed = true
-    end
-end
-
--- Event callback
-local function onAuctionItemListUpdate()
-    if not XAutoBuyList[queryIndex] then
-        finishCurTask()
-        return
-    end
-
-    local item = XAutoBuyList[queryIndex]
-
-    local res = { XAPI.GetAuctionItemInfo('list', 1) }
-    local itemName = res[1]
-
-    if not itemName then
-        queryFound = false
-        isQuerying = false
-        queryResultProcessed = false
-        return
-    end
-
-    if itemName ~= item['itemname'] then return end
-
-    queryFound = true
-    queryResultProcessed = false
-    isQuerying = false
-end
-
-local function onUpdate()
-    if not confirmFrame then return end
-    if not isStarted then return end
-
-    if isQuerying then
-        if time() - queryStartTime > dft_taskTimeout then
-            finishCurTask()
-            refreshUI()
-        end
-        return
-    end
-
-    if queryFound == true then
-        if not queryResultProcessed then
-            local item = XAutoBuyList[queryIndex]
-            local index = 1
-            local lowerPriceFound = false
-            while true do
-                local res = { XAPI.GetAuctionItemInfo('list', index) }
-                local timeLeft = XAPI.GetAuctionItemTimeLeft('list', index)
-                local itemName = res[1]
-                local stackCount = res[3]
-                local bidStart = res[8]
-                local bidIncrease = res[9]
-                local buyoutPrice = res[10]
-                local bidPrice = res[11]
-                local isMine = res[12]
-                local seller = res[14]
-                local itemId = res[17]
-
-                if not itemName then break end
-
-                XExternal.updateItemInfo(itemName, itemId)
-                XExternal.addScanHistory(itemName, time(), buyoutPrice)
-
-                if itemName == item['itemname'] then
-                    item.updatetime = time()
-                    local nextBidPrice = 0
-                    if bidPrice == 0 then
-                        nextBidPrice = bidStart
-                    else
-                        nextBidPrice = bidPrice + bidIncrease
-                    end
-
-                    local price = buyoutPrice / stackCount
-                    if price > 0 then
-                        if item.minbuyoutprice then
-                            if price < item.minbuyoutprice then
-                                item.minbuyoutprice = price
-                            end
-                        else
-                            item.minbuyoutprice = price
-                        end
-
-                        if nextBidPrice / stackCount < price then
-                            price = nextBidPrice / stackCount
-                        end
-                    else
-                        price = nextBidPrice / stackCount
-                    end
-                    if item.minprice then
-                        if price < item.minprice then
-                            item.minprice = price
-                        end
-                    else
-                        item.minprice = price
-                    end
-
-                    if (timeLeft < 3 and nextBidPrice / stackCount <= item['price'])
-                        or (buyoutPrice > 0 and buyoutPrice / stackCount <= item['price']) then
-                        if (not XInfo.isMe(seller)) and (not isMine) then
-                            lowerPriceFound = true
-                            break
-                        end
-                    end
-                end
-                index = index + 1
-            end
-
-            if lowerPriceFound then
-                if buyingItem == nil then
-                    buyingItem = item
-                    confirmFrame.title:SetText(item['itemname'])
-                    confirmFrame:Show()
-                end
-                return
-            else
-                finishCurTask()
-                return
-            end
-
-            return
-        end
-
-        if not XAPI.CanSendAuctionQuery() then return end
-
-        queryStartTime = time()
-        queryPage = queryPage + 1
-        queryFound = nil
-        isQuerying = true
-        XAPI.QueryAuctionItems(XAutoBuyList[queryIndex]['itemname'], nil, nil, queryPage, nil, nil, nil, true)
-        refreshUI()
-        return
-    end
-
-    if queryFound == false then
-        finishCurTask()
-        refreshUI()
-        return
-    end
-
-    if not XAPI.CanSendAuctionQuery() then return end
-
-    local item = nil
-    for i = queryIndex, #XAutoBuyList do
-        local titem = XAutoBuyList[i]
-        if titem and titem['enabled'] then
-            queryIndex = i
-            item = titem
-            break
-        end
-    end
-
-    if item then
-        item.minprice = dft_minPrice
-        item.minbuyoutprice = dft_minPrice
-        queryStartTime = time()
-        queryPage = 0
-        queryFound = nil
-        isQuerying = true
-        XAPI.QueryAuctionItems(item['itemname'], nil, nil, queryPage, nil, nil, nil, true)
-        refreshUI()
-        return
-    end
-
-    queryRound = queryRound + 1
-    isQuerying = false
-    queryStartTime = 0
-    queryIndex = 1
-    queryPage = 0
-    queryFound = nil
-    refreshUI()
-end
-
 -- Events
 XAutoAuction.registerEventCallback(moduleName, 'ADDON_LOADED', function()
     initUI()
-    initUI_Confirm()
     refreshUI()
 end)
 
-XAutoAuction.registerEventCallback(moduleName, 'AUCTION_ITEM_LIST_UPDATE', function()
-    onAuctionItemListUpdate()
-end)
-
 XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_CLOSED', function()
-    stopBuy()
     if mainFrame then mainFrame:Hide() end
 end)
-
-XAutoAuction.registerUpdateCallback(moduleName, onUpdate, dft_interval)
 
 XAutoAuction.registerRefreshCallback(moduleName, refreshUI)
 

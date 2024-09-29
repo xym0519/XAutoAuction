@@ -317,6 +317,8 @@ XInfo.getItemInfo = function(itemName)
 end
 
 XInfo.getItemInfoField = function(itemName, fieldName, defaultValue)
+    if itemName == nil then return defaultValue end
+
     itemName = strtrim(itemName)
     local item = XInfo.getItemInfo(itemName)
     if not item then return defaultValue end;

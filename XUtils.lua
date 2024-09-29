@@ -1,4 +1,6 @@
 XUtils = {}
+local moduleName = 'XUtils'
+
 XUtils.formatTime = function(timestamp)
     local time = math.floor((timestamp % (24 * 3600)) / 60)
     local hour = (math.floor(time / 60) + 8) % 24
@@ -23,47 +25,6 @@ XUtils.formatTimeLeft = function(seconds)
     return XUtils.padStringLeft(math.floor(seconds / 60), 2, '0') ..
         ':' .. XUtils.padStringLeft(seconds % 60, 2, '0')
 end
-
--- XUtils.formatCount = function(count, length, padding)
---     if padding == nil then padding = ' ' end
---     if length == nil then
---         length = 2
---     end
-
---     local maxCount = 1
---     for i = 1, length do
---         maxCount = maxCount * 10
---     end
---     maxCount = maxCount - 1
-
---     local scount = count .. ''
---     if count > maxCount then
---         scount = maxCount .. ''
---     else
---         while (string.len(scount) < length) do
---             scount = padding .. scount;
---         end
---     end
---     return scount
--- end
-
--- XUtils.formatCount2 = function(count)
---     local countStr = tostring(count)
---     local length = #countStr;
---     local result = countStr:sub(1, 1)
-
---     if (length == 1) then
---         result = XUI.Red .. result
---     elseif (length == 2) then
---         result = XUI.Yellow .. result
---     elseif (length == 3) then
---         result = XUI.Green .. result
---     else
---         result = XUI.Cyan .. result
---     end
-
---     return result
--- end
 
 XUtils.itemIDfromLink = function(itemLink)
     if (itemLink == nil) then
@@ -246,7 +207,9 @@ XUtils.sendMail = function(itemName, stackCount, fullStack, receiver)
     XInfo.reloadMail()
 end
 
-XUtils.receiveMail = function(itemName)
+XUtils.receiveMail = function(itemName, receiveAll)
+    if receiveAll == nil then receiveAll = false end
+
     if not XAPI.IsMailBoxOpen() then
         xdebug.error('请先打开邮箱')
         return
@@ -265,28 +228,61 @@ XUtils.receiveMail = function(itemName)
         return
     end
 
-    for idx = 1, mailCount do
-        local mailInfo = { XAPI.GetInboxHeaderInfo(idx) }
-        local itemCount = mailInfo[8]
-        if itemCount then
-            if itemCount > 0 then
-                local found = false
-                for iidx = 1, 12 do
-                    local _itemName = XAPI.GetInboxItem(idx, iidx)
-                    if _itemName == itemName then
-                        found = true
-                        XAPI.TakeInboxItem(idx, iidx)
-                        break
+    local stackCount = XInfo.getStackCount(itemName)
+    local emptyCount = XInfo.emptyBagCount * stackCount
+    local count = 0
+
+    if receiveAll then
+        XAutoAuction.registerUIUpdateCallback(moduleName .. '_receiveMail', function()
+            local found = false
+            for idx = mailCount, 1, -1 do
+                local mailInfo = { XAPI.GetInboxHeaderInfo(idx) }
+                local subject = mailInfo[4]
+                if subject ~= nil then
+                    local mailType = XAPI.Postal_GetMailType(subject)
+                    if mailType == XAPI.Postal_MailType_AHWon
+                        or mailType == XAPI.Postal_MailType_AHOutbid
+                        or mailType == XAPI.Postal_MailType_AHSuccess
+                        or mailType == XAPI.Postal_MailType_AHExpired
+                        or mailType == XAPI.Postal_MailType_AHCancelled then
+                        for iidx = 1, 12 do
+                            local _itemName, _, _, _count = XAPI.GetInboxItem(idx, iidx)
+                            if _itemName == itemName then
+                                found = true
+                                XAPI.TakeInboxItem(idx, iidx)
+                                count = count + _count
+                                break
+                            end
+                        end
+                        if found then break end
                     end
                 end
-                if found then break end
             end
+            if not found or count >= emptyCount then
+                XAutoAuction.unRegisterUIUpdateCallback(moduleName .. '_receiveMail')
+                xdebug.info('收取' .. itemName .. ' ' .. count)
+                XInfo.reloadBag()
+                XInfo.reloadMail()
+            end
+        end, 0.1)
+    else
+        for idx = 1, mailCount do
+            local found = false
+            for iidx = 1, 12 do
+                local _itemName, _, _, _count = XAPI.GetInboxItem(idx, iidx)
+                if _itemName == itemName then
+                    found = true
+                    XAPI.TakeInboxItem(idx, iidx)
+                    count = count + _count
+                    break
+                end
+            end
+            if found then break end
         end
+        xdebug.info('收取' .. itemName .. ' ' .. count)
+        XInfo.reloadBag()
+        XInfo.reloadMail()
     end
-
-    xdebug.info('收取' .. itemName)
-    XInfo.reloadBag()
-    XInfo.reloadMail()
 end
 
 function MoveToBagBank(itemNames, direcion, stackCount, exceptions, fullStack)

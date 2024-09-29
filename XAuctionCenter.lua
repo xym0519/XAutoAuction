@@ -10,7 +10,7 @@ local dft_minPrice = 9999999
 local dft_maxPrice = 2180000
 local dft_basePriceRate = 1.5
 local dft_taskInterval = 0.9
-local dft_taskTimeout = 30
+local dft_taskTimeout = 15
 local dft_filterList = { '全部', '星星', '优质', '可售', '有效', '潜力', '价低', '无效', '垃圾', '不做', '邮寄', '收件', '量大' }
 local dft_deltaPrice = 10
 local dft_postdelay = 2
@@ -29,13 +29,15 @@ local taskList = {}
 local curTask = nil
 local lastTaskFinishTime = 0
 
+local buyPriceEnabled = true
+local autoBuyEnabled = true
+
 local queryIndex = 1
 local starQueryIndex = 1
 local queryStarFlag = true
 
-local materialList = {}
 local lastMaterialTaskTime = time()
-local materialQueryIndex = 1
+local materialQueryIndex = 0
 
 local cleaningItems = {}
 
@@ -97,13 +99,7 @@ local processMaterialQueryTask
 
 -- Function implemention
 initData = function()
-    materialList = {}
-    for _, itemName in ipairs(XInfo.materialListS) do
-        table.insert(materialList, { itemname = itemName, price = dft_minPrice })
-    end
-    for _, itemName in ipairs(XInfo.mineList) do
-        table.insert(materialList, { itemname = itemName, price = dft_minPrice })
-    end
+
 end
 
 resetData = function()
@@ -124,7 +120,7 @@ resetData = function()
 end
 
 initUI = function()
-    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 1315, 500)
+    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 1315, 530)
     mainFrame:SetFrameStrata('HIGH')
     mainFrame.title:SetText('自动拍卖')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
@@ -135,19 +131,35 @@ initUI = function()
     auctionBoardButton:SetPoint('TOPRIGHT', mainFrame, 'TOPRIGHT', -30, 0)
     auctionBoardButton:SetScript('OnClick', XAuctionBoard.toggle)
 
+    local jewCountButton = XUI.createButton(mainFrame, dft_buttonWidth, '材料')
+    jewCountButton:SetPoint('RIGHT', auctionBoardButton, 'LEFT', -3, 0)
+    jewCountButton:SetScript('OnClick', XJewCount.toggle)
+
     local craftQueueButton = XUI.createButton(mainFrame, dft_buttonWidth, '制造')
-    craftQueueButton:SetPoint('RIGHT', auctionBoardButton, 'LEFT', -3, 0)
+    craftQueueButton:SetPoint('RIGHT', jewCountButton, 'LEFT', -3, 0)
     craftQueueButton:SetScript('OnClick', XCraftQueue.toggle)
     mainFrame.craftQueueButton = craftQueueButton
 
-    local jewCountButton = XUI.createButton(mainFrame, dft_buttonWidth, '材料')
-    jewCountButton:SetPoint('RIGHT', craftQueueButton, 'LEFT', -3, 0)
-    jewCountButton:SetScript('OnClick', XJewCount.toggle)
-
     local autoSpeakButton = XUI.createButton(mainFrame, dft_buttonWidth, XUI.Red .. '喊话')
-    autoSpeakButton:SetPoint('RIGHT', jewCountButton, 'LEFT', -3, 0)
+    autoSpeakButton:SetPoint('RIGHT', craftQueueButton, 'LEFT', -3, 0)
     autoSpeakButton:SetScript('OnClick', XAutoSpeak.toggle)
     mainFrame.autoSpeakButton = autoSpeakButton
+
+    local autoBuyButton = XUI.createButton(mainFrame, dft_buttonWidth, XUI.Red .. '购买')
+    autoBuyButton:SetPoint('RIGHT', autoSpeakButton, 'LEFT', -3, 0)
+    autoBuyButton:SetScript('OnClick', function()
+        autoBuyEnabled = not autoBuyEnabled
+        refreshUI()
+    end)
+    mainFrame.autoBuyButton = autoBuyButton
+
+    local buyPriceButton = XUI.createButton(mainFrame, dft_buttonWidth, XUI.Red .. '买价')
+    buyPriceButton:SetPoint('RIGHT', autoBuyButton, 'LEFT', -3, 0)
+    buyPriceButton:SetScript('OnClick', function()
+        buyPriceEnabled = not buyPriceEnabled
+        refreshUI()
+    end)
+    mainFrame.buyPriceButton = buyPriceButton
 
     local startButton = XUI.createButton(mainFrame, dft_buttonWidth, '开始')
     startButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -30)
@@ -172,7 +184,7 @@ initUI = function()
     local putonButton = XUI.createButton(mainFrame, dft_buttonWidth, '上架')
     putonButton:SetPoint('LEFT', resetButton, 'RIGHT', dft_sectionGap, 0)
     putonButton:SetScript('OnClick', function()
-        local count = puton()
+        local count = puton(IsLeftShiftKeyDown())
         xdebug.info('PutOn: ' .. count)
     end)
 
@@ -314,53 +326,9 @@ initUI = function()
     priceAdjustButton:SetPoint('LEFT', checkRecipeButton, 'RIGHT', dft_buttonGap, 0)
     priceAdjustButton:SetScript('OnClick', priceAdjustClick)
 
-    local preFrame = priceAdjustButton
-    for _, item in ipairs(materialList) do
-        local materialItemFrame = XAPI.CreateFrame('Frame', nil, mainFrame)
-        materialItemFrame:SetSize(63, 30)
-        if preFrame == priceAdjustButton then
-            materialItemFrame:SetPoint('LEFT', preFrame, 'RIGHT', dft_sectionGap, 0)
-        else
-            materialItemFrame:SetPoint('LEFT', preFrame, 'RIGHT', 3, 0)
-        end
-        materialItemFrame.itemName = item['itemname']
-
-        local icon = XUI.createItemIcon(materialItemFrame, 25, 25, item['itemname'])
-        icon:SetPoint('LEFT', materialItemFrame, 'LEFT', 0, 0)
-
-        local countLabel = XUI.createLabel(materialItemFrame, 30, '', 'LEFT')
-        countLabel:SetPoint('LEFT', icon, 'RIGHT', 3, 0)
-
-        materialItemFrame:SetScript("OnEnter", function(self)
-            local itemid = XInfo.getItemId(self.itemName)
-            if itemid > 0 then
-                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                GameTooltip:SetHyperlink("item:" .. itemid) -- 显示物品信息
-            end
-        end)
-        materialItemFrame:SetScript("OnLeave", function(self)
-            GameTooltip:Hide()
-        end)
-
-        materialItemFrame:SetScript('OnMouseDown', function(self)
-            if IsLeftAltKeyDown() then
-                XAPI.AuctionatorSearchExact(self.itemName)
-            elseif IsLeftShiftKeyDown() then
-                addMaterialQueryTaskByItemName(self.itemName)
-                refreshUI()
-            elseif IsLeftControlKeyDown() then
-                XInfo.printBuyHistory(self.itemName)
-            end
-        end)
-
-        materialFrames[item['itemname']] = countLabel
-
-        preFrame = materialItemFrame
-    end
-
     local labelFrame = XAPI.CreateFrame('Frame', nil, mainFrame)
     labelFrame:SetSize(mainFrame:GetWidth() - 20, 30)
-    labelFrame:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 10, -90)
+    labelFrame:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 10, -120)
 
     local indexLabel = XUI.createLabel(labelFrame, 35, '序号', 'CENTER')
     indexLabel:SetPoint('LEFT', labelFrame, 'LEFT', 8, 0)
@@ -384,7 +352,7 @@ initUI = function()
     priceLabel:SetPoint('LEFT', dealLabel, 'RIGHT', 3, 0)
 
     scrollView = XUI.createScrollView(mainFrame, mainFrame:GetWidth() - 20,
-        mainFrame:GetHeight() - labelFrame:GetHeight() - 100)
+        mainFrame:GetHeight() - labelFrame:GetHeight() - 130)
     scrollView:SetPoint('TOPLEFT', labelFrame, 'BottomLeft', 0, 0)
 
     refreshUI()
@@ -400,7 +368,6 @@ filterDisplayList = function()
     for i, item in ipairs(XAutoAuctionList) do
         item.index = i
         local itemName = item['itemname']
-        local materialName = XInfo.getMaterialName(itemName)
         local enabled = item['enabled']
         if enabled == nil then enabled = false end
         local star = item['star']
@@ -663,6 +630,18 @@ refreshUI = function()
         mainFrame.startButton:SetText('开始')
     end
 
+    if buyPriceEnabled then
+        mainFrame.buyPriceButton:SetText(XUI.Green .. '买价')
+    else
+        mainFrame.buyPriceButton:SetText(XUI.Red .. '买价')
+    end
+
+    if autoBuyEnabled then
+        mainFrame.autoBuyButton:SetText(XUI.Green .. '购买')
+    else
+        mainFrame.autoBuyButton:SetText(XUI.Red .. '购买')
+    end
+
     if XAutoSpeak.isRunning() then
         mainFrame.autoSpeakButton:SetText(XUI.Green .. '喊话')
     else
@@ -696,6 +675,63 @@ refreshUI = function()
         .. '    已出售: ' .. XInfo.auctionedCount
         .. '    待收款: ' .. (XUtils.round(XInfo.auctionedMoney / 10000))
         .. '    背包: ' .. XInfo.emptyBagCount)
+
+    for _, item in ipairs(materialFrames) do
+        item:Hide()
+    end
+    materialFrames = {}
+    local preFrame = mainFrame
+    for _, item in ipairs(XAutoBuyList) do
+        if item['enabled'] then
+            local tprice = item['minbuyoutprice']
+            if tprice > 1000000 then
+                tprice = math.floor(tprice / 10000)
+            else
+                tprice = math.floor(tprice / 1000) / 10
+            end
+
+            local materialItemFrame = XAPI.CreateFrame('Frame', nil, mainFrame)
+            materialItemFrame:SetSize(63, 30)
+            if preFrame == mainFrame then
+                materialItemFrame:SetPoint('TOPLEFT', preFrame, 'TOPLEFT', 15, -95)
+            else
+                materialItemFrame:SetPoint('LEFT', preFrame, 'RIGHT', 3, 0)
+            end
+            materialItemFrame.itemName = item['itemname']
+
+            local icon = XUI.createItemIcon(materialItemFrame, 25, 25, item['itemname'])
+            icon:SetPoint('LEFT', materialItemFrame, 'LEFT', 0, 0)
+
+            local countLabel = XUI.createLabel(materialItemFrame, 30, tprice, 'LEFT')
+            countLabel:SetPoint('LEFT', icon, 'RIGHT', 3, 0)
+
+            materialItemFrame:SetScript("OnEnter", function(self)
+                local itemid = XInfo.getItemId(self.itemName)
+                if itemid > 0 then
+                    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                    GameTooltip:SetHyperlink("item:" .. itemid) -- 显示物品信息
+                end
+            end)
+            materialItemFrame:SetScript("OnLeave", function(self)
+                GameTooltip:Hide()
+            end)
+
+            materialItemFrame:SetScript('OnMouseDown', function(self)
+                if IsLeftAltKeyDown() then
+                    XAPI.Auctionator_SearchExact(self.itemName)
+                elseif IsLeftShiftKeyDown() then
+                    addMaterialQueryTaskByItemName(self.itemName)
+                    refreshUI()
+                elseif IsLeftControlKeyDown() then
+                    XInfo.printBuyHistory(self.itemName)
+                end
+            end)
+
+            preFrame = materialItemFrame
+
+            table.insert(materialFrames, materialItemFrame)
+        end
+    end
 
     for idx, item in ipairs(displayList) do
         local frame = scrollView:GetItemFrame(idx)
@@ -780,7 +816,12 @@ refreshUI = function()
         end
 
         local dealRateStr = XUI.getColor_DealRate(dealRate) .. 'R' .. XUtils.round(dealRate)
-        local dealCountStr = XUI.getColor_DealCount(dealCount) .. 'D' .. dealCount
+        local dealCountStr = XUI.getColor_DealCount(dealCount) .. 'D'
+        if dealCount > 999 then
+            dealCountStr = dealCountStr .. '999'
+        else
+            dealCountStr = dealCountStr .. dealCount
+        end
         local stackCountStr = 'S' .. stackCount
         if stackCount > 4 then
             stackCountStr = XUI.Color_Worst .. stackCountStr
@@ -847,19 +888,6 @@ refreshUI = function()
             frame.itemCanCraftButton:SetText(XUI.Red .. '禁')
         end
     end
-
-    for _, item in ipairs(materialList) do
-        local label = materialFrames[item['itemname']]
-        if label then
-            local tprice = item['price']
-            if tprice > 1000000 then
-                tprice = math.floor(tprice / 10000)
-            else
-                tprice = math.floor(tprice / 1000) / 10
-            end
-            label:SetText(tprice)
-        end
-    end
 end
 
 start = function()
@@ -912,20 +940,32 @@ startNextTask = function()
         return
     end
 
-    if lastMaterialTaskTime + dft_materialTaskInterval < time() then
-        lastMaterialTaskTime = time()
-        if #materialList > 0 then
-            local item = materialList[materialQueryIndex]
-            if item then
-                addMaterialQueryTaskByItemName(item['itemname'])
-                curTask = taskList[1]
-                table.remove(taskList, 1)
-                curTask['starttime'] = time()
+    if buyPriceEnabled then
+        if lastMaterialTaskTime + dft_materialTaskInterval < time() then
+            lastMaterialTaskTime = time()
+            if #XAutoBuyList > 0 then
+                local item = nil
+                for idx = 0, #XAutoBuyList - 1 do
+                    local tIndex = ((materialQueryIndex + idx) % #XAutoBuyList) + 1
+                    item = XAutoBuyList[tIndex]
+                    if item ~= nil then
+                        if item['enabled'] then
+                            materialQueryIndex = tIndex
+                            break
+                        end
+                    end
+                end
 
-                processMaterialQueryTask(curTask)
-                refreshUI()
-                materialQueryIndex = (materialQueryIndex % #materialList) + 1
-                return
+                if item then
+                    addMaterialQueryTaskByItemName(item['itemname'])
+                    curTask = taskList[1]
+                    table.remove(taskList, 1)
+                    curTask['starttime'] = time()
+
+                    processMaterialQueryTask(curTask)
+                    refreshUI()
+                    return
+                end
             end
         end
     end
@@ -1319,7 +1359,8 @@ cleanShort = function()
     xdebug.warn('清理短期结束')
 end
 
-puton = function()
+puton = function(isForce)
+    if isForce == nil then isForce = false end
     XInfo.reloadBag()
     XInfo.reloadAuction()
     local count = 0
@@ -1330,21 +1371,23 @@ puton = function()
             local bagCount = XInfo.getBagItemCount(item['itemname'])
             local validCount = getMyValidCount(item['itemname'])
             local stackCount = item['stackcount']
-            if item['minpriceother'] >= item['baseprice'] and bagCount > 0 and validCount < stackCount then
-                if item['star'] then
-                    table.insert(starQueue, i)
-                else
-                    table.insert(unStarQueue, i)
+            if isForce or bagCount > 0 then
+                if item['minpriceother'] >= item['baseprice'] and validCount < stackCount then
+                    if item['star'] then
+                        table.insert(starQueue, i)
+                    else
+                        table.insert(unStarQueue, i)
+                    end
+                    count = count + 1
                 end
-                count = count + 1
             end
         end
     end
     for _, idx in ipairs(starQueue) do
-        addQueryTaskByIndex(idx)
+        addQueryTaskByIndex(idx, isForce)
     end
     for _, idx in ipairs(unStarQueue) do
-        addQueryTaskByIndex(idx)
+        addQueryTaskByIndex(idx, isForce)
     end
     refreshUI()
     return count
@@ -1633,7 +1676,11 @@ itemReceiveClick = function(this)
     local item = XAutoAuctionList[index];
     if not item then return end
 
-    XUtils.receiveMail(item['itemname'])
+    if IsLeftShiftKeyDown() then
+        XUtils.receiveMail(item['itemname'], true)
+    else
+        XUtils.receiveMail(item['itemname'])
+    end
     refreshUI()
 end
 
@@ -1669,7 +1716,7 @@ itemNameClick = function(this)
     if not item then return end
 
     if IsLeftAltKeyDown() then
-        XAPI.AuctionatorSearchExact(item['itemname'])
+        XAPI.Auctionator_SearchExact(item['itemname'])
     elseif IsLeftControlKeyDown() then
         XInfo.printBuyHistory(item['itemname'])
     elseif IsLeftShiftKeyDown() then
@@ -1960,7 +2007,6 @@ processQueryTask = function(task)
             if XAPI.C_Item_DoesItemExist(task['location']) then
                 XAPI.C_Item_UnlockItem(task['location'])
             end
-            -- XAPI.C_Item_LockItem(task['location'])
             task['status'] = 'posting'
             return
         end
@@ -2020,12 +2066,6 @@ processMaterialQueryTask = function(task)
             end
             itemIndex = itemIndex + 1
         end
-        for _, item in ipairs(materialList) do
-            if task['itemname'] == item['itemname'] then
-                item['price'] = minBuyoutPrice
-                break
-            end
-        end
 
         for _, item in ipairs(XAutoBuyList) do
             if task['itemname'] == item['itemname'] then
@@ -2035,8 +2075,75 @@ processMaterialQueryTask = function(task)
             end
         end
 
-        finishTask()
-        startNextTask()
+        if autoBuyEnabled then
+            task['status'] = 'buying'
+        else
+            finishTask()
+            startNextTask()
+            return
+        end
+    elseif task['status'] == 'buying' then
+        local buyingItem = XAutoBuy.getItem(task['itemname'])
+        if buyingItem == nil then
+            finishTask()
+            startNextTask()
+            return
+        end
+        local itemIndex = 1
+        local found = false
+        while true do
+            local res = { XAPI.GetAuctionItemInfo('list', itemIndex) }
+            local timeLeft = XAPI.GetAuctionItemTimeLeft('list', itemIndex)
+            local itemName = res[1]
+            local stackCount = res[3]
+            local bidStart = res[8]
+            local bidIncrease = res[9]
+            local buyoutPrice = res[10]
+            local bidPrice = res[11]
+            local isMine = res[12]
+            local seller = res[14]
+
+            if not itemName then break end
+
+            if itemName == task['itemname'] then
+                local nextBidPrice = 0
+                if bidPrice == 0 then
+                    nextBidPrice = bidStart
+                else
+                    nextBidPrice = bidPrice + bidIncrease
+                end
+
+                if (timeLeft < 3 and nextBidPrice / stackCount <= buyingItem['price'])
+                    or (buyoutPrice > 0 and buyoutPrice / stackCount <= buyingItem['price']) then
+                    if (not XInfo.isMe(seller)) and (not isMine) then
+                        found = true
+                    end
+                end
+
+                if (not XInfo.isMe(seller)) and (not isMine) then
+                    if buyoutPrice / stackCount <= buyingItem['price'] and buyoutPrice > 0 then
+                        xdebug.info('Buyout: ' .. itemName .. ' (' .. stackCount .. ')'
+                            .. '    ' .. XUtils.priceToMoneyString(buyoutPrice / stackCount))
+                        XAPI.PlaceAuctionBid('list', itemIndex, buyoutPrice)
+                        XAuctionBoard.addItem(itemName, 'buy', stackCount)
+                        break
+                    elseif timeLeft < 3 and nextBidPrice / stackCount <= buyingItem['price'] then
+                        xdebug.info('Bid: ' .. itemName .. ' (' .. stackCount .. ')'
+                            .. '    ' .. XUtils.priceToMoneyString(nextBidPrice / stackCount))
+                        XAPI.PlaceAuctionBid('list', itemIndex, nextBidPrice)
+                        XAuctionBoard.addItem(itemName, 'buy', stackCount)
+                        break
+                    end
+                end
+            end
+            itemIndex = itemIndex + 1
+        end
+
+        if not found then
+            finishTask()
+            startNextTask()
+            return
+        end
     end
 end
 
@@ -2056,7 +2163,7 @@ local function onUpdate()
 
         if curTask['action'] == 'query' then
             processQueryTask(curTask)
-        elseif curTask['action'] == 'material' then
+        elseif curTask['action'] == 'material' and curTask['status'] ~= 'buying' then
             processMaterialQueryTask(curTask)
         end
         refreshUI()
@@ -2066,6 +2173,17 @@ local function onUpdate()
     puton()
 
     startNextTask()
+end
+
+local function onFastUpdate()
+    if not isStarted then return end
+
+    if curTask then
+        if curTask['action'] == 'material' and curTask['status'] == 'buying' then
+            processMaterialQueryTask(curTask)
+        end
+        return
+    end
 end
 
 -- Events
@@ -2109,6 +2227,7 @@ XAutoAuction.registerEventCallback(moduleName, 'CHAT_MSG_SYSTEM', function(...)
 end)
 
 XAutoAuction.registerUpdateCallback(moduleName, onUpdate)
+XAutoAuction.registerFastUpdateCallback(moduleName, onFastUpdate)
 
 XAutoAuction.registerRefreshCallback(moduleName, refreshUI)
 

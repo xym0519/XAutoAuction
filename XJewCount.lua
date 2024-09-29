@@ -38,7 +38,11 @@ createLabel = function(itemName)
     local receiveMailButton = XUI.createButton(frame, 30, 'R')
     receiveMailButton:SetPoint('LEFT', sendMailButton, 'RIGHT', 0, 0)
     receiveMailButton:SetScript('OnClick', function(self)
-        XUtils.receiveMail(self.frame.itemName)
+        if IsLeftShiftKeyDown() then
+            XUtils.receiveMail(self.frame.itemName, true)
+        else
+            XUtils.receiveMail(self.frame.itemName)
+        end
         refreshUI()
     end)
     receiveMailButton.frame = frame
@@ -89,7 +93,7 @@ createLabel = function(itemName)
     end)
     itemFrame:SetScript('OnMouseDown', function(self)
         if IsLeftAltKeyDown() then
-            XAPI.AuctionatorSearchExact(self.frame.itemName)
+            XAPI.Auctionator_SearchExact(self.frame.itemName)
         elseif IsLeftShiftKeyDown() then
             XAuctionCenter.addMaterialQueryTaskByItemName(self.frame.itemName)
             refreshUI()

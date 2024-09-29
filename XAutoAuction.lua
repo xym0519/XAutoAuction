@@ -1,5 +1,6 @@
 XAutoAuction = {}
 XAutoAuctionFrame = XAPI.CreateFrame('Frame')
+local moduleName = 'XAutoAuction'
 
 -- Global variables definition
 XAutoAuctionList = {}
@@ -38,10 +39,20 @@ XAutoAuction.registerUpdateCallback = function(key, callback, interval)
     updateCallback[key] = { callback = callback, interval = interval, lastUpdateTime = 0 }
 end
 
--- OnUIUpdate callback
+-- OnFastUpdate callback
+local fastUpdateCallback = {}
+XAutoAuction.registerFastUpdateCallback = function(key, callback)
+    fastUpdateCallback[key] = callback
+end
+
+-- onUIUpdate callback
 local uiUpdateCallback = {}
-XAutoAuction.registerUIUpdateCallback = function(key, callback)
-    uiUpdateCallback[key] = callback
+XAutoAuction.registerUIUpdateCallback = function(key, callback, interval)
+    if interval == nil then interval = 1 end
+    uiUpdateCallback[key] = { callback = callback, interval = interval, lastUpdateTime = 0 }
+end
+XAutoAuction.unRegisterUIUpdateCallback = function(key)
+    uiUpdateCallback[key] = nil
 end
 
 -- Refresh callback
@@ -63,6 +74,12 @@ end
 -- Update callback
 local lastUpdateTime = 0
 local onUpdate = function()
+    for _, callback in pairs(fastUpdateCallback) do
+        if type(callback) == 'function' then
+            callback()
+        end
+    end
+
     local currentTime = time()
     if currentTime - lastUpdateTime < 1 then
         return
@@ -78,24 +95,43 @@ local onUpdate = function()
     end
 end
 
--- UIUpdate callback
-local lastUIUpdateTime = 0
-local onUIUpdate = function()
-    local currentTime = time()
-    if currentTime - lastUIUpdateTime < 1 then
-        return
+-- Event listener
+local uiUpdateTimeList = {}
+local uiUpdateTimeItem = nil
+local deltaTime = 1
+XAutoAuctionFrame:SetScript('OnUpdate', function()
+    local time = time()
+    if uiUpdateTimeItem == nil then
+        uiUpdateTimeItem = { time = time, count = 0 }
     end
-    lastUIUpdateTime = currentTime
-    XAutoAuction.refreshUI()
-    for _, callback in pairs(uiUpdateCallback) do
-        if type(callback) == 'function' then
-            callback()
+    if time ~= uiUpdateTimeItem['time'] then
+        table.insert(uiUpdateTimeList, 1, uiUpdateTimeItem['count'])
+        uiUpdateTimeItem['time'] = time
+        uiUpdateTimeItem['count'] = 1
+        local totalCount = 0
+        for i = 1, #uiUpdateTimeList do
+            if i <= 5 then
+                totalCount = totalCount + uiUpdateTimeList[i]
+            else
+                uiUpdateTimeList[i] = nil
+            end
+        end
+        deltaTime = #uiUpdateTimeList / totalCount
+    else
+        uiUpdateTimeItem['count'] = uiUpdateTimeItem['count'] + 1
+    end
+    if #uiUpdateTimeList >= 5 then
+        local curMilTime = time + deltaTime * uiUpdateTimeItem['count']
+        for _, item in pairs(uiUpdateCallback) do
+            if item.lastUpdateTime + item.interval < curMilTime then
+                if type(item.callback) == 'function' then
+                    item.callback()
+                    item.lastUpdateTime = curMilTime
+                end
+            end
         end
     end
-end
-
--- Event listener
-XAutoAuctionFrame:SetScript('OnUpdate', onUIUpdate)
+end)
 
 XAutoAuctionFrame:SetScript('OnEvent', function(...)
     local event, text = select(2, ...)
@@ -128,6 +164,8 @@ XAutoAuction.refreshUI = function()
         end
     end
 end
+
+XAutoAuction.registerUIUpdateCallback(moduleName, XAutoAuction.refreshUI, 1)
 
 -- Commands
 SlashCmdList['XAUTOAUCTIONREFRESH'] = function()

@@ -14,7 +14,7 @@ local getItemCount
 
 -- Function implemention
 initUI = function()
-    mainFrame = XUI.createFrame(moduleName .. 'Frame', 370, 400)
+    mainFrame = XUI.createFrame(moduleName .. 'Frame', 415, 400)
     mainFrame.title:SetText('拍卖纪录')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
     mainFrame:Hide()
@@ -52,6 +52,9 @@ initUI = function()
     local craftCountLabel = XUI.createLabel(labelFrame, 40, '制造', 'CENTER')
     craftCountLabel:SetPoint('LEFT', dealCountLabel, 'RIGHT', 5, 0)
 
+    local buyCountLabel = XUI.createLabel(labelFrame, 40, '购买', 'CENTER')
+    buyCountLabel:SetPoint('LEFT', craftCountLabel, 'RIGHT', 5, 0)
+
     local scrollView = XUI.createScrollView(mainFrame, mainFrame:GetWidth() - 20,
         mainFrame:GetHeight() - labelFrame:GetHeight() - 70)
     scrollView:SetPoint('TOPLEFT', labelFrame, 'BottomLeft', 0, 0)
@@ -68,9 +71,11 @@ refreshUI = function()
     local itemList = {}
     local totalDealCount = 0
     local totalCraftCount = 0
+    local totalBuyCount = 0
     for _, dataItem in ipairs(XAuctionBoardList) do
         totalDealCount = totalDealCount + dataItem['dealcount']
         totalCraftCount = totalCraftCount + dataItem['craftcount']
+        totalBuyCount = totalBuyCount + dataItem['buycount']
         local materialName = XInfo.getMaterialName(dataItem['itemname'])
         if materialName ~= nil then
             local tItem = itemMap[materialName]
@@ -78,13 +83,15 @@ refreshUI = function()
                 tItem = {
                     itemname = materialName,
                     dealcount = dataItem['dealcount'],
-                    craftcount = dataItem['craftcount']
+                    craftcount = dataItem['craftcount'],
+                    buycount = dataItem['buycount']
                 }
                 itemMap[materialName] = tItem
                 table.insert(itemList, tItem)
             else
                 tItem['dealcount'] = tItem['dealcount'] + dataItem['dealcount']
                 tItem['craftcount'] = tItem['craftcount'] + dataItem['craftcount']
+                tItem['buycount'] = tItem['buycount'] + dataItem['buycount']
             end
         end
     end
@@ -96,11 +103,12 @@ refreshUI = function()
             return a['dealcount'] > b['dealcount']
         end
     end)
-    table.insert(itemList, { itemname = XUI.Green .. '----------', dealcount = 0, craftcount = 0 })
+    table.insert(itemList, { itemname = XUI.Green .. '----------', dealcount = 0, craftcount = 0, buycount = 0 })
 
     mainFrame.title:SetText('拍卖记录'
         .. '    成交: ' .. totalDealCount
-        .. '    制造: ' .. totalCraftCount)
+        .. '    制造: ' .. totalCraftCount
+        .. '    购买: ' .. totalBuyCount)
 
     for _, dataItem in ipairs(XAuctionBoardList) do
         table.insert(itemList, dataItem)
@@ -145,10 +153,23 @@ refreshUI = function()
         end
         local craftCountLabel = XUI.createLabel(frame, 40, craftCountStr, 'CENTER')
         craftCountLabel:SetPoint('LEFT', dealCountLabel, 'RIGHT', 5, 0)
+
+        local buyCountStr = dataItem['buycount']
+        if dataItem['buycount'] > 100 then
+            buyCountStr = XUI.Color_Great .. buyCountStr
+        elseif dataItem['buycount'] > 60 then
+            buyCountStr = XUI.Color_Good .. buyCountStr
+        elseif dataItem['buycount'] > 20 then
+            buyCountStr = XUI.Color_Fair .. buyCountStr
+        else
+            buyCountStr = XUI.Color_Normal .. buyCountStr
+        end
+        local buyCountLabel = XUI.createLabel(frame, 40, buyCountStr, 'CENTER')
+        buyCountLabel:SetPoint('LEFT', craftCountLabel, 'RIGHT', 5, 0)
     end
 end
 
--- type: deal / craft
+-- type: deal / craft / buy
 addItem = function(itemName, type, count)
     if count == nil then count = 1 end
 
@@ -160,6 +181,8 @@ addItem = function(itemName, type, count)
                 item['dealcount'] = item['dealcount'] + count
             elseif type == 'craft' then
                 item['craftcount'] = item['craftcount'] + count
+            elseif type == 'buy' then
+                item['buycount'] = item['buycount'] + count
             end
             existed = true
             break
@@ -168,9 +191,11 @@ addItem = function(itemName, type, count)
 
     if not existed then
         if type == 'deal' then
-            table.insert(XAuctionBoardList, { itemname = itemName, dealcount = count, craftcount = 0 })
+            table.insert(XAuctionBoardList, { itemname = itemName, dealcount = count, craftcount = 0, buycount = 0 })
         elseif type == 'craft' then
-            table.insert(XAuctionBoardList, { itemname = itemName, dealcount = 0, craftcount = count })
+            table.insert(XAuctionBoardList, { itemname = itemName, dealcount = 0, craftcount = count, buycount = 0 })
+        elseif type == 'buy' then
+            table.insert(XAuctionBoardList, { itemname = itemName, dealcount = 0, craftcount = 0, buycount = count })
         end
     end
 
@@ -211,8 +236,6 @@ getItemCount = function(itemName, type)
     end
     return 0
 end
-
--- Event callback
 
 
 -- Events

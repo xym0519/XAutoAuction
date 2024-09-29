@@ -260,6 +260,11 @@ refreshUI = function()
     if not mainFrame then return end
     if not mainFrame:IsVisible() then return end
 
+    local time = time() - lastUpdatetime
+    if lastUpdatetime == 0 then time = 0 end
+    if time < 0 then time = 0 end
+    mainFrame.title:SetText('自动喊话(' .. curIndex .. ')    ' .. XUtils.formatTimeLeft(time) .. ' / ' .. dft_interval)
+
     if mainFrame.startButton then
         if isRunning then
             mainFrame.startButton:SetText('停止')
@@ -324,15 +329,6 @@ send = function()
 end
 
 -- Event callback
-local function onUIUpdate()
-    if mainFrame then
-        local time = time() - lastUpdatetime
-        if lastUpdatetime == 0 then time = 0 end
-        if time < 0 then time = 0 end
-        mainFrame.title:SetText('自动喊话(' .. curIndex .. ')    ' .. XUtils.formatTimeLeft(time) .. ' / ' .. dft_interval)
-    end
-end
-
 local function onUpdate()
     if isRunning then
         if #XSpeakWordList <= 0 then
@@ -356,7 +352,6 @@ XAutoAuction.registerEventCallback(moduleName, 'CHAT_MSG_WHISPER', function(self
     hintFrame:Show()
 end)
 
-XAutoAuction.registerUIUpdateCallback(moduleName, onUIUpdate)
 XAutoAuction.registerUpdateCallback(moduleName, onUpdate)
 
 -- Commands

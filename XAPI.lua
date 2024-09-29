@@ -603,7 +603,7 @@ end
 
 -- Auctionator
 -- 简单搜索
-XAPI.AuctionatorSearch = function(search)
+XAPI.Auctionator_Search = function(search)
     if Auctionator then
         if Auctionator.API.v1.MultiSearch then
             return Auctionator.API.v1.MultiSearch('XAutoAuction', { search })
@@ -616,7 +616,7 @@ XAPI.AuctionatorSearch = function(search)
 end
 
 -- 精确搜索
-XAPI.AuctionatorSearchExact = function(search)
+XAPI.Auctionator_SearchExact = function(search)
     if Auctionator then
         if Auctionator.API.v1.MultiSearchExact then
             return Auctionator.API.v1.MultiSearchExact('XAutoAuction', { search })
@@ -629,7 +629,7 @@ XAPI.AuctionatorSearchExact = function(search)
 end
 
 -- 获取价格
-XAPI.AuctionatorGetAuctionPriceByItemId = function(itemId)
+XAPI.Auctionator_GetAuctionPriceByItemId = function(itemId)
     if Auctionator then
         if Auctionator.API.v1.MultiSearchExact then
             return Auctionator.API.v1.GetAuctionPriceByItemID('XAutoAuction', itemId)
@@ -638,5 +638,24 @@ XAPI.AuctionatorGetAuctionPriceByItemId = function(itemId)
         end
     else
         xdebug.error('Auctionator插件未找到')
+    end
+end
+
+-- Postal
+XAPI.Postal_MailType_NonAHMail = 'NonAHMail'
+XAPI.Postal_MailType_AHWon = 'AHWon'
+XAPI.Postal_MailType_AHOutbid = 'AHOutbid'
+XAPI.Postal_MailType_AHSuccess = 'AHExpired'
+XAPI.Postal_MailType_AHExpired = 'AHExpired'
+XAPI.Postal_MailType_AHCancelled = 'AHCancelled'
+XAPI.Postal_GetMailType = function(subject)
+    if Postal then
+        if Postal.GetMailType then
+            return Postal:GetMailType(subject)
+        else
+            xdebug.error('获取邮件类型接口未找到')
+        end
+    else
+        xdebug.error('获取邮件类型接口未找到')
     end
 end

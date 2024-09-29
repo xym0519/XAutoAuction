@@ -17,17 +17,17 @@ end
 
 -- AH Mail
 XExternal.processMail = function(mailIndex, mailType, msgSubject)
-    if mailType == 'NonAHMail' then return end
+    if mailType == XAPI.Postal_MailType_NonAHMail then return end
 
-    if mailType == 'AHOutbid' then
+    if mailType == XAPI.Postal_MailType_AHOutbid then
         return
-    elseif mailType == 'AHWon' then
+    elseif mailType == XAPI.Postal_MailType_AHWon then
         local invoiceType, itemName, playerName, bid, buyout, deposit, consignment,
         moneyDelay, etaHour, etaMin, count, commerceAuction = XAPI.GetInboxInvoiceInfo(mailIndex);
         if not invoiceType then return end
 
         if invoiceType == 'buyer' then XExternal.addBuyHistory(itemName, time(), bid / count, count) end
-    elseif mailType == 'AHCancelled' then
+    elseif mailType == XAPI.Postal_MailType_AHCancelled then
         if msgSubject == nil then
             msgSubject = select(4, XAPI.GetInboxHeaderInfo(mailIndex))
         end
@@ -35,7 +35,7 @@ XExternal.processMail = function(mailIndex, mailType, msgSubject)
         local itemName, count = getNameCount(itemStr)
 
         XExternal.addSellHistory(itemName, time(), false, 0, count)
-    elseif mailType == 'AHExpired' then
+    elseif mailType == XAPI.Postal_MailType_AHExpired then
         if msgSubject == nil then
             msgSubject = select(4, XAPI.GetInboxHeaderInfo(mailIndex))
         end
@@ -43,7 +43,7 @@ XExternal.processMail = function(mailIndex, mailType, msgSubject)
         local itemName, count = getNameCount(itemStr)
 
         XExternal.addSellHistory(itemName, time(), false, 0, count)
-    elseif mailType == 'AHSuccess' then
+    elseif mailType == XAPI.Postal_MailType_AHSuccess then
         local invoiceType, itemName, playerName, bid, buyout, deposit, consignment,
         moneyDelay, etaHour, etaMin, count, commerceAuction = XAPI.GetInboxInvoiceInfo(mailIndex);
         if not invoiceType then return end
