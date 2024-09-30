@@ -207,8 +207,9 @@ XUtils.sendMail = function(itemName, stackCount, fullStack, receiver)
     XInfo.reloadMail()
 end
 
-XUtils.receiveMail = function(itemName, receiveAll)
+XUtils.receiveMail = function(itemName, receiveAll, onlyAH)
     if receiveAll == nil then receiveAll = false end
+    if onlyAH == nil then onlyAH = false end
 
     if not XAPI.IsMailBoxOpen() then
         xdebug.error('请先打开邮箱')
@@ -239,12 +240,20 @@ XUtils.receiveMail = function(itemName, receiveAll)
                 local mailInfo = { XAPI.GetInboxHeaderInfo(idx) }
                 local subject = mailInfo[4]
                 if subject ~= nil then
+                    local canReceive = false
                     local mailType = XAPI.Postal_GetMailType(subject)
-                    if mailType == XAPI.Postal_MailType_AHWon
-                        or mailType == XAPI.Postal_MailType_AHOutbid
-                        or mailType == XAPI.Postal_MailType_AHSuccess
-                        or mailType == XAPI.Postal_MailType_AHExpired
-                        or mailType == XAPI.Postal_MailType_AHCancelled then
+                    if onlyAH then
+                        if mailType == XAPI.Postal_MailType_AHWon
+                            or mailType == XAPI.Postal_MailType_AHOutbid
+                            or mailType == XAPI.Postal_MailType_AHSuccess
+                            or mailType == XAPI.Postal_MailType_AHExpired
+                            or mailType == XAPI.Postal_MailType_AHCancelled then
+                            canReceive = true
+                        end
+                    else
+                        canReceive = true
+                    end
+                    if canReceive then
                         for iidx = 1, 12 do
                             local _itemName, _, _, _count = XAPI.GetInboxItem(idx, iidx)
                             if _itemName == itemName then
@@ -268,13 +277,32 @@ XUtils.receiveMail = function(itemName, receiveAll)
     else
         for idx = 1, mailCount do
             local found = false
-            for iidx = 1, 12 do
-                local _itemName, _, _, _count = XAPI.GetInboxItem(idx, iidx)
-                if _itemName == itemName then
-                    found = true
-                    XAPI.TakeInboxItem(idx, iidx)
-                    count = count + _count
-                    break
+            local mailInfo = { XAPI.GetInboxHeaderInfo(idx) }
+            local subject = mailInfo[4]
+            if subject ~= nil then
+                local canReceive = false
+                local mailType = XAPI.Postal_GetMailType(subject)
+                if onlyAH then
+                    if mailType == XAPI.Postal_MailType_AHWon
+                        or mailType == XAPI.Postal_MailType_AHOutbid
+                        or mailType == XAPI.Postal_MailType_AHSuccess
+                        or mailType == XAPI.Postal_MailType_AHExpired
+                        or mailType == XAPI.Postal_MailType_AHCancelled then
+                        canReceive = true
+                    end
+                else
+                    canReceive = true
+                end
+                if canReceive then
+                    for iidx = 1, 12 do
+                        local _itemName, _, _, _count = XAPI.GetInboxItem(idx, iidx)
+                        if _itemName == itemName then
+                            found = true
+                            XAPI.TakeInboxItem(idx, iidx)
+                            count = count + _count
+                            break
+                        end
+                    end
                 end
             end
             if found then break end

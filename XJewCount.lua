@@ -7,6 +7,15 @@ local labels = {}
 local initUI
 local refreshUI
 local createLabel
+local reloadLabels
+
+local printPrice
+
+local category = '原石' -- 原石 / 炸矿
+local category1List = { { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼', '巨锆石', '恐惧石' },
+    { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石' } }
+local category2List = { { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石', '泰坦神铁矿石' },
+    { '血石', '茶晶石', '太阳水晶', '黑玉', '玉髓石', '暗影水晶', '萨隆邪铁矿石' } }
 
 -- Function implemention
 createLabel = function(itemName)
@@ -39,7 +48,11 @@ createLabel = function(itemName)
     receiveMailButton:SetPoint('LEFT', sendMailButton, 'RIGHT', 0, 0)
     receiveMailButton:SetScript('OnClick', function(self)
         if IsLeftShiftKeyDown() then
-            XUtils.receiveMail(self.frame.itemName, true)
+            if IsLeftControlKeyDown() then
+                XUtils.receiveMail(self.frame.itemName, true)
+            else
+                XUtils.receiveMail(self.frame.itemName, true, true)
+            end
         else
             XUtils.receiveMail(self.frame.itemName)
         end
@@ -71,7 +84,7 @@ createLabel = function(itemName)
     end)
     toBagButton.frame = frame
 
-    local itemFrame = XAPI.CreateFrame('Frame', nil, mainFrame)
+    local itemFrame = XAPI.CreateFrame('Frame', nil, frame)
     itemFrame:SetSize(110, 30)
     itemFrame:SetPoint('LEFT', toBagButton, 'RIGHT', 3, 0)
 
@@ -115,6 +128,52 @@ createLabel = function(itemName)
         self.label:SetText(content)
     end
     return frame
+end
+
+reloadLabels = function()
+    if mainFrame == nil then return end
+    local col1 = {}
+    local col2 = {}
+    if category == '原石' then
+        col1 = category1List[1]
+        col2 = category1List[2]
+    elseif category == '炸矿' then
+        col1 = category2List[1]
+        col2 = category2List[2]
+    end
+
+    for _, item in ipairs(labels) do
+        item:Hide()
+    end
+    labels = {}
+
+    local lastWidget = mainFrame
+    for index, itemName in ipairs(col1) do
+        local label = createLabel(itemName)
+        if index == 1 then
+            label:SetPoint('TOPLEFT', lastWidget, 'TOPLEFT', 20, -30)
+        else
+            label:SetPoint('TOPLEFT', lastWidget, 'BOTTOMLEFT', 0, 0)
+        end
+        table.insert(labels, label)
+        lastWidget = label
+    end
+
+    lastWidget = mainFrame
+    for index, itemName in ipairs(col2) do
+        local label = createLabel(itemName)
+        if index == 1 then
+            label:SetPoint('TOPLEFT', lastWidget, 'TOPLEFT', 260, -30)
+        else
+            label:SetPoint('TOPLEFT', lastWidget, 'BOTTOMLEFT', 0, 0)
+        end
+        table.insert(labels, label)
+        lastWidget = label
+    end
+
+    local count = #col1
+    if #col2 > count then count = #col2 end
+    mainFrame:SetHeight(count * 30 + 40)
 end
 
 initUI = function()
@@ -207,69 +266,35 @@ initUI = function()
         xdebug.info('整理完成')
     end)
 
-    local prLabel = createLabel('赤玉石')
-    prLabel:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 20, -30)
-    table.insert(labels, prLabel)
+    local categoryButton = XUI.createButton(mainFrame, 60, category)
+    categoryButton:SetHeight(20)
+    categoryButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 5, -1)
+    categoryButton:SetScript('OnClick', function(self)
+        if category == '原石' then
+            category = '炸矿'
+        else
+            category = '原石'
+        end
+        self:SetText(category)
+        reloadLabels()
+        refreshUI()
+    end)
 
-    local poLabel = createLabel('紫黄晶')
-    poLabel:SetPoint('TOPLEFT', prLabel, 'BOTTOMLEFT', 0, 0)
-    table.insert(labels, poLabel)
+    local bagPriceButton = XUI.createButton(mainFrame, 60, '包价')
+    bagPriceButton:SetHeight(20)
+    bagPriceButton:SetPoint('LEFT', categoryButton, 'RIGHT', 10, 0)
+    bagPriceButton:SetScript('OnClick', function()
+        printPrice(false)
+    end)
 
-    local pyLabel = createLabel('王者琥珀')
-    pyLabel:SetPoint('TOPLEFT', poLabel, 'BOTTOMLEFT', 0, 0)
-    table.insert(labels, pyLabel)
+    local totalPriceButton = XUI.createButton(mainFrame, 60, '总价')
+    totalPriceButton:SetHeight(20)
+    totalPriceButton:SetPoint('LEFT', bagPriceButton, 'RIGHT', 3, 0)
+    totalPriceButton:SetScript('OnClick', function(self)
+        printPrice(true)
+    end)
 
-    local pgLabel = createLabel('祖尔之眼')
-    pgLabel:SetPoint('TOPLEFT', pyLabel, 'BOTTOMLEFT', 0, 0)
-    table.insert(labels, pgLabel)
-
-    local pbLabel = createLabel('巨锆石')
-    pbLabel:SetPoint('TOPLEFT', pgLabel, 'BOTTOMLEFT', 0, 0)
-    table.insert(labels, pbLabel)
-
-    local ppLabel = createLabel('恐惧石')
-    ppLabel:SetPoint('TOPLEFT', pbLabel, 'BOTTOMLEFT', 0, 0)
-    table.insert(labels, ppLabel)
-
-    local brLabel = createLabel('血玉石')
-    brLabel:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 260, -30)
-    table.insert(labels, brLabel)
-
-    local boLabel = createLabel('帝黄晶')
-    boLabel:SetPoint('TOPLEFT', brLabel, 'BOTTOMLEFT', 0, 0)
-    table.insert(labels, boLabel)
-
-    local byLabel = createLabel('秋色石')
-    byLabel:SetPoint('TOPLEFT', boLabel, 'BOTTOMLEFT', 0, 0)
-    table.insert(labels, byLabel)
-
-    local bgLabel = createLabel('森林翡翠')
-    bgLabel:SetPoint('TOPLEFT', byLabel, 'BOTTOMLEFT', 0, 0)
-    table.insert(labels, bgLabel)
-
-    local bbLabel = createLabel('天蓝石')
-    bbLabel:SetPoint('TOPLEFT', bgLabel, 'BOTTOMLEFT', 0, 0)
-    table.insert(labels, bbLabel)
-
-    local bpLabel = createLabel('曙光猫眼石')
-    bpLabel:SetPoint('TOPLEFT', bbLabel, 'BOTTOMLEFT', 0, 0)
-    table.insert(labels, bpLabel)
-
-    -- other
-    local xtLabel = createLabel('萨隆邪铁矿石')
-    xtLabel:SetPoint('TOPLEFT', bpLabel, 'BOTTOMLEFT', 0, 0)
-    table.insert(labels, xtLabel)
-
-    local stLabel = createLabel('泰坦神铁矿石')
-    stLabel:SetPoint('TOPLEFT', ppLabel, 'BOTTOMLEFT', 0, 0)
-    table.insert(labels, stLabel)
-    -- local tyLabel = createLabel('天焰钻石')
-    -- tyLabel:SetPoint('TOPLEFT', ppLabel, 'BOTTOMLEFT', 0, 0)
-    -- table.insert(labels, tyLabel)
-
-    -- local ddLabel = createLabel('大地侵攻钻石')
-    -- ddLabel:SetPoint('TOPLEFT', bpLabel, 'BOTTOMLEFT', 0, 0)
-    -- table.insert(labels, ddLabel)
+    reloadLabels()
 
     refreshUI()
 end
@@ -282,6 +307,48 @@ refreshUI = function()
 
     for _, label in ipairs(labels) do
         label:Refresh()
+    end
+end
+
+printPrice = function(isAll)
+    local itemList = {}
+    if category == '原石' then
+        for _, itemName in ipairs(category1List[1]) do
+            table.insert(itemList, itemName)
+        end
+        for _, itemName in ipairs(category1List[2]) do
+            table.insert(itemList, itemName)
+        end
+    elseif category == '炸矿' then
+        for _, itemName in ipairs(category2List[1]) do
+            table.insert(itemList, itemName)
+        end
+        for _, itemName in ipairs(category2List[2]) do
+            table.insert(itemList, itemName)
+        end
+    end
+
+    XInfo.reloadCount()
+    local str = ''
+    local total = 0
+    for _, itemName in ipairs(itemList) do
+        local price = XAutoBuy.getItemField(itemName, 'price', 0) / 10000
+        local count = 0
+        if isAll then
+            count = XInfo.getItemTotalCount(itemName)
+        else
+            count = XInfo.getBagItemCount(itemName)
+        end
+        if count > 0 and price > 0 then
+            str = str .. string.sub(itemName, 1, 3) .. price .. '*' .. count .. '+'
+            total = total + price * count
+        end
+    end
+    total = math.floor(total)
+    if XUtils.stringEndsWith(str, '+') then
+        str = string.sub(str, 1, string.len(str) - 1)
+        str = str .. '=' .. total
+        xdebug.info(str)
     end
 end
 
