@@ -2,6 +2,10 @@ XJewCount = {}
 local moduleName = 'XJewCount'
 
 -- Variable definition
+local dft_receiver1 = '阿肌'
+local dft_receiver2 = '默法'
+local dft_receiverItemList2 = XInfo.mineList
+
 local mainFrame = nil
 local labels = {}
 local initUI
@@ -11,11 +15,11 @@ local reloadLabels
 
 local printPrice
 
-local category = '原石' -- 原石 / 炸矿
+local category = '炸矿' -- 原石 / 炸矿
 local category1List = { { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼', '巨锆石', '恐惧石' },
     { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石' } }
-local category2List = { { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石', '泰坦神铁矿石' },
-    { '血石', '茶晶石', '太阳水晶', '黑玉', '玉髓石', '暗影水晶', '萨隆邪铁矿石' } }
+local category2List = { { '血石', '茶晶石', '太阳水晶', '黑玉', '玉髓石', '暗影水晶', '泰坦神铁矿石' },
+    { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石', '萨隆邪铁矿石' } }
 
 -- Function implemention
 createLabel = function(itemName)
@@ -30,16 +34,26 @@ createLabel = function(itemName)
     sendMailButton:SetPoint('LEFT', frame, 'LEFT', 0, 0)
     sendMailButton:SetScript('OnClick', function(self)
         local count = 1
-        if IsShiftKeyDown() then
-            XInfo.reloadBag()
-            local item = XInfo.getBagItem(self.frame.itemName)
-            if item then count = #item['positions'] - 1 end
+        local fullStack = true
+        if IsLeftControlKeyDown() then
+            fullStack = false
+            if IsShiftKeyDown() then
+                XInfo.reloadBag()
+                local item = XInfo.getBagItem(self.frame.itemName)
+                if item then count = #item['positions'] end
+            end
+        else
+            if IsShiftKeyDown() then
+                XInfo.reloadBag()
+                local item = XInfo.getBagItem(self.frame.itemName)
+                if item then count = #item['positions'] - 1 end
+            end
         end
-        local receiver = '阿肌'
-        if XUtils.inArray(self.frame.itemName, XInfo.mineList) then
-            receiver = '默法'
+        local receiver = dft_receiver1
+        if XUtils.inArray(self.frame.itemName, dft_receiverItemList2) then
+            receiver = dft_receiver2
         end
-        XUtils.sendMail(self.frame.itemName, count, true, receiver)
+        XUtils.sendMail(self.frame.itemName, count, fullStack, receiver)
         refreshUI()
     end)
     sendMailButton.frame = frame
@@ -266,6 +280,14 @@ initUI = function()
         xdebug.info('整理完成')
     end)
 
+    local sellButton = XUI.createButton(mainFrame, 25, 'S')
+    sellButton:SetHeight(20)
+    sellButton:SetPoint('RIGHT', shrinkButton, 'LEFT', -3, 0)
+    sellButton:SetScript('OnClick', function()
+        XUtils.sendMail('萨隆邪铁矿石', 12, true, '小灬白龙', 2050000)
+        -- XUtils.sendMail('萨隆邪铁矿石', 12, true, '阿肌', 2050000)
+    end)
+
     local categoryButton = XUI.createButton(mainFrame, 60, category)
     categoryButton:SetHeight(20)
     categoryButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 5, -1)
@@ -347,7 +369,7 @@ printPrice = function(isAll)
     total = math.floor(total)
     if XUtils.stringEndsWith(str, '+') then
         str = string.sub(str, 1, string.len(str) - 1)
-        str = str .. '=' .. total
+        str = str .. '=' .. total .. ' (' .. math.floor(total * XAPI.ProfitRate) .. ')'
         xdebug.info(str)
     end
 end

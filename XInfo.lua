@@ -53,7 +53,7 @@ XInfo.getStackCount = function(itemName)
     local stackCount = itemStackCountCache[itemName]
     if stackCount then return stackCount end
 
-    local itemInfo = { XAPI.GetItemInfo(itemName) }
+    local itemInfo = { XAPI.GetItemInfo(XInfo.getItemId(itemName)) }
     if itemInfo then
         stackCount = itemInfo[8]
         itemStackCountCache[itemName] = stackCount

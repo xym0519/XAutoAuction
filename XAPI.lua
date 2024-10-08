@@ -548,6 +548,13 @@ XAPI.ClickSendMailItemButton = function(...)
     return ClickSendMailItemButton(...)
 end
 
+-- 设置付款取信金额
+-- Arguments: (money)
+--   money
+XAPI.SetSendMailCOD = function(...)
+    return SetSendMailCOD(...)
+end
+
 -- 发送邮件
 -- https://wowpedia.fandom.com/wiki/API_SendMail
 -- Arguments: (recipient, subject, [body])
@@ -645,7 +652,7 @@ end
 XAPI.Postal_MailType_NonAHMail = 'NonAHMail'
 XAPI.Postal_MailType_AHWon = 'AHWon'
 XAPI.Postal_MailType_AHOutbid = 'AHOutbid'
-XAPI.Postal_MailType_AHSuccess = 'AHExpired'
+XAPI.Postal_MailType_AHSuccess = 'AHSuccess'
 XAPI.Postal_MailType_AHExpired = 'AHExpired'
 XAPI.Postal_MailType_AHCancelled = 'AHCancelled'
 XAPI.Postal_GetMailType = function(subject)

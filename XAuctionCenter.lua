@@ -231,7 +231,7 @@ initUI = function()
     local allToBagButton = XUI.createButton(mainFrame, dft_buttonWidth, '全取')
     allToBagButton:SetPoint('LEFT', allToBankButton, 'RIGHT', dft_buttonGap, 0)
     allToBagButton:SetScript('OnClick', function()
-        local itemNames = {}
+        local itemNames = { '简易研磨器' }
         for _, item in ipairs(XAutoAuctionList) do
             table.insert(itemNames, item['itemname'])
         end
@@ -1129,7 +1129,7 @@ addMaterialQueryTaskByItemName = function(itemName)
         action = 'material',
         itemname = itemName,
         starttime = time(),
-        timeout = dft_taskTimeout
+        timeout = 30
     }
     table.insert(taskList, 1, task)
 end
@@ -1340,7 +1340,7 @@ cleanShort = function()
         if saleStatus ~= 1 then
             local timeLeft = XAPI.GetAuctionItemTimeLeft('owner', i)
             local itemName = XAPI.GetAuctionItemInfo('owner', i);
-            if timeLeft < 3 then
+            if timeLeft < 2 then
                 XAPI.CancelAuction(i)
 
                 for _, item in ipairs(XAutoAuctionList) do

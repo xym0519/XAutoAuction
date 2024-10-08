@@ -5,6 +5,8 @@ local moduleName = 'XAuctionBoard'
 local mainFrame = nil
 XAuctionBoard = CreateFrame("Frame")
 
+local displayIndex = 1
+
 -- Function definition
 local initUI
 local refreshUI
@@ -21,18 +23,54 @@ initUI = function()
     tinsert(UISpecialFrames, mainFrame:GetName())
     XAuctionBoard.mainFrame = mainFrame
 
-    local cleanButton = XUI.createButton(mainFrame, 60, '清除')
+    local cleanButton = XUI.createButton(mainFrame, 50, '清除')
     cleanButton:SetPoint("TOPLEFT", mainFrame, "TOPLEFT", 15, -30)
     cleanButton:SetScript("OnClick", function()
         XUIConfirmDialog.show(moduleName, '确认', '确认清除', function()
-            XAuctionBoardList = {}
+            XAuctionBoardList = { { starttime = time(), data = {} } }
+            displayIndex = 1
             refreshUI()
         end)
     end)
 
-    local refreshButton = XUI.createButton(mainFrame, 60, '刷新')
-    refreshButton:SetPoint("LEFT", cleanButton, "RIGHT", 5, 0)
+    local refreshButton = XUI.createButton(mainFrame, 50, '刷新')
+    refreshButton:SetPoint("LEFT", cleanButton, "RIGHT", 0, 0)
     refreshButton:SetScript("OnClick", function()
+        refreshUI()
+    end)
+
+    local draftButton = XUI.createButton(mainFrame, 50, '暂存')
+    draftButton:SetPoint("LEFT", refreshButton, "RIGHT", 5, 0)
+    draftButton:SetScript("OnClick", function()
+        XUIConfirmDialog.show(moduleName, '确认', '确认暂存', function()
+            if #XAuctionBoardList > 0 then
+                XAuctionBoardList[1]['endtime'] = time()
+            end
+            table.insert(XAuctionBoardList, 1, { starttime = time(), data = {} })
+            refreshUI()
+        end)
+    end)
+
+    local currentButton = XUI.createButton(mainFrame, 50, '当前')
+    currentButton:SetPoint("LEFT", draftButton, "RIGHT", 0, 0)
+    currentButton:SetScript("OnClick", function()
+        displayIndex = 1
+        refreshUI()
+    end)
+
+    local preButton = XUI.createButton(mainFrame, 50, '上次')
+    preButton:SetPoint("LEFT", currentButton, "RIGHT", 0, 0)
+    preButton:SetScript("OnClick", function()
+        displayIndex = displayIndex + 1
+        if displayIndex > #XAuctionBoardList then displayIndex = #XAuctionBoardList end
+        refreshUI()
+    end)
+
+    local nextButton = XUI.createButton(mainFrame, 50, '下次')
+    nextButton:SetPoint("LEFT", preButton, "RIGHT", 5, 0)
+    nextButton:SetScript("OnClick", function()
+        displayIndex = displayIndex - 1
+        if displayIndex < 1 then displayIndex = 1 end
         refreshUI()
     end)
 
@@ -72,27 +110,32 @@ refreshUI = function()
     local totalDealCount = 0
     local totalCraftCount = 0
     local totalBuyCount = 0
-    for _, dataItem in ipairs(XAuctionBoardList) do
+
+    local list = {}
+    local item = XAuctionBoardList[displayIndex]
+    if item then list = item['data'] end
+    for _, dataItem in ipairs(list) do
         totalDealCount = totalDealCount + dataItem['dealcount']
         totalCraftCount = totalCraftCount + dataItem['craftcount']
         totalBuyCount = totalBuyCount + dataItem['buycount']
-        local materialName = XInfo.getMaterialName(dataItem['itemname'])
-        if materialName ~= nil then
-            local tItem = itemMap[materialName]
-            if tItem == nil then
-                tItem = {
-                    itemname = materialName,
-                    dealcount = dataItem['dealcount'],
-                    craftcount = dataItem['craftcount'],
-                    buycount = dataItem['buycount']
-                }
-                itemMap[materialName] = tItem
-                table.insert(itemList, tItem)
-            else
-                tItem['dealcount'] = tItem['dealcount'] + dataItem['dealcount']
-                tItem['craftcount'] = tItem['craftcount'] + dataItem['craftcount']
-                tItem['buycount'] = tItem['buycount'] + dataItem['buycount']
-            end
+        local targetName = XInfo.getMaterialName(dataItem['itemname'])
+        if targetName == nil then
+            targetName = dataItem['itemname']
+        end
+        local tItem = itemMap[targetName]
+        if tItem == nil then
+            tItem = {
+                itemname = targetName,
+                dealcount = dataItem['dealcount'],
+                craftcount = dataItem['craftcount'],
+                buycount = dataItem['buycount']
+            }
+            itemMap[targetName] = tItem
+            table.insert(itemList, tItem)
+        else
+            tItem['dealcount'] = tItem['dealcount'] + dataItem['dealcount']
+            tItem['craftcount'] = tItem['craftcount'] + dataItem['craftcount']
+            tItem['buycount'] = tItem['buycount'] + dataItem['buycount']
         end
     end
 
@@ -105,12 +148,17 @@ refreshUI = function()
     end)
     table.insert(itemList, { itemname = XUI.Green .. '----------', dealcount = 0, craftcount = 0, buycount = 0 })
 
-    mainFrame.title:SetText('拍卖记录'
-        .. '    成交: ' .. totalDealCount
-        .. '    制造: ' .. totalCraftCount
-        .. '    购买: ' .. totalBuyCount)
+    local startTimeStr = '-'
+    if item['starttime'] then startTimeStr = XUtils.formatTime(item['starttime']) end
+    local endTimeStr = '-'
+    if item['endtime'] then endTimeStr = XUtils.formatTime(item['endtime']) end
+    mainFrame.title:SetText('拍卖记录(' .. startTimeStr
+        .. '~' .. endTimeStr .. ')'
+        .. '  卖: ' .. totalDealCount
+        .. '  造: ' .. totalCraftCount
+        .. '  买: ' .. totalBuyCount)
 
-    for _, dataItem in ipairs(XAuctionBoardList) do
+    for _, dataItem in ipairs(list) do
         table.insert(itemList, dataItem)
     end
 
@@ -175,7 +223,13 @@ addItem = function(itemName, type, count)
 
     local existed = false
 
-    for _, item in ipairs(XAuctionBoardList) do
+    if #XAuctionBoardList < 1 then
+        table.insert(XAuctionBoardList, 1, { starttime = time(), data = {} })
+    end
+
+    local list = XAuctionBoardList[1]['data']
+
+    for _, item in ipairs(list) do
         if item['itemname'] == itemName then
             if type == 'deal' then
                 item['dealcount'] = item['dealcount'] + count
@@ -191,15 +245,15 @@ addItem = function(itemName, type, count)
 
     if not existed then
         if type == 'deal' then
-            table.insert(XAuctionBoardList, { itemname = itemName, dealcount = count, craftcount = 0, buycount = 0 })
+            table.insert(list, { itemname = itemName, dealcount = count, craftcount = 0, buycount = 0 })
         elseif type == 'craft' then
-            table.insert(XAuctionBoardList, { itemname = itemName, dealcount = 0, craftcount = count, buycount = 0 })
+            table.insert(list, { itemname = itemName, dealcount = 0, craftcount = count, buycount = 0 })
         elseif type == 'buy' then
-            table.insert(XAuctionBoardList, { itemname = itemName, dealcount = 0, craftcount = 0, buycount = count })
+            table.insert(list, { itemname = itemName, dealcount = 0, craftcount = 0, buycount = count })
         end
     end
 
-    table.sort(XAuctionBoardList, function(a, b)
+    table.sort(list, function(a, b)
         if a['dealcount'] == b['dealcount'] then
             return a['craftcount'] > b['craftcount']
         else
@@ -217,7 +271,12 @@ addItem = function(itemName, type, count)
 end
 
 getItem = function(itemName)
-    for _, item in ipairs(XAuctionBoardList) do
+    if #XAuctionBoardList < 1 then
+        return nil
+    end
+
+    local list = XAuctionBoardList[1]['data']
+    for _, item in ipairs(list) do
         if item['itemname'] == itemName then
             return item
         end

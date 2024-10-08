@@ -151,7 +151,7 @@ XUtils.round = function(v)
     return math.floor(v + 0.5);
 end
 
-XUtils.sendMail = function(itemName, stackCount, fullStack, receiver)
+XUtils.sendMail = function(itemName, stackCount, fullStack, receiver, money)
     if receiver == nil then receiver = '阿肌' end
     if fullStack == nil then fullStack = true end
 
@@ -201,6 +201,11 @@ XUtils.sendMail = function(itemName, stackCount, fullStack, receiver)
         XAPI.ClickSendMailItemButton(idx)
     end
 
+    if money ~= nil then
+        if money > 0 then
+            XAPI.SetSendMailCOD(money)
+        end
+    end
     XAPI.SendMail(receiver, 'P-' .. itemName .. '-' .. stackCount)
     xdebug.info(itemName .. '发送成功')
     XInfo.reloadBag()
@@ -235,6 +240,10 @@ XUtils.receiveMail = function(itemName, receiveAll, onlyAH)
 
     if receiveAll then
         XAutoAuction.registerUIUpdateCallback(moduleName .. '_receiveMail', function()
+            if not XAPI.IsMailBoxOpen() then
+                XAutoAuction.unRegisterUIUpdateCallback(moduleName .. '_receiveMail')
+                return
+            end
             local found = false
             for idx = mailCount, 1, -1 do
                 local mailInfo = { XAPI.GetInboxHeaderInfo(idx) }
@@ -323,7 +332,7 @@ function MoveToBagBank(itemNames, direcion, stackCount, exceptions, fullStack)
 
     if itemNames == nil then itemNames = {} end
     if type(itemNames) == "string" then itemNames = { itemNames } end
-    if exceptions == nil then exceptions = { '炉石', '简易研磨器' } end
+    if exceptions == nil then exceptions = {} end
     if fullStack == nil then fullStack = true end
 
     local sourceItems = {}

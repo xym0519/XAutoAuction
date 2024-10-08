@@ -83,30 +83,6 @@ initUI = function()
         refreshUI()
     end)
 
-    local myMoneyButton = XUI.createButton(mainFrame, 60, '库存')
-    myMoneyButton:SetPoint('LEFT', stopButton, 'RIGHT', 5, 0)
-    myMoneyButton:SetScript('OnClick', function()
-        XInfo.reloadCount()
-        local str = ''
-        local total = 0
-        for _, item in ipairs(XJewWordList) do
-            local itemName = item['itemname']
-            if XUtils.inArray(itemName, XInfo.materialListS) or XUtils.inArray(itemName, XInfo.materialListB) then
-                local price = item['price1']
-                local count = XInfo.getItemTotalCount(itemName)
-                if count > 0 then
-                    str = str .. string.sub(item['itemname'], 1, 3) .. price .. '*' .. count .. '+'
-                    total = total + price * count
-                end
-            end
-        end
-        if XUtils.stringEndsWith(str, '+') then
-            str = string.sub(str, 1, string.len(str) - 1)
-            str = str .. '=' .. total
-            xdebug.info(str)
-        end
-    end)
-
     local lastWidget = preButton
     for i = 1, displayPageSize do
         local frame = XAPI.CreateFrame('Frame', nil, mainFrame)

@@ -11,6 +11,25 @@ XJewWordSetting = {}
 XAuctionBoardList = {}
 XFrameLevel = 10
 
+-- ui
+local hintShowDelay = 3
+local lastActionTime = time()
+local isRunning = false
+local hintFrame = XAPI.CreateFrame('Frame', nil, UIParent)
+hintFrame:SetSize(300, 100)
+hintFrame:SetPoint('CENTER', UIParent, 'CENTER', 0, 0)
+hintFrame:SetFrameStrata('DIALOG')
+hintFrame:Hide()
+hintFrame.text = hintFrame:CreateFontString(nil, 'ARTWORK')
+hintFrame.text:SetJustifyH('CENTER')
+hintFrame.text:SetAllPoints()
+hintFrame.text:SetFontObject(ChatFontNormal)
+hintFrame.text:SetText('已停止')
+hintFrame.hintBg = hintFrame:CreateTexture(nil, 'BACKGROUND')
+hintFrame.hintBg:SetAllPoints(hintFrame)
+hintFrame.hintBg:SetColorTexture(1, 1, 0, 0.9)
+hintFrame:SetScript('OnMouseDown', function(self) self:Hide() end)
+
 -- Register system events
 XAutoAuctionFrame:RegisterEvent('ADDON_LOADED')
 
@@ -74,6 +93,9 @@ end
 -- Update callback
 local lastUpdateTime = 0
 local onUpdate = function()
+    isRunning = true
+    lastActionTime = time()
+
     for _, callback in pairs(fastUpdateCallback) do
         if type(callback) == 'function' then
             callback()
@@ -101,6 +123,14 @@ local uiUpdateTimeItem = nil
 local deltaTime = 1
 XAutoAuctionFrame:SetScript('OnUpdate', function()
     local time = time()
+
+    if isRunning and lastActionTime + hintShowDelay < time then
+        if not hintFrame:IsVisible() then
+            hintFrame:Show()
+        end
+        isRunning = false
+    end
+
     if uiUpdateTimeItem == nil then
         uiUpdateTimeItem = { time = time, count = 0 }
     end
@@ -166,6 +196,7 @@ XAutoAuction.refreshUI = function()
 end
 
 XAutoAuction.registerUIUpdateCallback(moduleName, XAutoAuction.refreshUI, 1)
+
 
 -- Commands
 SlashCmdList['XAUTOAUCTIONREFRESH'] = function()

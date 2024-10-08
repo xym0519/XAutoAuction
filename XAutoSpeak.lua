@@ -80,7 +80,7 @@ initUI = function()
     initUI_Edit()
 
     hintFrame = XAPI.CreateFrame('Frame', nil, UIParent)
-    hintFrame:SetSize(200, 50)
+    hintFrame:SetSize(300, 100)
     hintFrame:SetPoint('TOPRIGHT', UIParent, 'TOPRIGHT', 0, 0)
     hintFrame:SetFrameStrata('DIALOG')
     hintFrame:Hide()
