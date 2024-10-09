@@ -61,8 +61,20 @@ initUI = function()
         end
     end)
 
+    local craftRubbishButton = XUI.createButton(mainFrame, 35, XUI.Red .. '造')
+    craftRubbishButton:SetPoint('LEFT', nextButton, 'RIGHT', 5, 0)
+    craftRubbishButton:SetScript('OnClick', function(self)
+        craftRubbish = not craftRubbish
+        if craftRubbish then
+            self:SetText(XUI.Green .. '造')
+        else
+            self:SetText(XUI.Red .. '造')
+        end
+        refreshUI()
+    end)
+
     local cleanButton = XUI.createButton(mainFrame, 35, '清')
-    cleanButton:SetPoint('LEFT', nextButton, 'RIGHT', 5, 0)
+    cleanButton:SetPoint('LEFT', craftRubbishButton, 'RIGHT', 5, 0)
     cleanButton:SetScript('OnClick', function()
         reset()
         refreshUI()
