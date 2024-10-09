@@ -353,6 +353,7 @@ XAutoAuction.registerEventCallback(moduleName, 'CHAT_MSG_WHISPER', function(self
 end)
 
 XAutoAuction.registerUpdateCallback(moduleName, onUpdate)
+XAutoAuction.registerUIUpdateCallback(moduleName, refreshUI, 1)
 
 -- Commands
 SlashCmdList['XAUTOSPEAK'] = function()
