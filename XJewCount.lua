@@ -5,6 +5,8 @@ local moduleName = 'XJewCount'
 local dft_receiver1 = '阿肌'
 local dft_receiver2 = '默法'
 local dft_receiverItemList2 = XInfo.mineList
+local dft_receiverSell = '小灬白龙'
+-- local dft_receiverSell = '咖喱骑士'
 
 local mainFrame = nil
 local labels = {}
@@ -15,11 +17,26 @@ local reloadLabels
 
 local printPrice
 
-local category = '炸矿' -- 原石 / 炸矿
-local category1List = { { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼', '巨锆石', '恐惧石' },
-    { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石' } }
-local category2List = { { '血石', '茶晶石', '太阳水晶', '黑玉', '玉髓石', '暗影水晶', '泰坦神铁矿石' },
-    { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石', '萨隆邪铁矿石' } }
+local categories = { '默认', '出售', '原石', '炸矿' }
+local categoryIndex = 1
+local categoryItemList = {
+    {
+        { '太阳水晶', '萨隆邪铁矿石', '永恒之土' },
+        { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石' }
+    },
+    {
+        { '太阳水晶', '萨隆邪铁矿石' },
+        { '永恒之土' }
+    },
+    {
+        { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼', '巨锆石', '恐惧石' },
+        { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石' }
+    },
+    {
+        { '血石', '茶晶石', '太阳水晶', '黑玉', '玉髓石', '暗影水晶', '泰坦神铁矿石' },
+        { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石', '萨隆邪铁矿石' }
+    }
+}
 
 -- Function implemention
 createLabel = function(itemName)
@@ -33,27 +50,36 @@ createLabel = function(itemName)
     local sendMailButton = XUI.createButton(frame, 30, 'U')
     sendMailButton:SetPoint('LEFT', frame, 'LEFT', 0, 0)
     sendMailButton:SetScript('OnClick', function(self)
-        local count = 1
-        local fullStack = true
-        if IsLeftControlKeyDown() then
-            fullStack = false
-            if IsShiftKeyDown() then
-                XInfo.reloadBag()
-                local item = XInfo.getBagItem(self.frame.itemName)
-                if item then count = #item['positions'] end
+        local category = categories[categoryIndex]
+        if category == '出售' then
+            XInfo.reloadBag()
+            local item = XInfo.getBagItem(self.frame.itemName)
+            if item then
+                XUtils.sendMail(self.frame.itemName, #item['positions'], false, dft_receiverSell, 'auto')
             end
         else
-            if IsShiftKeyDown() then
-                XInfo.reloadBag()
-                local item = XInfo.getBagItem(self.frame.itemName)
-                if item then count = #item['positions'] - 1 end
+            local count = 1
+            local fullStack = true
+            if IsLeftControlKeyDown() then
+                fullStack = false
+                if IsShiftKeyDown() then
+                    XInfo.reloadBag()
+                    local item = XInfo.getBagItem(self.frame.itemName)
+                    if item then count = #item['positions'] end
+                end
+            else
+                if IsShiftKeyDown() then
+                    XInfo.reloadBag()
+                    local item = XInfo.getBagItem(self.frame.itemName)
+                    if item then count = #item['positions'] - 1 end
+                end
             end
+            local receiver = dft_receiver1
+            if XUtils.inArray(self.frame.itemName, dft_receiverItemList2) then
+                receiver = dft_receiver2
+            end
+            XUtils.sendMail(self.frame.itemName, count, fullStack, receiver)
         end
-        local receiver = dft_receiver1
-        if XUtils.inArray(self.frame.itemName, dft_receiverItemList2) then
-            receiver = dft_receiver2
-        end
-        XUtils.sendMail(self.frame.itemName, count, fullStack, receiver)
         refreshUI()
     end)
     sendMailButton.frame = frame
@@ -146,15 +172,10 @@ end
 
 reloadLabels = function()
     if mainFrame == nil then return end
-    local col1 = {}
-    local col2 = {}
-    if category == '原石' then
-        col1 = category1List[1]
-        col2 = category1List[2]
-    elseif category == '炸矿' then
-        col1 = category2List[1]
-        col2 = category2List[2]
-    end
+    if not categoryItemList[categoryIndex] then return end
+
+    local col1 = categoryItemList[categoryIndex][1]
+    local col2 = categoryItemList[categoryIndex][2]
 
     for _, item in ipairs(labels) do
         item:Hide()
@@ -187,17 +208,17 @@ reloadLabels = function()
 
     local count = #col1
     if #col2 > count then count = #col2 end
-    mainFrame:SetHeight(count * 30 + 40)
+    mainFrame:SetHeight(count * 30 + 50)
 end
 
 initUI = function()
     mainFrame = XUI.createFrame('XJewCountMainFrame', 520, 250)
-    mainFrame.title:SetText('原石数量')
+    mainFrame.title:SetText('默认')
     mainFrame:SetPoint('BOTTOM', UIParent, 'BOTTOM', 0, 60)
     mainFrame:Hide()
     tinsert(UISpecialFrames, mainFrame:GetName())
 
-    local fulfilStackButton = XUI.createButton(mainFrame, 25, 'V')
+    local fulfilStackButton = XUI.createButton(mainFrame, 60, '补全')
     fulfilStackButton:SetHeight(20)
     fulfilStackButton:SetPoint('TOPRIGHT', mainFrame, 'TOPRIGHT', -30, -1)
     fulfilStackButton:SetScript('OnClick', function()
@@ -254,57 +275,42 @@ initUI = function()
         xdebug.info('补充完成')
     end)
 
-    local shrinkButton = XUI.createButton(mainFrame, 25, '-')
+    local shrinkButton = XUI.createButton(mainFrame, 60, '整理')
     shrinkButton:SetHeight(20)
     shrinkButton:SetPoint('RIGHT', fulfilStackButton, 'LEFT', -3, 0)
     shrinkButton:SetScript('OnClick', function()
-        local list = {}
-        for i = 0, XAPI.NUM_BAG_SLOTS do
-            local bagSlotCount = XAPI.C_Container_GetContainerNumSlots(i)
-            for j = 1, bagSlotCount do
-                if not XInfo.isItemFullStack(i, j) then
-                    local itemBag = XAPI.C_Container_GetContainerItemInfo(i, j)
-                    if itemBag then
-                        local itemName = itemBag.itemName
-                        if list[itemName] then
-                            XAPI.C_Container_PickupContainerItem(i, j)
-                            XAPI.C_Container_PickupContainerItem(list[itemName]['x'], list[itemName]['y'])
-                            list[itemName] = nil
-                        else
-                            list[itemName] = { x = i, y = j }
+        XAutoAuction.registerUIUpdateCallback(moduleName .. '_sort', function()
+            local list = {}
+            local found = false
+            for i = 0, XAPI.NUM_BAG_SLOTS do
+                local bagSlotCount = XAPI.C_Container_GetContainerNumSlots(i)
+                for j = 1, bagSlotCount do
+                    if not XInfo.isItemFullStack(i, j) then
+                        local itemBag = XAPI.C_Container_GetContainerItemInfo(i, j)
+                        if itemBag then
+                            local itemName = itemBag.itemName
+                            if list[itemName] then
+                                XAPI.C_Container_PickupContainerItem(i, j)
+                                XAPI.C_Container_PickupContainerItem(list[itemName]['x'], list[itemName]['y'])
+                                list[itemName] = nil
+                                found = true
+                            else
+                                list[itemName] = { x = i, y = j }
+                            end
                         end
                     end
                 end
             end
-        end
-        xdebug.info('整理完成')
-    end)
-
-    local sellButton = XUI.createButton(mainFrame, 25, 'S')
-    sellButton:SetHeight(20)
-    sellButton:SetPoint('RIGHT', shrinkButton, 'LEFT', -3, 0)
-    sellButton:SetScript('OnClick', function()
-        XUtils.sendMail('萨隆邪铁矿石', 12, true, '小灬白龙', 2050000)
-        -- XUtils.sendMail('萨隆邪铁矿石', 12, true, '阿肌', 2050000)
-    end)
-
-    local categoryButton = XUI.createButton(mainFrame, 60, category)
-    categoryButton:SetHeight(20)
-    categoryButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 5, -1)
-    categoryButton:SetScript('OnClick', function(self)
-        if category == '原石' then
-            category = '炸矿'
-        else
-            category = '原石'
-        end
-        self:SetText(category)
-        reloadLabels()
-        refreshUI()
+            if not found then
+                XAutoAuction.unRegisterUIUpdateCallback(moduleName .. '_sort')
+                xdebug.info('整理完成')
+            end
+        end, 0.2)
     end)
 
     local bagPriceButton = XUI.createButton(mainFrame, 60, '包价')
     bagPriceButton:SetHeight(20)
-    bagPriceButton:SetPoint('LEFT', categoryButton, 'RIGHT', 10, 0)
+    bagPriceButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 5, -1)
     bagPriceButton:SetScript('OnClick', function()
         printPrice(false)
     end)
@@ -315,6 +321,17 @@ initUI = function()
     totalPriceButton:SetScript('OnClick', function(self)
         printPrice(true)
     end)
+
+    local categoryButton = XUI.createButton(mainFrame, 60, categories[categoryIndex])
+    categoryButton:SetHeight(20)
+    categoryButton:SetPoint('BOTTOMRIGHT', mainFrame, 'BOTTOMRIGHT', 0, 0)
+    categoryButton:SetScript('OnClick', function(self)
+        categoryIndex = (categoryIndex % #categories) + 1
+        self:SetText(categories[categoryIndex])
+        reloadLabels()
+        refreshUI()
+    end)
+
 
     reloadLabels()
 
@@ -327,6 +344,7 @@ refreshUI = function()
 
     XInfo.reloadBag()
 
+    mainFrame.title:SetText(categories[categoryIndex])
     for _, label in ipairs(labels) do
         label:Refresh()
     end
@@ -334,20 +352,11 @@ end
 
 printPrice = function(isAll)
     local itemList = {}
-    if category == '原石' then
-        for _, itemName in ipairs(category1List[1]) do
-            table.insert(itemList, itemName)
-        end
-        for _, itemName in ipairs(category1List[2]) do
-            table.insert(itemList, itemName)
-        end
-    elseif category == '炸矿' then
-        for _, itemName in ipairs(category2List[1]) do
-            table.insert(itemList, itemName)
-        end
-        for _, itemName in ipairs(category2List[2]) do
-            table.insert(itemList, itemName)
-        end
+    for _, itemName in ipairs(categoryItemList[categoryIndex][1]) do
+        table.insert(itemList, itemName)
+    end
+    for _, itemName in ipairs(categoryItemList[categoryIndex][2]) do
+        table.insert(itemList, itemName)
     end
 
     XInfo.reloadCount()
@@ -379,10 +388,6 @@ XAutoAuction.registerEventCallback(moduleName, 'ADDON_LOADED', function()
     initUI()
     refreshUI()
 end)
-
--- XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_SHOW', function()
---     if mainFrame then mainFrame:Show() end
--- end)
 
 XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_CLOSED', function()
     if mainFrame then mainFrame:Hide() end

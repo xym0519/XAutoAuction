@@ -72,6 +72,41 @@ XUtils.priceToMoneyString = function(money, noZeroCoppers)
     return st;
 end
 
+XUtils.priceToMoneyText = function(money, noZeroCoppers)
+    local goldicon   = '金'
+    local silvericon = '银'
+    local coppericon = '铜'
+    local val        = XUtils.round(money);
+    local gold       = math.floor(val / 10000);
+    val              = val - gold * 10000;
+    local silver     = math.floor(val / 100);
+    val              = val - silver * 100;
+    local copper     = val;
+
+    local st         = '';
+    if (gold ~= 0) then
+        st = gold .. goldicon;
+    end
+
+    if (st ~= '') then
+        st = st .. format('%02i%s', silver, silvericon);
+    elseif (silver ~= 0) then
+        st = st .. silver .. silvericon;
+    end
+
+    if (noZeroCoppers and copper == 0) then
+        return st;
+    end
+
+    if (st ~= '') then
+        st = st .. format('%02i%s', copper, coppericon);
+    elseif (copper ~= 0) then
+        st = st .. copper .. coppericon;
+    end
+
+    return st;
+end
+
 XUtils.priceToString = function(money)
     local val    = XUtils.round(money);
     local gold   = math.floor(val / 10000);
@@ -151,7 +186,7 @@ XUtils.round = function(v)
     return math.floor(v + 0.5);
 end
 
-XUtils.sendMail = function(itemName, stackCount, fullStack, receiver, money)
+XUtils.sendMail = function(itemName, stackCount, fullStack, receiver, money, subject, content)
     if receiver == nil then receiver = '阿肌' end
     if fullStack == nil then fullStack = true end
 
@@ -195,19 +230,41 @@ XUtils.sendMail = function(itemName, stackCount, fullStack, receiver, money)
     end
 
     if stackCount > 12 then stackCount = 12 end
+    local itemCount = 0
     for idx = 1, stackCount do
         local position = targetPositions[idx]
-        XAPI.C_Container_PickupContainerItem(position[1], position[2])
-        XAPI.ClickSendMailItemButton(idx)
-    end
 
-    if money ~= nil then
-        if money > 0 then
-            XAPI.SetSendMailCOD(money)
+        local tItem = XAPI.C_Container_GetContainerItemInfo(position[1], position[2])
+        if tItem then
+            itemCount = itemCount + tItem['stackCount']
+            XAPI.C_Container_PickupContainerItem(position[1], position[2])
+            XAPI.ClickSendMailItemButton(idx)
         end
     end
-    XAPI.SendMail(receiver, 'P-' .. itemName .. '-' .. stackCount)
-    xdebug.info(itemName .. '发送成功')
+
+    if money == 'auto' then
+        local price = XAutoBuy.getItemField(itemName, 'price', 0)
+        if price <= 0 then
+            xdebug.error(itemName .. '没有设置单价')
+            return
+        end
+        money = price * itemCount
+        local gold = math.floor(money / 10000)
+        subject = itemName .. '*' .. itemCount .. ' (' .. gold .. 'G)'
+        -- content = XUtils.priceToMoneyText(price, true)
+        --     .. ' * ' .. itemCount
+        --     .. ' = ' .. XUtils.priceToMoneyText(money, true)
+        XAPI.SetSendMailCOD(gold * 10000)
+    else
+        if type(money) == 'number' then
+            XAPI.SetSendMailCOD(money)
+        end
+        if subject == nil then
+            subject = 'P-' .. itemName .. '*' .. stackCount
+        end
+    end
+    XAPI.SendMail(receiver, subject, content)
+    xdebug.info(subject)
     XInfo.reloadBag()
     XInfo.reloadMail()
 end

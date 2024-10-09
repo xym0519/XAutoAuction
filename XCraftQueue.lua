@@ -7,8 +7,8 @@ local mainFrame
 local dft_smalltime = 5
 local dft_largetime = 1.5
 local dft_taskInterval = 1
-local dft_minPrice = 9999999
 
+local craftRubbish = false
 local craftQueue = {}
 local displayPageNo = 0
 local displayPageSize = 3
@@ -237,8 +237,8 @@ end
 
 -- type: add, reset, fulfil
 addItem = function(itemName, count, type)
-    count = tonumber(count)
     if count == nil then count = 1 end
+    count = tonumber(count)
     if type == nil then type = 'add' end
     local found = false
     if curTask ~= nil and curTask['itemname'] == itemName then
@@ -338,17 +338,30 @@ local function onUpdate()
         return
     end
 
-    if #craftQueue <= 0 then
-        refreshUI()
-        return
-    end
-
     if time() < lastTaskFinishTime + dft_taskInterval then return end
 
     XInfo.reloadBag()
     if XInfo.emptyBagCount <= 0 then
+        refreshUI()
         return
     end
+
+    if #craftQueue <= 0 then
+        if craftRubbish then
+            if XInfo.getBagItemCount('天蓝石') > 20 then
+                addItem('致密天蓝石')
+            elseif XInfo.getBagItemCount('森林翡翠') > 10 then
+                addItem('裂纹森林翡翠')
+            else
+                refreshUI()
+                return
+            end
+        else
+            refreshUI()
+            return
+        end
+    end
+
 
     curTask = craftQueue[1];
     table.remove(craftQueue, 1)
