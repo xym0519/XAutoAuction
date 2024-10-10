@@ -7,6 +7,7 @@ local mainFrame
 local dft_smalltime = 5
 local dft_largetime = 1.5
 local dft_taskInterval = 1
+local dft_emptySlotCount = 2
 
 local craftRubbish = false
 local craftQueue = {}
@@ -359,7 +360,7 @@ local function onUpdate()
     end
 
     if #craftQueue <= 0 then
-        if craftRubbish then
+        if craftRubbish and XInfo.emptyBagCount > dft_emptySlotCount then
             if XInfo.getBagItemCount('天蓝石') > 20 then
                 addItem('致密天蓝石')
             elseif XInfo.getBagItemCount('森林翡翠') > 10 then

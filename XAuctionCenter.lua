@@ -11,7 +11,7 @@ local dft_maxPrice = 2180000
 local dft_basePriceRate = 1.5
 local dft_taskInterval = 0.9
 local dft_taskTimeout = 15
-local dft_filterList = { '全部', '星星', '优质', '可售', '有效', '潜力', '价低', '无效', '垃圾', '不做', '邮寄', '收件', '量大' }
+local dft_filterList = { '全部', '星星', '优质', '可售', '缺货', '有效', '潜力', '价低', '无效', '垃圾', '不做', '邮寄', '收件', '量大' }
 local dft_deltaPrice = 10
 local dft_postdelay = 2
 local dft_oldInterval = 1800
@@ -273,18 +273,36 @@ initUI = function()
         refreshUI()
     end)
 
-    local filter3Button = XUI.createButton(mainFrame, dft_buttonWidth, '邮寄')
+    local filter3Button = XUI.createButton(mainFrame, dft_buttonWidth, '缺货')
     filter3Button:SetPoint('LEFT', filter2Button, 'RIGHT', dft_buttonGap, 0)
     filter3Button:SetScript('OnClick', function()
+        XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '缺货')
+        mainFrame.filterBox:SetText('')
+        filterDisplayList()
+        refreshUI()
+    end)
+
+    local filter4Button = XUI.createButton(mainFrame, dft_buttonWidth, '可售')
+    filter4Button:SetPoint('LEFT', filter3Button, 'RIGHT', dft_buttonGap, 0)
+    filter4Button:SetScript('OnClick', function()
+        XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '可售')
+        mainFrame.filterBox:SetText('')
+        filterDisplayList()
+        refreshUI()
+    end)
+
+    local filter5Button = XUI.createButton(mainFrame, dft_buttonWidth, '邮寄')
+    filter5Button:SetPoint('LEFT', filter4Button, 'RIGHT', dft_buttonGap, 0)
+    filter5Button:SetScript('OnClick', function()
         XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '邮寄')
         mainFrame.filterBox:SetText('')
         filterDisplayList()
         refreshUI()
     end)
 
-    local filter4Button = XUI.createButton(mainFrame, dft_buttonWidth, '收件')
-    filter4Button:SetPoint('LEFT', filter3Button, 'RIGHT', dft_buttonGap, 0)
-    filter4Button:SetScript('OnClick', function()
+    local filter6Button = XUI.createButton(mainFrame, dft_buttonWidth, '收件')
+    filter6Button:SetPoint('LEFT', filter5Button, 'RIGHT', dft_buttonGap, 0)
+    filter6Button:SetScript('OnClick', function()
         XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '收件')
         mainFrame.filterBox:SetText('')
         filterDisplayList()
@@ -296,7 +314,7 @@ initUI = function()
             filterDisplayList()
             refreshUI()
         end)
-    filterDropDown:SetPoint('LEFT', filter4Button, 'RIGHT', -15, 0)
+    filterDropDown:SetPoint('LEFT', filter6Button, 'RIGHT', -15, 0)
     mainFrame.filterDropDown = filterDropDown
 
     local filterBox = XUI.createEditbox(mainFrame, 90)
@@ -438,6 +456,10 @@ filterDisplayList = function()
             end
         elseif displayFilter == '潜力' then
             if (not important) and (dealCount / 3 / stackCount >= 10) then
+                disFlag = true
+            end
+        elseif displayFilter == '缺货' then
+            if enabled and (IsLeftShiftKeyDown() or important or star) and minPriceOther >= basePrice and bagCount < stackCount then
                 disFlag = true
             end
         end
@@ -993,6 +1015,7 @@ addItem = function(itemName, basePrice, defaultPrice, stackCount)
         lowercount = 0,
         pricelowcount = 0,
         minpriceother = dft_minPrice,
+        minpriceotherispartner = false,
         maxpriceother = 0,
         lastpriceother = 0,
     }
@@ -1012,6 +1035,7 @@ resetItem = function(item, keepUpdateTime)
         item['lastpriceother'] = item['minpriceother']
     end
     item['minpriceother'] = dft_minPrice
+    item['minpriceotherispartner'] = false
     item['maxpriceother'] = 0
     if not keepUpdateTime then
         item['updatetime'] = 0
@@ -1918,10 +1942,12 @@ processQueryTask = function(task)
                         item['pricelowercount'] = item['pricelowercount'] + 1
                     end
 
-                    if buyoutPrice <= item['minpriceother'] then
-                        if XInfo.isMe(seller) then
+                    if XInfo.isMe(seller) then
+                        if buyoutPrice <= item['minpriceother'] then
                             table.insert(item['myvalidlist'], buyoutPrice)
-                        else
+                        end
+                    else
+                        if buyoutPrice < item['minpriceother'] then
                             local newPriceList = {}
                             for _, tprice in ipairs(item['myvalidlist']) do
                                 if tprice <= buyoutPrice then
@@ -1930,8 +1956,14 @@ processQueryTask = function(task)
                             end
                             item['myvalidlist'] = newPriceList
                             item['minpriceother'] = buyoutPrice
+                            item['minpriceotherispartner'] = XInfo.isPartner(seller)
+                        elseif buyoutPrice == item['minpriceother'] then
+                            if not item['minpriceotherispartner'] then
+                                item['minpriceotherispartner'] = XInfo.isPartner(seller)
+                            end
                         end
                     end
+
                     if buyoutPrice > item['maxpriceother'] then
                         if not XInfo.isMe(seller) then
                             item['maxpriceother'] = buyoutPrice
@@ -1956,7 +1988,11 @@ processQueryTask = function(task)
 
             local price = item['defaultprice']
             if item['minpriceother'] ~= dft_minPrice then
-                price = item['minpriceother'] - dft_deltaPrice
+                if item['minpriceotherispartner'] then
+                    price = item['minpriceother']
+                else
+                    price = item['minpriceother'] - dft_deltaPrice
+                end
             end
             if item['minpriceother'] >= item['baseprice'] and price < item['baseprice'] then
                 price = item['baseprice']
@@ -2115,12 +2151,12 @@ processMaterialQueryTask = function(task)
 
                 if (timeLeft < 3 and nextBidPrice / stackCount <= buyingItem['price'])
                     or (buyoutPrice > 0 and buyoutPrice / stackCount <= buyingItem['price']) then
-                    if (not XInfo.isMe(seller)) and (not isMine) then
+                    if (not XInfo.isMe(seller)) and (not isMine) and (not XInfo.isPartner(seller)) then
                         found = true
                     end
                 end
 
-                if (not XInfo.isMe(seller)) and (not isMine) then
+                if (not XInfo.isMe(seller)) and (not isMine) and (not XInfo.isPartner(seller)) then
                     if buyoutPrice / stackCount <= buyingItem['price'] and buyoutPrice > 0 then
                         xdebug.info('Buyout: ' .. itemName .. ' (' .. stackCount .. ')'
                             .. '    ' .. XUtils.priceToMoneyString(buyoutPrice / stackCount))

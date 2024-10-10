@@ -441,6 +441,11 @@ XInfo.isMe = function(characterName)
     return XUtils.inArray(characterName, XInfo.characterList)
 end
 
+XInfo.partnerList = { '嘿丶小十六', '京城顽主' }
+XInfo.isPartner = function(characterName)
+    return XUtils.inArray(characterName, XInfo.partnerList)
+end
+
 -- print count
 XInfo.printBuyHistory = function(itemName, count)
     if not count then count = 30 end
