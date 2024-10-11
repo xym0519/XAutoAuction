@@ -4,7 +4,7 @@ local moduleName = 'XJewCount'
 -- Variable definition
 local dft_receiver1 = '阿肌'
 local dft_receiver2 = '默法'
-local dft_receiverItemList2 = XInfo.mineList
+local dft_receiverItemList2 = { '萨隆邪铁矿石', '太阳水晶', '永恒之土', '钴矿石' }
 local dft_receiverSell = '小灬白龙'
 -- local dft_receiverSell = '咖喱骑士'
 
@@ -131,7 +131,7 @@ createLabel = function(itemName)
     local icon = XUI.createItemIcon(itemFrame, 25, 25, itemName)
     icon:SetPoint('LEFT', itemFrame, 'LEFT', 0, 0)
 
-    local label = XUI.createLabel(itemFrame, 70)
+    local label = XUI.createLabel(itemFrame, 100)
     label:SetPoint('LEFT', icon, 'RIGHT', 10, 0)
     label:SetHeight(18)
 
@@ -160,10 +160,14 @@ createLabel = function(itemName)
     frame.Refresh = function(self)
         local bagCount = XInfo.getBagItemCount(self.itemName)
         local bagCountStr = XUI.getColor_MaterialCount(bagCount) .. bagCount
-        local totalCount = XInfo.getItemTotalCount(self.itemName)
+        local mailCount = XInfo.getMailItemCount(self.itemName)
+        local mailCountStr = XUI.getColor_MaterialTotalCount(mailCount) .. mailCount
+        local totalCount = XInfo.getItemTotalCountAll(self.itemName)
         local totalCountStr = XUI.getColor_MaterialTotalCount(totalCount) .. totalCount
 
-        local content = bagCountStr .. XUI.White .. ' / ' .. totalCountStr
+        local content = bagCountStr
+            .. XUI.White .. ' / ' .. mailCountStr
+            .. XUI.White .. ' / ' .. totalCountStr
 
         self.label:SetText(content)
     end
@@ -198,7 +202,7 @@ reloadLabels = function()
     for index, itemName in ipairs(col2) do
         local label = createLabel(itemName)
         if index == 1 then
-            label:SetPoint('TOPLEFT', lastWidget, 'TOPLEFT', 260, -30)
+            label:SetPoint('TOPLEFT', lastWidget, 'TOPLEFT', 290, -30)
         else
             label:SetPoint('TOPLEFT', lastWidget, 'BOTTOMLEFT', 0, 0)
         end
@@ -212,7 +216,7 @@ reloadLabels = function()
 end
 
 initUI = function()
-    mainFrame = XUI.createFrame('XJewCountMainFrame', 520, 250)
+    mainFrame = XUI.createFrame('XJewCountMainFrame', 580, 250)
     mainFrame.title:SetText('默认')
     mainFrame:SetPoint('BOTTOM', UIParent, 'BOTTOM', 0, 60)
     mainFrame:Hide()

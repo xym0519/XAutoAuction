@@ -21,12 +21,18 @@ XInfo.getItemTotalCount = function(itemName)
         + XInfo.getAuctionItemCount(itemName)
 end
 
+XInfo.getItemTotalCountAll = function(itemName)
+    return XInfo.getBagItemCount(itemName)
+        + XInfo.getBankItemCount(itemName)
+        + XInfo.getMailItemCountAll(itemName)
+        + XInfo.getAuctionItemCount(itemName)
+end
+
 -- count, positions(bagId, slotId)
 XInfo.getBagItem = function(itemName)
-    if XInfoBagList and XInfoBagList[itemName] then
-        return XInfoBagList[itemName]
-    end
-    return nil
+    if not XInfoBagList then return nil end
+    if not XInfoBagList[XInfo.myName] then return nil end
+    return XInfoBagList[XInfo.myName][itemName]
 end
 
 XInfo.getBagItemCount = function(itemName)
@@ -36,10 +42,9 @@ XInfo.getBagItemCount = function(itemName)
 end
 
 XInfo.getBankItem = function(itemName)
-    if XInfoBankList and XInfoBankList[itemName] then
-        return XInfoBankList[itemName]
-    end
-    return nil
+    if not XInfoBankList then return nil end
+    if not XInfoBankList[XInfo.myName] then return nil end
+    return XInfoBankList[XInfo.myName][itemName]
 end
 
 XInfo.getBankItemCount = function(itemName)
@@ -74,11 +79,7 @@ XInfo.isItemFullStack = function(bagId, slotId)
     return count >= stackCount
 end
 
--- local lastBagUpdateTime = 0
--- local lastBankUpdateTime = 0
 function ReloadBagBank(type)
-    -- if type == 'bag' and time() - lastBagUpdateTime < 1 then return end
-    -- if type == 'bank' and time() - lastBankUpdateTime < 1 then return end
     if type == 'bank' then
         if not XAPI.IsBankOpen() then
             return
@@ -126,13 +127,11 @@ function ReloadBagBank(type)
     end
 
     if type == 'bag' then
-        XInfoBagList = list
+        XInfoBagList[XInfo.myName] = list
         XInfo.emptyBagCount = emptyBagCount
-        -- lastBagUpdateTime = time()
     else
-        XInfoBankList = list
+        XInfoBankList[XInfo.myName] = list
         XInfo.emptyBankCount = emptyBankCount
-        -- lastBankUpdateTime = time()
     end
 end
 
@@ -146,9 +145,7 @@ end
 
 -- Mail Items
 XInfoMailList = {}
--- local lastMailUpdateTime = 0
 XInfo.reloadMail = function()
-    -- if time() - lastMailUpdateTime < 1 then return end
     if not XAPI.IsMailBoxOpen() then
         return
     end
@@ -173,21 +170,30 @@ XInfo.reloadMail = function()
             end
         end
     end
-    XInfoMailList = list
-    -- lastMailUpdateTime = time()
+    XInfoMailList[XInfo.myName] = list
 end
 
 XInfo.getMailItem = function(itemName)
-    if XInfoMailList and XInfoMailList[itemName] then
-        return XInfoMailList[itemName]
-    end
-    return nil
+    if not XInfoMailList then return nil end
+    if not XInfoMailList[XInfo.myName] then return nil end
+    return XInfoMailList[XInfo.myName][itemName]
 end
 
 XInfo.getMailItemCount = function(itemName)
     local item = XInfo.getMailItem(itemName)
     if not item then return 0 end
     return item['count']
+end
+
+XInfo.getMailItemCountAll = function(itemName)
+    local count = 0
+    if not XInfoMailList then return 0 end
+    for _, list in pairs(XInfoMailList) do
+        if list[itemName] then
+            count = count + list[itemName]['count']
+        end
+    end
+    return count
 end
 
 -- Auction Items
@@ -441,8 +447,9 @@ XInfo.isMe = function(characterName)
     return XUtils.inArray(characterName, XInfo.characterList)
 end
 
-XInfo.partnerList = { '嘿丶小十六', '京城顽主' }
+XInfo.partnerList = { '嘿丶小十六', '京城顽主', '小灬白龙' }
 XInfo.isPartner = function(characterName)
+    -- return true
     return XUtils.inArray(characterName, XInfo.partnerList)
 end
 

@@ -8,6 +8,7 @@ local dft_smalltime = 5
 local dft_largetime = 1.5
 local dft_taskInterval = 1
 local dft_emptySlotCount = 2
+local dft_rubbishList = { '致密天蓝石', '裂纹森林翡翠' }
 
 local craftRubbish = false
 local craftQueue = {}
@@ -86,6 +87,10 @@ initUI = function()
     refreshButton:SetScript('OnClick', function()
         XAutoAuction.refreshUI()
     end)
+
+    local rubbishCountLabel = XUI.createLabel(mainFrame, 30)
+    rubbishCountLabel:SetPoint('LEFT', refreshButton, 'RIGHT', 10, 0)
+    mainFrame.rubbishCountLabel = rubbishCountLabel
 
     local lastWidget = startButton
     for i = 1, displayPageSize do
@@ -213,6 +218,20 @@ refreshUI = function()
         mainFrame.startButton:SetText('起')
     end
 
+    local rubbishCount = 0
+    for _, _itemName in ipairs(dft_rubbishList) do
+        rubbishCount = rubbishCount + XInfo.getBagItemCount(_itemName)
+    end
+    local rubbishCountStr = 'R' .. rubbishCount
+    if rubbishCount > 10 then
+        rubbishCountStr = XUI.Color_Bad .. rubbishCountStr
+    elseif rubbishCount > 5 then
+        rubbishCountStr = XUI.Color_Poor .. rubbishCountStr
+    else
+        rubbishCountStr = XUI.Color_Fair .. rubbishCountStr
+    end
+    mainFrame.rubbishCountLabel:SetText(rubbishCountStr)
+
     for i = 1, displayPageSize do
         local frame = displayFrameList[i]
         local idx = displayPageNo * displayPageSize + i;
@@ -274,26 +293,33 @@ addItem = function(itemName, count, type)
     if not found then
         local index = 0
         local important = XAuctionCenter.checkImportantByName(itemName)
-        local dealCount = XInfo.getItemInfoField(itemName, 'dealcount', 0)
+        local deltaPrice = 0
+        local tItem = XAuctionCenter.getItem(itemName)
+        if tItem then
+            local materialName = XInfo.getMaterialName(itemName)
+            local materialBuyPrice = XAutoBuy.getItemField(materialName, 'price', 0)
+            deltaPrice = tItem['lastpriceother'] - materialBuyPrice
+        end
 
         for idx, item in pairs(craftQueue) do
             if important then
-                if (item['important'] and item['dealcount'] < dealCount) or (not item['important']) then
+                if (item['important'] and item['deltaprice'] < deltaPrice) or (not item['important']) then
                     index = idx
                     break
                 end
             else
-                if (not item['important']) and item['dealcount'] < dealCount then
+                if (not item['important']) and item['deltaprice'] < deltaPrice then
                     index = idx
                     break
                 end
             end
         end
         if index == 0 then
-            table.insert(craftQueue, { itemname = itemName, count = count, dealcount = dealCount, important = important })
+            table.insert(craftQueue,
+                { itemname = itemName, count = count, deltaprice = deltaPrice, important = important })
         else
             table.insert(craftQueue, index,
-                { itemname = itemName, count = count, dealcount = dealCount, important = important })
+                { itemname = itemName, count = count, deltaprice = deltaPrice, important = important })
         end
     end
     refreshUI()
@@ -361,11 +387,15 @@ local function onUpdate()
 
     if #craftQueue <= 0 then
         if craftRubbish and XInfo.emptyBagCount > dft_emptySlotCount then
-            if XInfo.getBagItemCount('天蓝石') > 20 then
-                addItem('致密天蓝石')
-            elseif XInfo.getBagItemCount('森林翡翠') > 10 then
-                addItem('裂纹森林翡翠')
-            else
+            local found = false
+            for _, _itemName in ipairs(dft_rubbishList) do
+                if XInfo.getMaterialBagCount(_itemName) > 20 then
+                    addItem(_itemName)
+                    found = true
+                    break
+                end
+            end
+            if not found then
                 refreshUI()
                 return
             end
@@ -374,7 +404,6 @@ local function onUpdate()
             return
         end
     end
-
 
     curTask = craftQueue[1];
     table.remove(craftQueue, 1)

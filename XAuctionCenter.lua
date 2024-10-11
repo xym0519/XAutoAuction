@@ -120,7 +120,7 @@ resetData = function()
 end
 
 initUI = function()
-    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 1315, 530)
+    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 1325, 530)
     mainFrame:SetFrameStrata('HIGH')
     mainFrame.title:SetText('自动拍卖')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
@@ -357,13 +357,13 @@ initUI = function()
     local timeLabel = XUI.createLabel(labelFrame, 50, '时间', 'CENTER')
     timeLabel:SetPoint('LEFT', nameLabel, 'RIGHT', 3, 0)
 
-    local bagLabel = XUI.createLabel(labelFrame, 120, '银/邮/包/总', 'CENTER')
+    local bagLabel = XUI.createLabel(labelFrame, 130, '银/邮/包/总', 'CENTER')
     bagLabel:SetPoint('LEFT', timeLabel, 'RIGHT', 3, 0)
 
-    local auctionLabel = XUI.createLabel(labelFrame, 180, '卖/我/今/低/底', 'CENTER')
+    local auctionLabel = XUI.createLabel(labelFrame, 150, '卖/我/低/底', 'CENTER')
     auctionLabel:SetPoint('LEFT', bagLabel, 'RIGHT', 3, 0)
 
-    local dealLabel = XUI.createLabel(labelFrame, 100, '率/次/堆', 'CENTER')
+    local dealLabel = XUI.createLabel(labelFrame, 130, '率/次/今/堆', 'CENTER')
     dealLabel:SetPoint('LEFT', auctionLabel, 'RIGHT', 3, 0)
 
     local priceLabel = XUI.createLabel(labelFrame, 210, '现/上/高/基', 'CENTER')
@@ -386,6 +386,7 @@ filterDisplayList = function()
     for i, item in ipairs(XAutoAuctionList) do
         item.index = i
         local itemName = item['itemname']
+        local materialName = XInfo.getMaterialName(itemName)
         local enabled = item['enabled']
         if enabled == nil then enabled = false end
         local star = item['star']
@@ -395,7 +396,7 @@ filterDisplayList = function()
         local minPriceOther = item['minpriceother']
         local basePrice = item['baseprice']
         local stackCount = item['stackcount']
-        local materialBuyPrice = XAutoBuy.getItemField(itemName, 'price', 0)
+        local materialBuyPrice = XAutoBuy.getItemField(materialName, 'price', 0)
         local bagCount = XInfo.getBagItemCount(itemName)
         local mailCount = XInfo.getMailItemCount(itemName)
         local auctionCount = XInfo.getAuctionItemCount(itemName)
@@ -557,17 +558,17 @@ filterDisplayList = function()
         labelTime:SetPoint('LEFT', itemNameButton, 'RIGHT', 3, 0)
         frame.labelTime = labelTime
 
-        local labelBag = XUI.createLabel(frame, 120, '', 'CENTER')
+        local labelBag = XUI.createLabel(frame, 130, '', 'CENTER')
         labelBag:SetPoint('LEFT', labelTime, 'RIGHT', 3, 0)
         frame.labelBag = labelBag
         labelBag.frame = frame
 
-        local labelAuction = XUI.createLabel(frame, 180, '', 'CENTER')
+        local labelAuction = XUI.createLabel(frame, 150, '', 'CENTER')
         labelAuction:SetPoint('LEFT', labelBag, 'RIGHT', 3, 0)
         frame.labelAuction = labelAuction
         labelAuction.frame = frame
 
-        local labelDeal = XUI.createLabel(frame, 100, '', 'CENTER')
+        local labelDeal = XUI.createLabel(frame, 130, '', 'CENTER')
         labelDeal:SetPoint('LEFT', labelAuction, 'RIGHT', 3, 0)
         frame.labelDeal = labelDeal
         labelDeal.frame = frame
@@ -819,7 +820,6 @@ refreshUI = function()
 
         local auctionCountStr = XUI.getColor_AuctionStackCount(auctionCount, stackCount) .. 'A' .. auctionCount
         local validCountStr = XUI.getColor_AuctionValidStackCount(validCount, stackCount) .. 'M' .. validCount
-        local cDealCountStr = XUI.getColor_DealCount(cDealCount * 3) .. cDealCount
         local lowerCountStr = lowerCount .. ''
         if lowerCount > 5 then
             lowerCountStr = XUI.Color_Bad .. lowerCountStr
@@ -844,6 +844,7 @@ refreshUI = function()
         else
             dealCountStr = dealCountStr .. dealCount
         end
+        local cDealCountStr = XUI.getColor_DealCount(cDealCount * 3) .. cDealCount
         local stackCountStr = 'S' .. stackCount
         if stackCount > 4 then
             stackCountStr = XUI.Color_Worst .. stackCountStr
@@ -884,10 +885,12 @@ refreshUI = function()
         frame.labelBag:SetText(bankCountStr .. ' / ' .. mailCountStr
             .. XUI.White .. ' / ' .. bagCountStr .. XUI.White .. ' / ' .. totalCountStr)
         frame.labelAuction:SetText(auctionCountStr .. XUI.White .. ' / ' .. validCountStr
-            .. XUI.White .. ' / ' .. cDealCountStr
             .. XUI.White .. ' / ' .. priceLowerCountStr
             .. XUI.White .. ' / ' .. lowerCountStr .. XUI.White)
-        frame.labelDeal:SetText(dealRateStr .. XUI.White .. ' / ' .. dealCountStr .. XUI.White .. ' / ' .. stackCountStr)
+        frame.labelDeal:SetText(dealRateStr
+            .. XUI.White .. ' / ' .. dealCountStr
+            .. XUI.White .. ' / ' .. cDealCountStr
+            .. XUI.White .. ' / ' .. stackCountStr)
         frame.labelPrice:SetText(minPriceOtherStr
             .. XUI.White .. ' / ' .. lastPriceOtherStr
             .. XUI.White .. ' / ' .. maxPriceOtherStr .. ' / ' .. basePriceStr)

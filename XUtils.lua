@@ -394,9 +394,9 @@ function MoveToBagBank(itemNames, direcion, stackCount, exceptions, fullStack)
 
     local sourceItems = {}
     if direcion == 'tobank' then
-        sourceItems = XInfoBagList
+        sourceItems = XInfoBagList[XInfo.myName]
     else
-        sourceItems = XInfoBankList
+        sourceItems = XInfoBankList[XInfo.myName]
     end
     local sourcePositions = {}
 
