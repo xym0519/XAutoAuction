@@ -1891,9 +1891,12 @@ local function onQueryItemListUpdate(...)
     end
 end
 
-local function onAuctionSuccess()
-    -- if not curTask then return end
-    -- curTask['status'] = 'finished'
+local function onMaterialBuyFailed()
+    if not curTask then return end
+    if curTask['action'] == 'material' and curTask['status'] == 'buying' then
+        xdebug.error('Material buy failed')
+        finishTask()
+    end
 end
 
 processQueryTask = function(task)
@@ -2234,6 +2237,11 @@ XAutoAuction.registerEventCallback(moduleName, 'ADDON_LOADED', function()
 end)
 
 XAutoAuction.registerEventCallback(moduleName, 'AUCTION_ITEM_LIST_UPDATE', onQueryItemListUpdate)
+XAutoAuction.registerEventCallback(moduleName, 'UI_ERROR_MESSAGE', function(_, _, code, message)
+    if code == 28 and message == '未找到指定物品' then
+        onMaterialBuyFailed()
+    end
+end)
 
 -- XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_SHOW', function(self, event, text, context)
 --     stop()

@@ -48,6 +48,8 @@ XAutoAuctionFrame:RegisterEvent('UNIT_SPELLCAST_SUCCEEDED')
 XAutoAuctionFrame:RegisterEvent('UNIT_SPELLCAST_FAILED')
 XAutoAuctionFrame:RegisterEvent('UNIT_SPELLCAST_INTERRUPTED')
 
+XAutoAuctionFrame:RegisterEvent('UI_ERROR_MESSAGE')
+
 XAutoAuctionFrame:RegisterEvent('PLAYER_MONEY')
 
 -- Event registion interface
@@ -126,6 +128,7 @@ XAutoAuctionFrame:SetScript('OnUpdate', function()
 
     if isRunning and lastActionTime + hintShowDelay < time then
         if not hintFrame:IsVisible() then
+            hintFrame.text:SetText('已停止  ' .. XUtils.formatTime(lastActionTime + hintShowDelay))
             hintFrame:Show()
         end
         isRunning = false

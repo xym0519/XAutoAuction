@@ -21,12 +21,12 @@ local categories = { '默认', '出售', '原石', '炸矿' }
 local categoryIndex = 1
 local categoryItemList = {
     {
-        { '太阳水晶', '萨隆邪铁矿石', '永恒之土' },
+        { '太阳水晶', '萨隆邪铁矿石', '永恒之土', '钴矿石' },
         { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石' }
     },
     {
         { '太阳水晶', '萨隆邪铁矿石' },
-        { '永恒之土' }
+        { '永恒之土', '钴矿石' }
     },
     {
         { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼', '巨锆石', '恐惧石' },
@@ -131,7 +131,7 @@ createLabel = function(itemName)
     local icon = XUI.createItemIcon(itemFrame, 25, 25, itemName)
     icon:SetPoint('LEFT', itemFrame, 'LEFT', 0, 0)
 
-    local label = XUI.createLabel(itemFrame, 100)
+    local label = XUI.createLabel(itemFrame, 120)
     label:SetPoint('LEFT', icon, 'RIGHT', 10, 0)
     label:SetHeight(18)
 
@@ -190,7 +190,7 @@ reloadLabels = function()
     for index, itemName in ipairs(col1) do
         local label = createLabel(itemName)
         if index == 1 then
-            label:SetPoint('TOPLEFT', lastWidget, 'TOPLEFT', 20, -30)
+            label:SetPoint('TOPLEFT', lastWidget, 'TOPLEFT', 8, -30)
         else
             label:SetPoint('TOPLEFT', lastWidget, 'BOTTOMLEFT', 0, 0)
         end
@@ -202,7 +202,7 @@ reloadLabels = function()
     for index, itemName in ipairs(col2) do
         local label = createLabel(itemName)
         if index == 1 then
-            label:SetPoint('TOPLEFT', lastWidget, 'TOPLEFT', 290, -30)
+            label:SetPoint('TOPLEFT', lastWidget, 'TOPLEFT', 292, -30)
         else
             label:SetPoint('TOPLEFT', lastWidget, 'BOTTOMLEFT', 0, 0)
         end

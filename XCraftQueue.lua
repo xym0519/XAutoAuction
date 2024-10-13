@@ -227,8 +227,10 @@ refreshUI = function()
         rubbishCountStr = XUI.Color_Bad .. rubbishCountStr
     elseif rubbishCount > 5 then
         rubbishCountStr = XUI.Color_Poor .. rubbishCountStr
-    else
+    elseif rubbishCount > 0 then
         rubbishCountStr = XUI.Color_Fair .. rubbishCountStr
+    else
+        rubbishCountStr = XUI.Color_Good .. rubbishCountStr
     end
     mainFrame.rubbishCountLabel:SetText(rubbishCountStr)
 
