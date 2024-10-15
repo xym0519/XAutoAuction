@@ -17,6 +17,7 @@ local dft_postdelay = 2
 local dft_oldInterval = 1800
 local dft_maxCraftCount = 20
 local dft_materialTaskInterval = 30
+local dft_multiSellList = { '单倍', '双倍', '全部' }
 
 local dft_buttonWidth = 45
 local dft_buttonGap = 1
@@ -31,6 +32,7 @@ local lastTaskFinishTime = 0
 
 local buyPriceEnabled = true
 local autoBuyEnabled = true
+local multiSell = 1
 
 local queryIndex = 1
 local starQueryIndex = 1
@@ -122,40 +124,91 @@ end
 initUI = function()
     mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 1325, 530)
     mainFrame:SetFrameStrata('HIGH')
-    mainFrame.title:SetText('自动拍卖')
+    mainFrame.title:SetText('')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
     mainFrame:Hide()
+    mainFrame.titleList = {}
+    mainFrame.titleFrame = XAPI.CreateFrame('Frame', nil, mainFrame)
+    mainFrame.titleFrame:SetPoint('TOP', mainFrame, 'TOP', 0, 0)
+    mainFrame.addTitle = function(self, prefix)
+        local tlabel = XUI.createLabel(self.titleFrame, 70, '', 'Left')
+        tlabel:SetHeight(20)
+        tlabel.prefix = prefix
+        if #self.titleList == 0 then
+            tlabel:SetPoint('Left', self.titleFrame, 'Left', 0, 0)
+        else
+            tlabel:SetPoint('Left', self.titleList[#self.titleList], 'RIGHT', 5, 0)
+        end
+        table.insert(self.titleList, tlabel)
+        self.titleFrame:SetSize(#self.titleList * 75, 20)
+    end
+    mainFrame.setTitle = function(self, index, text)
+        local tlabel = self.titleList[index]
+        if not tlabel then return end
+        tlabel:SetText(tlabel.prefix .. ':' .. text)
+    end
+    mainFrame:addTitle('售中')
+    mainFrame:addTitle('回款')
+    mainFrame:addTitle('收款')
+    mainFrame:addTitle('已售')
+    mainFrame:addTitle('制作')
+    mainFrame:addTitle('购买')
+    mainFrame:addTitle('背包')
+    mainFrame:addTitle('制造')
     tinsert(UISpecialFrames, mainFrame:GetName())
 
     local auctionBoardButton = XUI.createButton(mainFrame, dft_buttonWidth, '面板')
     auctionBoardButton:SetPoint('TOPRIGHT', mainFrame, 'TOPRIGHT', -30, 0)
-    auctionBoardButton:SetScript('OnClick', XAuctionBoard.toggle)
+    auctionBoardButton:SetScript('OnClick', function(self)
+        XAuctionBoard.toggle()
+        refreshUI()
+    end)
+    mainFrame.auctionBoardButton = auctionBoardButton
 
     local jewCountButton = XUI.createButton(mainFrame, dft_buttonWidth, '材料')
     jewCountButton:SetPoint('RIGHT', auctionBoardButton, 'LEFT', -3, 0)
-    jewCountButton:SetScript('OnClick', XJewCount.toggle)
+    jewCountButton:SetScript('OnClick', function(self)
+        XJewCount.toggle()
+        refreshUI()
+    end)
+    mainFrame.jewCountButton = jewCountButton
 
     local craftQueueButton = XUI.createButton(mainFrame, dft_buttonWidth, '制造')
     craftQueueButton:SetPoint('RIGHT', jewCountButton, 'LEFT', -3, 0)
-    craftQueueButton:SetScript('OnClick', XCraftQueue.toggle)
+    craftQueueButton:SetScript('OnClick', function()
+        if IsLeftShiftKeyDown() then
+            XCraftQueue.toggle()
+        else
+            XCraftQueue.start()
+        end
+        refreshUI()
+    end)
     mainFrame.craftQueueButton = craftQueueButton
 
-    local autoSpeakButton = XUI.createButton(mainFrame, dft_buttonWidth, XUI.Red .. '喊话')
+    local autoSpeakButton = XUI.createButton(mainFrame, dft_buttonWidth, '喊话')
     autoSpeakButton:SetPoint('RIGHT', craftQueueButton, 'LEFT', -3, 0)
     autoSpeakButton:SetScript('OnClick', XAutoSpeak.toggle)
     mainFrame.autoSpeakButton = autoSpeakButton
 
-    local autoBuyButton = XUI.createButton(mainFrame, dft_buttonWidth, XUI.Red .. '购买')
-    autoBuyButton:SetPoint('RIGHT', autoSpeakButton, 'LEFT', -3, 0)
-    autoBuyButton:SetScript('OnClick', function()
+    local multiSellButton = XUI.createButton(mainFrame, dft_buttonWidth, '单倍')
+    multiSellButton:SetPoint('TOPRIGHT', auctionBoardButton, 'BOTTOMRIGHT', 0, -2)
+    multiSellButton:SetScript('OnClick', function(self)
+        multiSell = multiSell % #dft_multiSellList + 1
+        refreshUI()
+    end)
+    mainFrame.multiSellButton = multiSellButton
+
+    local autoBuyButton = XUI.createButton(mainFrame, dft_buttonWidth, '购买')
+    autoBuyButton:SetPoint('RIGHT', multiSellButton, 'LEFT', -3, 0)
+    autoBuyButton:SetScript('OnClick', function(self)
         autoBuyEnabled = not autoBuyEnabled
         refreshUI()
     end)
     mainFrame.autoBuyButton = autoBuyButton
 
-    local buyPriceButton = XUI.createButton(mainFrame, dft_buttonWidth, XUI.Red .. '买价')
+    local buyPriceButton = XUI.createButton(mainFrame, dft_buttonWidth, '买价')
     buyPriceButton:SetPoint('RIGHT', autoBuyButton, 'LEFT', -3, 0)
-    buyPriceButton:SetScript('OnClick', function()
+    buyPriceButton:SetScript('OnClick', function(self)
         buyPriceEnabled = not buyPriceEnabled
         refreshUI()
     end)
@@ -163,7 +216,7 @@ initUI = function()
 
     local startButton = XUI.createButton(mainFrame, dft_buttonWidth, '开始')
     startButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -30)
-    startButton:SetScript('OnClick', function()
+    startButton:SetScript('OnClick', function(self)
         if isStarted then
             stop()
         else
@@ -677,6 +730,20 @@ refreshUI = function()
         mainFrame.craftQueueButton:SetText(XUI.Red .. '制造')
     end
 
+    if XAuctionBoard.mainFrame:IsVisible() then
+        mainFrame.auctionBoardButton:SetText(XUI.Green .. '面板')
+    else
+        mainFrame.auctionBoardButton:SetText(XUI.Red .. '面板')
+    end
+
+    if XJewCount.mainFrame:IsVisible() then
+        mainFrame.jewCountButton:SetText(XUI.Green .. '材料')
+    else
+        mainFrame.jewCountButton:SetText(XUI.Red .. '材料')
+    end
+
+    mainFrame.multiSellButton:SetText(dft_multiSellList[multiSell])
+
     local labelText = format('%s) ', #taskList)
     if not curTask then
         labelText = labelText .. '等待'
@@ -693,11 +760,53 @@ refreshUI = function()
     end
     mainFrame.hintLabel:SetText(labelText)
 
-    mainFrame.title:SetText('自动拍卖'
-        .. '    出售中: ' .. XInfo.auctioningCount
-        .. '    已出售: ' .. XInfo.auctionedCount
-        .. '    待收款: ' .. (XUtils.round(XInfo.auctionedMoney / 10000))
-        .. '    背包: ' .. XInfo.emptyBagCount)
+    local totalDealCount = 0
+    local totalCraftCount = 0
+    local totalBuyCount = 0
+    local boardItem = XAuctionBoardList[1]
+    if boardItem then
+        for _, dataItem in ipairs(boardItem['data']) do
+            totalDealCount = totalDealCount + dataItem['dealcount']
+            totalCraftCount = totalCraftCount + dataItem['craftcount']
+            totalBuyCount = totalBuyCount + dataItem['buycount']
+        end
+    end
+
+    local emptyBagCountStr = XInfo.emptyBagCount .. ''
+    if XInfo.emptyBagCount >= 20 then
+        emptyBagCountStr = XUI.Color_Great .. emptyBagCountStr
+    elseif XInfo.emptyBagCount >= 10 then
+        emptyBagCountStr = XUI.Color_Good .. emptyBagCountStr
+    elseif XInfo.emptyBagCount >= 5 then
+        emptyBagCountStr = XUI.Color_Fair .. emptyBagCountStr
+    elseif XInfo.emptyBagCount > 0 then
+        emptyBagCountStr = XUI.Color_Poor .. emptyBagCountStr
+    else
+        emptyBagCountStr = XUI.Color_Bad .. emptyBagCountStr
+    end
+
+    local craftCount = XCraftQueue.getItemCount()
+    local craftCountStr = craftCount .. ''
+    if craftCount >= 20 then
+        craftCountStr = XUI.Color_Worst .. craftCountStr
+    elseif craftCount >= 10 then
+        craftCountStr = XUI.Color_Bad .. craftCountStr
+    elseif craftCount >= 5 then
+        craftCountStr = XUI.Color_Poor .. craftCountStr
+    elseif craftCount > 0 then
+        craftCountStr = XUI.Color_Fair .. craftCountStr
+    else
+        craftCountStr = XUI.Color_Good .. craftCountStr
+    end
+
+    mainFrame:setTitle(1, XUI.Green .. XInfo.auctioningCount)
+    mainFrame:setTitle(2, XUI.Green .. XInfo.auctionedCount)
+    mainFrame:setTitle(3, XUI.Green .. (XUtils.round(XInfo.auctionedMoney / 10000)))
+    mainFrame:setTitle(4, XUI.Green .. totalDealCount)
+    mainFrame:setTitle(5, XUI.Green .. totalCraftCount)
+    mainFrame:setTitle(6, XUI.Green .. totalBuyCount)
+    mainFrame:setTitle(7, XUI.Green .. emptyBagCountStr)
+    mainFrame:setTitle(8, XUI.Green .. craftCountStr)
 
     for _, item in ipairs(materialFrames) do
         item:Hide()
@@ -713,8 +822,11 @@ refreshUI = function()
                 tprice = math.floor(tprice / 1000) / 10
             end
 
+            local bagCount = XInfo.getBagItemCount(item['itemname'])
+            local bagCountStr = XUI.getColor_MaterialCount(bagCount) .. bagCount
+
             local materialItemFrame = XAPI.CreateFrame('Frame', nil, mainFrame)
-            materialItemFrame:SetSize(63, 30)
+            materialItemFrame:SetSize(93, 30)
             if preFrame == mainFrame then
                 materialItemFrame:SetPoint('TOPLEFT', preFrame, 'TOPLEFT', 15, -95)
             else
@@ -725,7 +837,8 @@ refreshUI = function()
             local icon = XUI.createItemIcon(materialItemFrame, 25, 25, item['itemname'])
             icon:SetPoint('LEFT', materialItemFrame, 'LEFT', 0, 0)
 
-            local countLabel = XUI.createLabel(materialItemFrame, 30, tprice, 'LEFT')
+            local countLabel = XUI.createLabel(materialItemFrame, 60,
+                tprice .. '(' .. bagCountStr .. XUI.White .. ')', 'LEFT')
             countLabel:SetPoint('LEFT', icon, 'RIGHT', 3, 0)
 
             materialItemFrame:SetScript("OnEnter", function(self)
@@ -1398,6 +1511,14 @@ puton = function(isForce)
             local bagCount = XInfo.getBagItemCount(item['itemname'])
             local validCount = getMyValidCount(item['itemname'])
             local stackCount = item['stackcount']
+            if checkImportant(item) then
+                local multiple = dft_multiSellList[multiSell]
+                if multiple == '双倍' then
+                    stackCount = stackCount * 2
+                elseif multiple == '全部' then
+                    stackCount = 99
+                end
+            end
             if isForce or bagCount > 0 then
                 if item['minpriceother'] >= item['baseprice'] and validCount < stackCount then
                     if item['star'] then
@@ -2018,6 +2139,14 @@ processQueryTask = function(task)
             local validCount = getMyValidCount(item['itemname'])
 
             local targetCount = item['stackcount']
+            if checkImportant(item) then
+                local multiple = dft_multiSellList[multiSell]
+                if multiple == '双倍' then
+                    targetCount = targetCount * 2
+                elseif multiple == '全部' then
+                    targetCount = 99
+                end
+            end
             local subcount = targetCount - validCount
             if itemBagCount < subcount then
                 subcount = itemBagCount
@@ -2256,7 +2385,8 @@ end)
 XAutoAuction.registerEventCallback(moduleName, 'CHAT_MSG_SYSTEM', function(...)
     local text = select(3, ...)
     if text == ERR_AUCTION_STARTED then
-        onAuctionSuccess()
+        -- TODO 这里干嘛用的
+        -- onAuctionSuccess()
     elseif XUtils.stringStartsWith(text, '你拍卖的') and XUtils.stringEndsWith(text, '已经售出。') then
         local itemname = string.sub(text, string.len('你拍卖的') + 1, string.len(text) - string.len('已经售出。'))
         local tindex = nil

@@ -1,8 +1,8 @@
 # 出售 C+1
 /xauctioncenter
-/xcraftqueue_show
+/xcraftqueue_close
 /xautobuy_close
-/xjewcount_show
+/xjewcount_close
 /xjewwords_close
 
 # 购买 C+2

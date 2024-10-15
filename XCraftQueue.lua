@@ -8,7 +8,10 @@ local dft_smalltime = 5
 local dft_largetime = 1.5
 local dft_taskInterval = 1
 local dft_emptySlotCount = 2
-local dft_rubbishList = { '致密天蓝石', '裂纹森林翡翠' }
+local dft_rubbishList = {
+    '致密天蓝石',
+    -- '裂纹森林翡翠'
+}
 
 local craftRubbish = false
 local craftQueue = {}
@@ -544,3 +547,6 @@ XCraftQueue.isRunning = function()
 end
 
 XCraftQueue.toggle = function() XUI.toggleVisible(mainFrame) end
+XCraftQueue.getItemCount = function()
+    return #craftQueue
+end

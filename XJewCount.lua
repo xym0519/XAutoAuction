@@ -220,6 +220,7 @@ initUI = function()
     mainFrame.title:SetText('默认')
     mainFrame:SetPoint('BOTTOM', UIParent, 'BOTTOM', 0, 60)
     mainFrame:Hide()
+    XJewCount.mainFrame = mainFrame
     tinsert(UISpecialFrames, mainFrame:GetName())
 
     local fulfilStackButton = XUI.createButton(mainFrame, 60, '补全')
