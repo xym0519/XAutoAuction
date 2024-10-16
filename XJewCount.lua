@@ -4,7 +4,7 @@ local moduleName = 'XJewCount'
 -- Variable definition
 local dft_receiver1 = '阿肌'
 local dft_receiver2 = '默法'
-local dft_receiverItemList2 = { '萨隆邪铁矿石', '太阳水晶', '永恒之土', '钴矿石' }
+local dft_receiverItemList2 = { '萨隆邪铁矿石', '血石', '茶晶石', '太阳水晶', '黑玉', '玉髓石', '暗影水晶', '永恒之土', '钴矿石', '冰冻宝珠' }
 local dft_receiverSell = '小灬白龙'
 -- local dft_receiverSell = '咖喱骑士'
 
@@ -21,7 +21,7 @@ local categories = { '默认', '出售', '原石', '炸矿' }
 local categoryIndex = 1
 local categoryItemList = {
     {
-        { '太阳水晶', '萨隆邪铁矿石', '永恒之土', '钴矿石' },
+        { '太阳水晶', '萨隆邪铁矿石', '永恒之土', '钴矿石', '冰冻宝珠' },
         { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石' }
     },
     {
@@ -284,33 +284,7 @@ initUI = function()
     shrinkButton:SetHeight(20)
     shrinkButton:SetPoint('RIGHT', fulfilStackButton, 'LEFT', -3, 0)
     shrinkButton:SetScript('OnClick', function()
-        XAutoAuction.registerUIUpdateCallback(moduleName .. '_sort', function()
-            local list = {}
-            local found = false
-            for i = 0, XAPI.NUM_BAG_SLOTS do
-                local bagSlotCount = XAPI.C_Container_GetContainerNumSlots(i)
-                for j = 1, bagSlotCount do
-                    if not XInfo.isItemFullStack(i, j) then
-                        local itemBag = XAPI.C_Container_GetContainerItemInfo(i, j)
-                        if itemBag then
-                            local itemName = itemBag.itemName
-                            if list[itemName] then
-                                XAPI.C_Container_PickupContainerItem(i, j)
-                                XAPI.C_Container_PickupContainerItem(list[itemName]['x'], list[itemName]['y'])
-                                list[itemName] = nil
-                                found = true
-                            else
-                                list[itemName] = { x = i, y = j }
-                            end
-                        end
-                    end
-                end
-            end
-            if not found then
-                XAutoAuction.unRegisterUIUpdateCallback(moduleName .. '_sort')
-                xdebug.info('整理完成')
-            end
-        end, 0.2)
+        XUtils.sortBag()
     end)
 
     local bagPriceButton = XUI.createButton(mainFrame, 60, '包价')
@@ -327,16 +301,24 @@ initUI = function()
         printPrice(true)
     end)
 
-    local categoryButton = XUI.createButton(mainFrame, 60, categories[categoryIndex])
-    categoryButton:SetHeight(20)
-    categoryButton:SetPoint('BOTTOMRIGHT', mainFrame, 'BOTTOMRIGHT', 0, 0)
-    categoryButton:SetScript('OnClick', function(self)
-        categoryIndex = (categoryIndex % #categories) + 1
-        self:SetText(categories[categoryIndex])
-        reloadLabels()
-        refreshUI()
-    end)
-
+    local lastWidget = mainFrame
+    for index, category in ipairs(categories) do
+        local categoryButton = XUI.createButton(mainFrame, 60, category)
+        categoryButton:SetHeight(20)
+        categoryButton.index = index
+        if index == 1 then
+            categoryButton:SetPoint('BOTTOMRIGHT', lastWidget, 'BOTTOMRIGHT', 0, 0)
+        else
+            categoryButton:SetPoint('RIGHT', lastWidget, 'LEFT', -3, 0)
+        end
+        categoryButton:SetScript('OnClick', function(self)
+            categoryIndex = self.index
+            self:SetText(categories[self.index])
+            reloadLabels()
+            refreshUI()
+        end)
+        lastWidget = categoryButton
+    end
 
     reloadLabels()
 

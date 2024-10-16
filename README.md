@@ -2,7 +2,7 @@
 /xauctioncenter
 /xcraftqueue_close
 /xautobuy_close
-/xjewcount_close
+<!-- /xjewcount_close -->
 /xjewwords_close
 
 # 购买 C+2

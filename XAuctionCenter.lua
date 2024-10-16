@@ -177,9 +177,11 @@ initUI = function()
     craftQueueButton:SetPoint('RIGHT', jewCountButton, 'LEFT', -3, 0)
     craftQueueButton:SetScript('OnClick', function()
         if IsLeftShiftKeyDown() then
-            XCraftQueue.toggle()
-        else
             XCraftQueue.start()
+        elseif IsLeftControlKeyDown() then
+            XCraftQueue.reset()
+        else
+            XCraftQueue.toggle()
         end
         refreshUI()
     end)
@@ -187,7 +189,15 @@ initUI = function()
 
     local autoSpeakButton = XUI.createButton(mainFrame, dft_buttonWidth, '喊话')
     autoSpeakButton:SetPoint('RIGHT', craftQueueButton, 'LEFT', -3, 0)
-    autoSpeakButton:SetScript('OnClick', XAutoSpeak.toggle)
+    autoSpeakButton:SetScript('OnClick', function()
+        if IsLeftShiftKeyDown() then
+            XAutoSpeak.start()
+        elseif IsLeftControlKeyDown() then
+            XAutoSpeak.printList()
+        else
+            XAutoSpeak.toggle()
+        end
+    end)
     mainFrame.autoSpeakButton = autoSpeakButton
 
     local multiSellButton = XUI.createButton(mainFrame, dft_buttonWidth, '单倍')
@@ -1211,10 +1221,6 @@ addQueryTaskByIndex = function(index, force)
     end
 
     XInfo.reloadBag()
-    local bagCount = XInfo.getBagItemCount(item['itemname'])
-    if bagCount <= 0 then
-        return
-    end
 
     local idx = 0
     for _index, task in pairs(taskList) do

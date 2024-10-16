@@ -10,7 +10,7 @@ local dft_taskInterval = 1
 local dft_emptySlotCount = 2
 local dft_rubbishList = {
     '致密天蓝石',
-    -- '裂纹森林翡翠'
+    '裂纹森林翡翠'
 }
 
 local craftRubbish = false

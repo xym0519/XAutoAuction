@@ -467,3 +467,39 @@ end
 XUtils.moveToBank = function(itemNames, stackCount, exceptions, fullStack)
     MoveToBagBank(itemNames, 'tobank', stackCount, exceptions, fullStack)
 end
+
+XUtils.sortBag = function()
+    XAutoAuction.registerUIUpdateCallback(moduleName .. '_sortBag', function()
+        local notFullList = {}
+        local lastItemList = {}
+
+        for i = 0, XAPI.NUM_BAG_SLOTS do
+            local bagSlotCount = XAPI.C_Container_GetContainerNumSlots(i)
+            for j = 1, bagSlotCount do
+                local itemBag = XAPI.C_Container_GetContainerItemInfo(i, j)
+                if itemBag then
+                    local itemName = itemBag.itemName
+                    lastItemList[itemName] = { x = i, y = j }
+                    if not XInfo.isItemFullStack(i, j) then
+                        if not notFullList[itemName] then
+                            notFullList[itemName] = { x = i, y = j }
+                        end
+                    end
+                end
+            end
+        end
+        local found = false
+        for itemName, position in pairs(notFullList) do
+            local lastPosotion = lastItemList[itemName]
+            if position['x'] ~= lastPosotion['x'] or position['y'] ~= lastPosotion['y'] then
+                XAPI.C_Container_PickupContainerItem(lastPosotion['x'], lastPosotion['y'])
+                XAPI.C_Container_PickupContainerItem(position['x'], position['y'])
+                found = true
+            end
+        end
+        if not found then
+            XAutoAuction.unRegisterUIUpdateCallback(moduleName .. '_sortBag')
+            xdebug.info('整理完成')
+        end
+    end, 0.2)
+end

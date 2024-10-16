@@ -28,6 +28,7 @@ local refreshUI
 local addItem
 local getItem
 local send
+local printList
 
 -- Function implemention
 initUI = function()
@@ -151,16 +152,7 @@ initUI_Setting = function()
 
     local printButton = XUI.createButton(settingFrame, dft_buttonWidth, '查看')
     printButton:SetPoint('LEFT', addButton, 'RIGHT', dft_buttonGap, 0)
-    printButton:SetScript('OnClick', function()
-        xdebug.info('----------自动喊话设置----------')
-        for idx, cnt in pairs(XSpeakWordList) do
-            local status = 'disabled'
-            if cnt['enabled'] ~= nil and cnt['enabled'] then
-                status = 'enabled'
-            end
-            xdebug.info(idx .. '(' .. status .. '): ' .. cnt['text'])
-        end
-    end)
+    printButton:SetScript('OnClick', printList)
 
     local lastWidget = preButton
     for i = 1, displayPageSize do
@@ -328,6 +320,17 @@ send = function()
     end
 end
 
+printList = function()
+    xdebug.info('----------自动喊话设置----------')
+    for idx, cnt in pairs(XSpeakWordList) do
+        local status = 'disabled'
+        if cnt['enabled'] ~= nil and cnt['enabled'] then
+            status = 'enabled'
+        end
+        xdebug.info(idx .. '(' .. status .. '): ' .. cnt['text'])
+    end
+end
+
 -- Event callback
 local function onUpdate()
     if isRunning then
@@ -381,3 +384,8 @@ XAutoSpeak.addItem = addItem
 XAutoSpeak.getItem = getItem
 XAutoSpeak.toggle = function() XUI.toggleVisible(mainFrame) end
 XAutoSpeak.isRunning = function() return isRunning end
+XAutoSpeak.start = function()
+    isRunning = not isRunning
+    lastUpdatetime = 0
+end
+XAutoSpeak.printList = printList
