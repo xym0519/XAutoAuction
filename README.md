@@ -27,9 +27,6 @@
 /xjewcount_close
 /xjewwords_close
 
-# 循环 \
-/xjewtool_update
-
 # 刷新
 /xjewtool_refresh
 
@@ -41,3 +38,17 @@
 /cast 选矿
 /use 萨隆邪铁矿石
 
+# 循环 1
+/xjewtool_update
+
+# 循环 2
+/xjewtool_skill
+
+# 循环 3
+/xjewtool_cast
+
+# 循环 4
+/xjewtool_magic
+
+# 循环 5
+/xjewtool_fang

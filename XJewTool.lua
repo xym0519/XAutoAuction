@@ -223,6 +223,3 @@ SLASH_XJEWTOOLMAGIC1 = '/xjewtool_magic'
 
 SlashCmdList['XJEWTOOLFANG'] = onUpdate
 SLASH_XJEWTOOLFANG1 = '/xjewtool_fang'
-
-SlashCmdList['XJEWTOOLFANG'] = onUpdate
-SLASH_XJEWTOOLFANG1 = '/xjewtool_fang'
