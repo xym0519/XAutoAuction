@@ -37,6 +37,7 @@
 /xjewtooldata_export
 
 # 选矿
+/xjewtool_update
 /cast 选矿
 /use 萨隆邪铁矿石
 
