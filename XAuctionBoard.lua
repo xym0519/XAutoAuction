@@ -298,12 +298,12 @@ end
 
 
 -- Events
-XAutoAuction.registerEventCallback(moduleName, 'ADDON_LOADED', function()
+XJewTool.registerEventCallback(moduleName, 'ADDON_LOADED', function()
     initUI()
     refreshUI()
 end)
 
-XAutoAuction.registerEventCallback(moduleName, 'CHAT_MSG_SYSTEM', function(self, event, text, context)
+XJewTool.registerEventCallback(moduleName, 'CHAT_MSG_SYSTEM', function(self, event, text, context)
     if XUtils.stringStartsWith(text, '你拍卖的') and XUtils.stringEndsWith(text, '已经售出。') then
         local itemName = string.sub(text, string.len('你拍卖的') + 1, string.len(text) - string.len('已经售出。'))
         addItem(itemName, 'deal')

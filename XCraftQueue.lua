@@ -88,7 +88,7 @@ initUI = function()
     local refreshButton = XUI.createButton(mainFrame, 35, '刷')
     refreshButton:SetPoint('LEFT', cleanButton, 'RIGHT', 5, 0)
     refreshButton:SetScript('OnClick', function()
-        XAutoAuction.refreshUI()
+        XJewTool.refreshUI()
     end)
 
     local rubbishCountLabel = XUI.createLabel(mainFrame, 30)
@@ -302,7 +302,7 @@ addItem = function(itemName, count, type)
         local tItem = XAuctionCenter.getItem(itemName)
         if tItem then
             local materialName = XInfo.getMaterialName(itemName)
-            local materialBuyPrice = XAutoBuy.getItemField(materialName, 'price', 0)
+            local materialBuyPrice = XBuy.getItemField(materialName, 'price', 0)
             deltaPrice = tItem['lastpriceother'] - materialBuyPrice
         end
 
@@ -451,7 +451,7 @@ local function onStart(...)
     if unit ~= 'player' then return end
 
     curTask['castid'] = castId
-    XAutoAuction.refreshUI()
+    XJewTool.refreshUI()
 end
 
 local function onSuccess(...)
@@ -473,7 +473,7 @@ local function onSuccess(...)
         curTask['count'] = curTask['count'] - 1
     end
 
-    XAutoAuction.refreshUI()
+    XJewTool.refreshUI()
 end
 
 local function onFailed(...)
@@ -485,34 +485,30 @@ local function onFailed(...)
 
     lastFailTime = time()
     finishCurTask()
-    XAutoAuction.refreshUI()
+    XJewTool.refreshUI()
 end
 
 -- Events
-XAutoAuction.registerEventCallback(moduleName, 'ADDON_LOADED', function()
+XJewTool.registerEventCallback(moduleName, 'ADDON_LOADED', function()
     initUI()
     refreshUI()
 end)
 
-XAutoAuction.registerUpdateCallback(moduleName, onUpdate)
+XJewTool.registerUpdateCallback(moduleName, onUpdate)
 
-XAutoAuction.registerEventCallback(moduleName, 'UNIT_SPELLCAST_START', onStart)
+XJewTool.registerEventCallback(moduleName, 'UNIT_SPELLCAST_START', onStart)
 
-XAutoAuction.registerEventCallback(moduleName, 'UNIT_SPELLCAST_SUCCEEDED', onSuccess)
+XJewTool.registerEventCallback(moduleName, 'UNIT_SPELLCAST_SUCCEEDED', onSuccess)
 
-XAutoAuction.registerEventCallback(moduleName, 'UNIT_SPELLCAST_FAILED', onFailed)
+XJewTool.registerEventCallback(moduleName, 'UNIT_SPELLCAST_FAILED', onFailed)
 
-XAutoAuction.registerEventCallback(moduleName, 'UNIT_SPELLCAST_INTERRUPTED', onFailed)
+XJewTool.registerEventCallback(moduleName, 'UNIT_SPELLCAST_INTERRUPTED', onFailed)
 
--- XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_SHOW', function(self, event, text, context)
---     if mainFrame then mainFrame:Show() end
--- end)
-
-XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_CLOSED', function()
+XJewTool.registerEventCallback(moduleName, 'AUCTION_HOUSE_CLOSED', function()
     if mainFrame then mainFrame:Hide() end
 end)
 
-XAutoAuction.registerRefreshCallback(moduleName, refreshUI)
+XJewTool.registerRefreshCallback(moduleName, refreshUI)
 
 -- Commands
 SlashCmdList['XCRAFTQUEUE'] = function()

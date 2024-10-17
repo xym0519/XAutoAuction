@@ -1,10 +1,10 @@
-XAutoAuction = {}
-XAutoAuctionFrame = XAPI.CreateFrame('Frame')
-local moduleName = 'XAutoAuction'
+XJewTool = {}
+XJewToolFrame = XAPI.CreateFrame('Frame')
+local moduleName = 'XJewTool'
 
 -- Global variables definition
-XAutoAuctionList = {}
-XAutoBuyList = {}
+XItemList = {}
+XBuyList = {}
 XSpeakWordList = {}
 XJewWordList = {}
 XJewWordSetting = {}
@@ -31,60 +31,60 @@ hintFrame.hintBg:SetColorTexture(1, 1, 0, 0.9)
 hintFrame:SetScript('OnMouseDown', function(self) self:Hide() end)
 
 -- Register system events
-XAutoAuctionFrame:RegisterEvent('ADDON_LOADED')
+XJewToolFrame:RegisterEvent('ADDON_LOADED')
 
-XAutoAuctionFrame:RegisterEvent('AUCTION_HOUSE_CLOSED')
-XAutoAuctionFrame:RegisterEvent('AUCTION_HOUSE_SHOW')
-XAutoAuctionFrame:RegisterEvent('AUCTION_ITEM_LIST_UPDATE')
+XJewToolFrame:RegisterEvent('AUCTION_HOUSE_CLOSED')
+XJewToolFrame:RegisterEvent('AUCTION_HOUSE_SHOW')
+XJewToolFrame:RegisterEvent('AUCTION_ITEM_LIST_UPDATE')
 
-XAutoAuctionFrame:RegisterEvent('CHAT_MSG_SYSTEM')
-XAutoAuctionFrame:RegisterEvent('CHAT_MSG_WHISPER')
+XJewToolFrame:RegisterEvent('CHAT_MSG_SYSTEM')
+XJewToolFrame:RegisterEvent('CHAT_MSG_WHISPER')
 
-XAutoAuctionFrame:RegisterEvent('BAG_UPDATE')
-XAutoAuctionFrame:RegisterEvent('GET_ITEM_INFO_RECEIVED')
+XJewToolFrame:RegisterEvent('BAG_UPDATE')
+XJewToolFrame:RegisterEvent('GET_ITEM_INFO_RECEIVED')
 
-XAutoAuctionFrame:RegisterEvent('UNIT_SPELLCAST_START')
-XAutoAuctionFrame:RegisterEvent('UNIT_SPELLCAST_SUCCEEDED')
-XAutoAuctionFrame:RegisterEvent('UNIT_SPELLCAST_FAILED')
-XAutoAuctionFrame:RegisterEvent('UNIT_SPELLCAST_INTERRUPTED')
+XJewToolFrame:RegisterEvent('UNIT_SPELLCAST_START')
+XJewToolFrame:RegisterEvent('UNIT_SPELLCAST_SUCCEEDED')
+XJewToolFrame:RegisterEvent('UNIT_SPELLCAST_FAILED')
+XJewToolFrame:RegisterEvent('UNIT_SPELLCAST_INTERRUPTED')
 
-XAutoAuctionFrame:RegisterEvent('UI_ERROR_MESSAGE')
+XJewToolFrame:RegisterEvent('UI_ERROR_MESSAGE')
 
-XAutoAuctionFrame:RegisterEvent('PLAYER_MONEY')
+XJewToolFrame:RegisterEvent('PLAYER_MONEY')
 
 -- Event registion interface
 -- OnUpdate callback
 local updateCallback = {}
-XAutoAuction.registerUpdateCallback = function(key, callback, interval)
+XJewTool.registerUpdateCallback = function(key, callback, interval)
     if interval == nil then interval = 1 end
     updateCallback[key] = { callback = callback, interval = interval, lastUpdateTime = 0 }
 end
 
 -- OnFastUpdate callback
 local fastUpdateCallback = {}
-XAutoAuction.registerFastUpdateCallback = function(key, callback)
+XJewTool.registerFastUpdateCallback = function(key, callback)
     fastUpdateCallback[key] = callback
 end
 
 -- onUIUpdate callback
 local uiUpdateCallback = {}
-XAutoAuction.registerUIUpdateCallback = function(key, callback, interval)
+XJewTool.registerUIUpdateCallback = function(key, callback, interval)
     if interval == nil then interval = 1 end
     uiUpdateCallback[key] = { callback = callback, interval = interval, lastUpdateTime = 0 }
 end
-XAutoAuction.unRegisterUIUpdateCallback = function(key)
+XJewTool.unRegisterUIUpdateCallback = function(key)
     uiUpdateCallback[key] = nil
 end
 
 -- Refresh callback
 local refreshCallback = {}
-XAutoAuction.registerRefreshCallback = function(key, callback)
+XJewTool.registerRefreshCallback = function(key, callback)
     refreshCallback[key] = callback
 end
 
 -- Other events callback
 local eventCallback = {}
-XAutoAuction.registerEventCallback = function(key, event, callback)
+XJewTool.registerEventCallback = function(key, event, callback)
     if not eventCallback[event] then
         eventCallback[event] = {}
     end
@@ -123,7 +123,7 @@ end
 local uiUpdateTimeList = {}
 local uiUpdateTimeItem = nil
 local deltaTime = 1
-XAutoAuctionFrame:SetScript('OnUpdate', function()
+XJewToolFrame:SetScript('OnUpdate', function()
     local time = time()
 
     if isRunning and lastActionTime + hintShowDelay < time then
@@ -166,10 +166,10 @@ XAutoAuctionFrame:SetScript('OnUpdate', function()
     end
 end)
 
-XAutoAuctionFrame:SetScript('OnEvent', function(...)
+XJewToolFrame:SetScript('OnEvent', function(...)
     local event, text = select(2, ...)
     if event == 'ADDON_LOADED' then
-        if text == 'XAutoAuction' then
+        if text == 'XJewTool' then
             if eventCallback[event] then
                 for _, callback in pairs(eventCallback[event]) do
                     if type(callback) == 'function' then
@@ -190,7 +190,7 @@ XAutoAuctionFrame:SetScript('OnEvent', function(...)
 end)
 
 -- Global functions
-XAutoAuction.refreshUI = function()
+XJewTool.refreshUI = function()
     for _, callback in pairs(refreshCallback) do
         if type(callback) == 'function' then
             callback()
@@ -198,16 +198,16 @@ XAutoAuction.refreshUI = function()
     end
 end
 
-XAutoAuction.registerUIUpdateCallback(moduleName, XAutoAuction.refreshUI, 1)
+XJewTool.registerUIUpdateCallback(moduleName, XJewTool.refreshUI, 1)
 
 
 -- Commands
-SlashCmdList['XAUTOAUCTIONREFRESH'] = function()
+SlashCmdList['XJEWTOOLREFRESH'] = function()
     XInfo.reloadCount()
     XInfo.reloadTradeSkill()
-    XAutoAuction.refreshUI()
+    XJewTool.refreshUI()
 end
-SLASH_XAUTOAUCTIONREFRESH1 = '/xautoauction_refresh'
+SLASH_XJEWTOOLREFRESH1 = '/xjewtool_refresh'
 
-SlashCmdList['XAUTOAUCTIONUPDATE'] = onUpdate
-SLASH_XAUTOAUCTIONUPDATE1 = '/xautoauction_update'
+SlashCmdList['XJEWTOOLUPDATE'] = onUpdate
+SLASH_XJEWTOOLUPDATE1 = '/xjewtool_update'

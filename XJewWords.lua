@@ -205,26 +205,26 @@ initUI = function()
         unitLabel:SetPoint('LEFT', price4Label, 'RIGHT', 0, 0)
         frame.unitLabel = unitLabel
 
-        local setAutoBuyButton = XUI.createButton(frame, 30, '>')
-        setAutoBuyButton:SetPoint('LEFT', unitLabel, 'RIGHT', 0, 0)
-        setAutoBuyButton:SetScript('OnClick', function()
+        local setBuyButton = XUI.createButton(frame, 30, '>')
+        setBuyButton:SetPoint('LEFT', unitLabel, 'RIGHT', 0, 0)
+        setBuyButton:SetScript('OnClick', function()
             local idx = displayPageNo * displayPageSize + i
             local item = XJewWordList[idx]
-            local autoBuyItem = XAutoBuy.getItem(item['itemname'])
-            if autoBuyItem then
-                autoBuyItem['price'] = item['price1'] * 10000
+            local buyItem = XBuy.getItem(item['itemname'])
+            if buyItem then
+                buyItem['price'] = item['price1'] * 10000
             end
             refreshUI()
         end)
 
         local setPriceButton = XUI.createButton(frame, 30, '<')
-        setPriceButton:SetPoint('LEFT', setAutoBuyButton, 'RIGHT', 0, 0)
+        setPriceButton:SetPoint('LEFT', setBuyButton, 'RIGHT', 0, 0)
         setPriceButton:SetScript('OnClick', function()
             local idx = displayPageNo * displayPageSize + i
             local item = XJewWordList[idx]
-            local autoBuyItem = XAutoBuy.getItem(item['itemname'])
-            if autoBuyItem then
-                local price = autoBuyItem['minbuyoutprice'];
+            local buyItem = XBuy.getItem(item['itemname'])
+            if buyItem then
+                local price = buyItem['minbuyoutprice'];
                 price = math.floor(price * 0.9 / 10000)
                 item['price1'] = price
             end
@@ -291,11 +291,11 @@ initUI = function()
     setButton:SetScript('OnClick', function(self)
         XUIConfirmDialog.show(moduleName, '确认', '是否设置喊话内容', function()
             local text = mainFrame.price1Editbox:GetText()
-            local wordItem = XAutoSpeak.getItem(1)
+            local wordItem = XSpeakWord.getItem(1)
             if wordItem ~= nil then
                 wordItem['text'] = text
             else
-                XAutoSpeak.addItem(text, true)
+                XSpeakWord.addItem(text, true)
             end
             xdebug.info('自动喊话设置成功: ' .. text)
         end)
@@ -380,11 +380,11 @@ refreshUI = function()
             local price2 = 0;
             local auctionMinPrice = 0
             local auctionMinBuyoutPrice = 0
-            local autoBuyItem = XAutoBuy.getItem(itemName)
-            if autoBuyItem then
-                price2 = autoBuyItem['price'] / 10000
-                auctionMinPrice = XUtils.round(autoBuyItem['minprice'] / 100) / 100
-                auctionMinBuyoutPrice = XUtils.round(autoBuyItem['minbuyoutprice'] / 100) / 100
+            local buyItem = XBuy.getItem(itemName)
+            if buyItem then
+                price2 = buyItem['price'] / 10000
+                auctionMinPrice = XUtils.round(buyItem['minprice'] / 100) / 100
+                auctionMinBuyoutPrice = XUtils.round(buyItem['minbuyoutprice'] / 100) / 100
             end
             local unit = item['unit']
             local ccount = item['ccount']
@@ -495,7 +495,7 @@ addItem = function(itemName, price1, unit)
 end
 
 -- Events
-XAutoAuction.registerEventCallback(moduleName, 'ADDON_LOADED', function()
+XJewTool.registerEventCallback(moduleName, 'ADDON_LOADED', function()
     initUI()
     refreshUI()
 end)

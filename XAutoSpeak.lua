@@ -1,5 +1,5 @@
-XAutoSpeak = {}
-local moduleName = 'XAutoSpeak'
+XSpeakWord = {}
+local moduleName = 'XSpeakWord'
 
 -- Variable definition
 local mainFrame = nil
@@ -32,7 +32,7 @@ local printList
 
 -- Function implemention
 initUI = function()
-    mainFrame = XUI.createFrame('XAutoSpeakMainFrame', 250, 80)
+    mainFrame = XUI.createFrame('XSpeakWordMainFrame', 250, 80)
     mainFrame.title:SetText('自动喊话')
     mainFrame:SetPoint('TOPRIGHT', UIParent, 'TOPRIGHT', -30, -50)
     mainFrame:Hide()
@@ -97,7 +97,7 @@ initUI = function()
 end
 
 initUI_Setting = function()
-    settingFrame = XUI.createFrame('XAutoSpeakSettingFrame', 500, 400)
+    settingFrame = XUI.createFrame('XSpeakWordSettingFrame', 500, 400)
     settingFrame.title:SetText('自动喊话设置')
     settingFrame:SetPoint('CENTER', UIParent, 'CENTER')
 
@@ -226,7 +226,7 @@ initUI_Setting = function()
 end
 
 initUI_Edit = function()
-    editFrame = XUI.createFrame('XAutoSpeakEditFrame', 400, 200, 'DIALOG')
+    editFrame = XUI.createFrame('XSpeakWordEditFrame', 400, 200, 'DIALOG')
     editFrame.title:SetText('自动喊话')
     editFrame:SetPoint('CENTER', UIParent, 'CENTER', 0, -50)
 
@@ -346,46 +346,46 @@ local function onUpdate()
 end
 
 -- Events
-XAutoAuction.registerEventCallback(moduleName, 'ADDON_LOADED', function()
+XJewTool.registerEventCallback(moduleName, 'ADDON_LOADED', function()
     initUI()
 end)
 
-XAutoAuction.registerEventCallback(moduleName, 'CHAT_MSG_WHISPER', function(self, event, message, sender, ...)
+XJewTool.registerEventCallback(moduleName, 'CHAT_MSG_WHISPER', function(self, event, message, sender, ...)
     if not hintFrame then return end
     hintFrame:Show()
 end)
 
-XAutoAuction.registerUpdateCallback(moduleName, onUpdate)
-XAutoAuction.registerUIUpdateCallback(moduleName, refreshUI, 1)
+XJewTool.registerUpdateCallback(moduleName, onUpdate)
+XJewTool.registerUIUpdateCallback(moduleName, refreshUI, 1)
 
 -- Commands
-SlashCmdList['XAUTOSPEAK'] = function()
+SlashCmdList['XSPEAKWORD'] = function()
     XUI.toggleVisible(mainFrame)
 end
-SLASH_XAUTOSPEAK1 = '/xautospeak'
+SLASH_XSPEAKWORD1 = '/xspeakword'
 
-SlashCmdList['XAUTOSPEAKSHOW'] = function()
+SlashCmdList['XSPEAKWORDSHOW'] = function()
     if mainFrame then mainFrame:Show() end
 end
-SLASH_XAUTOSPEAKSHOW1 = '/xautospeak_show'
+SLASH_XSPEAKWORDSHOW1 = '/xspeakword_show'
 
-SlashCmdList['XAUTOSPEAKCLOSE'] = function()
+SlashCmdList['XSPEAKWORDCLOSE'] = function()
     if mainFrame then mainFrame:Hide() end
 end
-SLASH_XAUTOSPEAKCLOSE1 = '/xautospeak_close'
+SLASH_XSPEAKWORDCLOSE1 = '/xspeakword_close'
 
-SlashCmdList['XAUTOSPEAKSEND'] = function()
+SlashCmdList['XSPEAKWORDSEND'] = function()
     send()
 end
-SLASH_XAUTOSPEAKSEND1 = '/xautospeak_send'
+SLASH_XSPEAKWORDSEND1 = '/xspeakword_send'
 
 -- Interface
-XAutoSpeak.addItem = addItem
-XAutoSpeak.getItem = getItem
-XAutoSpeak.toggle = function() XUI.toggleVisible(mainFrame) end
-XAutoSpeak.isRunning = function() return isRunning end
-XAutoSpeak.start = function()
+XSpeakWord.addItem = addItem
+XSpeakWord.getItem = getItem
+XSpeakWord.toggle = function() XUI.toggleVisible(mainFrame) end
+XSpeakWord.isRunning = function() return isRunning end
+XSpeakWord.start = function()
     isRunning = not isRunning
     lastUpdatetime = 0
 end
-XAutoSpeak.printList = printList
+XSpeakWord.printList = printList

@@ -46,7 +46,7 @@ GameTooltip:HookScript('OnTooltipSetItem', function(self)
     else
         minPriceOtherStr = XUI.Red .. minPriceOtherStr
     end
-    local materialBuyoutPrice = XAutoBuy.getItemField(materialName, 'minbuyoutprice', 9999999)
+    local materialBuyoutPrice = XBuy.getItemField(materialName, 'minbuyoutprice', 9999999)
     local materialBuyoutPriceStr = XUtils.priceToMoneyString(materialBuyoutPrice)
     local materialCostPrice = XInfo.getItemInfoField(materialName, 'costprice', 0)
     local materialCostPriceStr = XUtils.priceToMoneyString(materialCostPrice)

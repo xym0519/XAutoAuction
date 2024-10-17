@@ -243,7 +243,7 @@ XUtils.sendMail = function(itemName, stackCount, fullStack, receiver, money, sub
     end
 
     if money == 'auto' then
-        local price = XAutoBuy.getItemField(itemName, 'price', 0)
+        local price = XBuy.getItemField(itemName, 'price', 0)
         if price <= 0 then
             xdebug.error(itemName .. '没有设置单价')
             return
@@ -296,9 +296,9 @@ XUtils.receiveMail = function(itemName, receiveAll, onlyAH)
     local count = 0
 
     if receiveAll then
-        XAutoAuction.registerUIUpdateCallback(moduleName .. '_receiveMail', function()
+        XJewTool.registerUIUpdateCallback(moduleName .. '_receiveMail', function()
             if not XAPI.IsMailBoxOpen() then
-                XAutoAuction.unRegisterUIUpdateCallback(moduleName .. '_receiveMail')
+                XJewTool.unRegisterUIUpdateCallback(moduleName .. '_receiveMail')
                 return
             end
             local found = false
@@ -334,7 +334,7 @@ XUtils.receiveMail = function(itemName, receiveAll, onlyAH)
                 end
             end
             if not found or count >= emptyCount then
-                XAutoAuction.unRegisterUIUpdateCallback(moduleName .. '_receiveMail')
+                XJewTool.unRegisterUIUpdateCallback(moduleName .. '_receiveMail')
                 xdebug.info('收取' .. itemName .. ' ' .. count)
                 XInfo.reloadBag()
                 XInfo.reloadMail()
@@ -469,7 +469,7 @@ XUtils.moveToBank = function(itemNames, stackCount, exceptions, fullStack)
 end
 
 XUtils.sortBag = function()
-    XAutoAuction.registerUIUpdateCallback(moduleName .. '_sortBag', function()
+    XJewTool.registerUIUpdateCallback(moduleName .. '_sortBag', function()
         local notFullList = {}
         local lastItemList = {}
 
@@ -498,7 +498,7 @@ XUtils.sortBag = function()
             end
         end
         if not found then
-            XAutoAuction.unRegisterUIUpdateCallback(moduleName .. '_sortBag')
+            XJewTool.unRegisterUIUpdateCallback(moduleName .. '_sortBag')
             xdebug.info('整理完成')
         end
     end, 0.2)

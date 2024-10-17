@@ -48,7 +48,7 @@ initUI = function()
 end
 
 -- Events
-XAutoAuction.registerEventCallback(moduleName, 'ADDON_LOADED', function()
+XJewTool.registerEventCallback(moduleName, 'ADDON_LOADED', function()
     initUI()
 end)
 

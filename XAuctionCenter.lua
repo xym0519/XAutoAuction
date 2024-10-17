@@ -36,7 +36,7 @@ local curTask = nil
 local lastTaskFinishTime = 0
 
 local buyPriceEnabled = true
-local autoBuyEnabled = true
+local buyEnabled = true
 local multiSell = 1
 
 local queryIndex = 1
@@ -110,7 +110,7 @@ initData = function()
 end
 
 resetData = function()
-    for _, item in ipairs(XAutoAuctionList) do
+    for _, item in ipairs(XItemList) do
         resetItem(item)
     end
     isStarted = false
@@ -208,18 +208,18 @@ initUI = function()
     end)
     mainFrame.craftQueueButton = craftQueueButton
 
-    local autoSpeakButton = XUI.createButton(mainFrame, dft_buttonWidth, '喊话')
-    autoSpeakButton:SetPoint('RIGHT', craftQueueButton, 'LEFT', -3, 0)
-    autoSpeakButton:SetScript('OnClick', function()
+    local speakButton = XUI.createButton(mainFrame, dft_buttonWidth, '喊话')
+    speakButton:SetPoint('RIGHT', craftQueueButton, 'LEFT', -3, 0)
+    speakButton:SetScript('OnClick', function()
         if IsLeftShiftKeyDown() then
-            XAutoSpeak.start()
+            XSpeakWord.start()
         elseif IsLeftControlKeyDown() then
-            XAutoSpeak.printList()
+            XSpeakWord.printList()
         else
-            XAutoSpeak.toggle()
+            XSpeakWord.toggle()
         end
     end)
-    mainFrame.autoSpeakButton = autoSpeakButton
+    mainFrame.speakButton = speakButton
 
     local multiSellButton = XUI.createButton(mainFrame, dft_buttonWidth, '单倍')
     multiSellButton:SetPoint('TOPRIGHT', auctionBoardButton, 'BOTTOMRIGHT', 0, -2)
@@ -229,16 +229,16 @@ initUI = function()
     end)
     mainFrame.multiSellButton = multiSellButton
 
-    local autoBuyButton = XUI.createButton(mainFrame, dft_buttonWidth, '购买')
-    autoBuyButton:SetPoint('RIGHT', multiSellButton, 'LEFT', -3, 0)
-    autoBuyButton:SetScript('OnClick', function(self)
-        autoBuyEnabled = not autoBuyEnabled
+    local buyButton = XUI.createButton(mainFrame, dft_buttonWidth, '购买')
+    buyButton:SetPoint('RIGHT', multiSellButton, 'LEFT', -3, 0)
+    buyButton:SetScript('OnClick', function(self)
+        buyEnabled = not buyEnabled
         refreshUI()
     end)
-    mainFrame.autoBuyButton = autoBuyButton
+    mainFrame.buyButton = buyButton
 
     local buyPriceButton = XUI.createButton(mainFrame, dft_buttonWidth, '买价')
-    buyPriceButton:SetPoint('RIGHT', autoBuyButton, 'LEFT', -3, 0)
+    buyPriceButton:SetPoint('RIGHT', buyButton, 'LEFT', -3, 0)
     buyPriceButton:SetScript('OnClick', function(self)
         buyPriceEnabled = not buyPriceEnabled
         refreshUI()
@@ -261,7 +261,7 @@ initUI = function()
     resetButton:SetScript('OnClick', function()
         XUIConfirmDialog.show(moduleName, '确认', '是否确认重置所有数据', function()
             resetData()
-            XAutoBuy.reset()
+            XBuy.reset()
             refreshUI()
         end)
     end)
@@ -317,7 +317,7 @@ initUI = function()
     allToBagButton:SetPoint('LEFT', allToBankButton, 'RIGHT', dft_buttonGap, 0)
     allToBagButton:SetScript('OnClick', function()
         local itemNames = { '简易研磨器' }
-        for _, item in ipairs(XAutoAuctionList) do
+        for _, item in ipairs(XItemList) do
             table.insert(itemNames, item['itemname'])
         end
         XUtils.moveToBag(itemNames, nil, nil, false)
@@ -327,7 +327,7 @@ initUI = function()
     local refreshButton = XUI.createButton(mainFrame, dft_buttonWidth, '刷新')
     refreshButton:SetPoint('LEFT', allToBagButton, 'RIGHT', dft_sectionGap, 0)
     refreshButton:SetScript('OnClick', function()
-        XAutoAuction.refreshUI()
+        XJewTool.refreshUI()
     end)
 
     local printButton = XUI.createButton(mainFrame, dft_buttonWidth, '打印')
@@ -474,7 +474,7 @@ filterDisplayList = function()
     local filterWord = mainFrame.filterBox:GetText();
     local displayFilter = XAPI.UIDropDownMenu_GetText(mainFrame.filterDropDown)
     local dataList = {}
-    for i, item in ipairs(XAutoAuctionList) do
+    for i, item in ipairs(XItemList) do
         item.index = i
         local itemName = item['itemname']
         local materialName = XInfo.getMaterialName(itemName)
@@ -487,7 +487,7 @@ filterDisplayList = function()
         local minPriceOther = item['minpriceother']
         local basePrice = item['baseprice']
         local stackCount = item['stackcount']
-        local materialBuyPrice = XAutoBuy.getItemField(materialName, 'price', 0)
+        local materialBuyPrice = XBuy.getItemField(materialName, 'price', 0)
         local bagCount = XInfo.getBagItemCount(itemName)
         local mailCount = XInfo.getMailItemCount(itemName)
         local auctionCount = XInfo.getAuctionItemCount(itemName)
@@ -625,7 +625,7 @@ filterDisplayList = function()
         itemNameButton:SetScript('OnClick', itemNameClick)
         itemNameButton:SetScript("OnEnter", function(self)
             local tindex = self.frame.index
-            local titem = XAutoAuctionList[tindex];
+            local titem = XItemList[tindex];
             if not titem then return end
             local itemid = XInfo.getItemId(titem['itemname'])
             if itemid > 0 then
@@ -750,16 +750,16 @@ refreshUI = function()
         mainFrame.buyPriceButton:SetText(XUI.Red .. '买价')
     end
 
-    if autoBuyEnabled then
-        mainFrame.autoBuyButton:SetText(XUI.Green .. '购买')
+    if buyEnabled then
+        mainFrame.buyButton:SetText(XUI.Green .. '购买')
     else
-        mainFrame.autoBuyButton:SetText(XUI.Red .. '购买')
+        mainFrame.buyButton:SetText(XUI.Red .. '购买')
     end
 
-    if XAutoSpeak.isRunning() then
-        mainFrame.autoSpeakButton:SetText(XUI.Green .. '喊话')
+    if XSpeakWord.isRunning() then
+        mainFrame.speakButton:SetText(XUI.Green .. '喊话')
     else
-        mainFrame.autoSpeakButton:SetText(XUI.Red .. '喊话')
+        mainFrame.speakButton:SetText(XUI.Red .. '喊话')
     end
 
     if XCraftQueue.isRunning() then
@@ -851,7 +851,7 @@ refreshUI = function()
     end
     materialFrames = {}
     local enabledBuyList = {}
-    for _, item in ipairs(XAutoBuyList) do
+    for _, item in ipairs(XBuyList) do
         if item['enabled'] then
             table.insert(enabledBuyList, item)
         end
@@ -1089,7 +1089,7 @@ end
 
 stop = function()
     if curTask and curTask['action'] == 'query' then
-        local item = XAutoAuctionList[curTask['index']];
+        local item = XItemList[curTask['index']];
         resetItem(item)
     end
     isStarted = false
@@ -1132,11 +1132,11 @@ startNextTask = function()
     if buyPriceEnabled then
         if lastMaterialTaskTime + dft_materialTaskInterval < time() then
             lastMaterialTaskTime = time()
-            if #XAutoBuyList > 0 then
+            if #XBuyList > 0 then
                 local item = nil
-                for idx = 0, #XAutoBuyList - 1 do
-                    local tIndex = ((materialQueryIndex + idx) % #XAutoBuyList) + 1
-                    item = XAutoBuyList[tIndex]
+                for idx = 0, #XBuyList - 1 do
+                    local tIndex = ((materialQueryIndex + idx) % #XBuyList) + 1
+                    item = XBuyList[tIndex]
                     if item ~= nil then
                         if item['enabled'] then
                             materialQueryIndex = tIndex
@@ -1187,7 +1187,7 @@ addItem = function(itemName, basePrice, defaultPrice, stackCount)
         lastpriceother = 0,
     }
     resetItem(item)
-    table.insert(XAutoAuctionList, item)
+    table.insert(XItemList, item)
     refreshUI()
 end
 
@@ -1210,7 +1210,7 @@ resetItem = function(item, keepUpdateTime)
 end
 
 resetItemByName = function(itemName)
-    for _, item in ipairs(XAutoAuctionList) do
+    for _, item in ipairs(XItemList) do
         if item['itemname'] == itemName then
             resetItem(item)
             return
@@ -1219,7 +1219,7 @@ resetItemByName = function(itemName)
 end
 
 getItem = function(itemName)
-    for _, item in ipairs(XAutoAuctionList) do
+    for _, item in ipairs(XItemList) do
         if item['itemname'] == itemName then
             return item
         end
@@ -1240,7 +1240,7 @@ addQueryTaskByIndex = function(index, force)
         end
     end
 
-    local item = XAutoAuctionList[index];
+    local item = XItemList[index];
     if not item then return end
     local itemName = item['itemname']
 
@@ -1249,7 +1249,7 @@ addQueryTaskByIndex = function(index, force)
     local tItem = XAuctionCenter.getItem(itemName)
     if tItem then
         local materialName = XInfo.getMaterialName(itemName)
-        local materialBuyPrice = XAutoBuy.getItemField(materialName, 'price', 0)
+        local materialBuyPrice = XBuy.getItemField(materialName, 'price', 0)
         deltaPrice = tItem['lastpriceother'] - materialBuyPrice
     end
 
@@ -1303,7 +1303,7 @@ addQueryTaskByIndex = function(index, force)
 end
 
 addQueryTaskByItemName = function(itemName, force)
-    for i, item in ipairs(XAutoAuctionList) do
+    for i, item in ipairs(XItemList) do
         if item['itemname'] == itemName then
             addQueryTaskByIndex(i, force)
             return
@@ -1325,9 +1325,9 @@ getNextQueryTask = function()
     local nextTaskIndex = -1
 
     if queryStarFlag then
-        for idx = 0, #XAutoAuctionList - 1 do
-            local index = ((starQueryIndex + idx) % #XAutoAuctionList) + 1
-            local item = XAutoAuctionList[index]
+        for idx = 0, #XItemList - 1 do
+            local index = ((starQueryIndex + idx) % #XItemList) + 1
+            local item = XItemList[index]
             if item ~= nil then
                 if item['enabled'] and item['star'] then
                     starQueryIndex = index
@@ -1340,9 +1340,9 @@ getNextQueryTask = function()
     end
 
     if nextTaskIndex == -1 then
-        for idx = 0, #XAutoAuctionList - 1 do
-            local index = ((queryIndex + idx) % #XAutoAuctionList) + 1
-            local item = XAutoAuctionList[index]
+        for idx = 0, #XItemList - 1 do
+            local index = ((queryIndex + idx) % #XItemList) + 1
+            local item = XItemList[index]
             if item ~= nil then
                 if item['enabled'] and (not item['star']) then
                     queryIndex = index
@@ -1355,7 +1355,7 @@ getNextQueryTask = function()
     end
 
     if nextTaskIndex ~= -1 then
-        local item = XAutoAuctionList[nextTaskIndex];
+        local item = XItemList[nextTaskIndex];
         if not item then return end
 
         local task = {
@@ -1386,7 +1386,7 @@ addCraftQueue = function()
     XInfo.reloadBag()
     XInfo.reloadAuction()
     local count = 0
-    for idx, item in ipairs(XAutoAuctionList) do
+    for idx, item in ipairs(XItemList) do
         if item['enabled'] and item['cancraft'] then
             local inQuery = false
             if curTask and curTask['action'] == 'query' and curTask['index'] == idx then
@@ -1455,7 +1455,7 @@ cleanLower = function(targetItemName)
             local saleStatus = res[16]
 
             if saleStatus ~= 1 then
-                for _, item in ipairs(XAutoAuctionList) do
+                for _, item in ipairs(XItemList) do
                     if item['itemname'] == itemName then
                         if buyoutPrice / stackCount > item['minpriceother'] then
                             if targetItemName == nil then
@@ -1530,7 +1530,7 @@ cleanShort = function()
             if timeLeft < 2 then
                 XAPI.CancelAuction(i)
 
-                for _, item in ipairs(XAutoAuctionList) do
+                for _, item in ipairs(XItemList) do
                     if item['itemname'] == itemName then
                         resetItem(item)
                         xdebug.info('清理短期：' .. item['itemname'])
@@ -1552,7 +1552,7 @@ puton = function(isForce)
     XInfo.reloadAuction()
     local count = 0
     local queue = {}
-    for i, item in ipairs(XAutoAuctionList) do
+    for i, item in ipairs(XItemList) do
         if item['enabled'] then
             local bagCount = XInfo.getBagItemCount(item['itemname'])
             local validCount = getMyValidCount(item['itemname'])
@@ -1584,7 +1584,7 @@ putonNoPrice = function()
     local count = 0
     local starQueue = {}
     local unStarQueue = {}
-    for i, item in ipairs(XAutoAuctionList) do
+    for i, item in ipairs(XItemList) do
         if item['enabled'] then
             if item['minpriceother'] == dft_minPrice then
                 if item['star'] then
@@ -1610,7 +1610,7 @@ putonOld = function()
     local count = 0
     local starQueue = {}
     local unStarQueue = {}
-    for i, item in ipairs(XAutoAuctionList) do
+    for i, item in ipairs(XItemList) do
         if item['enabled'] then
             if time() - item['updatetime'] > dft_oldInterval then
                 if item['star'] then
@@ -1633,7 +1633,7 @@ putonOld = function()
 end
 
 printList = function()
-    XAutoAuction.refreshUI()
+    XJewTool.refreshUI()
     xdebug.info('----------')
     if (not curTask) and #taskList <= 0 then
         xdebug.info('暂无任务')
@@ -1642,7 +1642,7 @@ printList = function()
     for i = #taskList, 1, -1 do
         local task = taskList[i]
         if task['action'] == 'query' then
-            xdebug.info('[' .. i .. ']查询: ' .. XAutoAuctionList[task['index']]['itemname'])
+            xdebug.info('[' .. i .. ']查询: ' .. XItemList[task['index']]['itemname'])
         elseif task['action'] == 'material' then
             xdebug.info('[' .. i .. ']查询: ' .. task['itemname'])
         else
@@ -1651,7 +1651,7 @@ printList = function()
     end
     if curTask then
         if curTask['action'] == 'query' then
-            xdebug.info('当前任务：查询: ' .. XAutoAuctionList[curTask['index']]['itemname'])
+            xdebug.info('当前任务：查询: ' .. XItemList[curTask['index']]['itemname'])
         elseif curTask['action'] == 'material' then
             xdebug.info('当前任务：查询: ' .. curTask['itemname'])
         else
@@ -1670,7 +1670,7 @@ printItemsByName = function(key)
         key = string.gsub(key, '^%*', '')
     end
     xdebug.info('----------')
-    for _, item in ipairs(XAutoAuctionList) do
+    for _, item in ipairs(XItemList) do
         if XUtils.stringContains(item['itemname'], key) then
             if item['enabled'] ~= nil and item['enabled'] then
                 if all or (not item['star']) then
@@ -1692,7 +1692,7 @@ setPriceByName = function(itemName, basePrice, profitRate, isDealRate, confirm)
             itemName = string.gsub(itemName, '^%*', '')
         end
         xdebug.info('----------')
-        for _, item in ipairs(XAutoAuctionList) do
+        for _, item in ipairs(XItemList) do
             if XUtils.stringContains(item['itemname'], itemName) then
                 if item['enabled'] ~= nil and item['enabled'] then
                     if all or (not item['star']) then
@@ -1717,7 +1717,7 @@ end
 
 getMyValidCount = function(itemName)
     local count = 0
-    for _, item in ipairs(XAutoAuctionList) do
+    for _, item in ipairs(XItemList) do
         if item['itemname'] == itemName then
             count = #item['myvalidlist']
             break
@@ -1768,7 +1768,7 @@ checkRecipeClick = function(this)
             or XUtils.stringEndsWith(itemName, '天焰钻石')
             or XUtils.stringEndsWith(itemName, '大地侵攻钻石') then
             local existed = false
-            for _, item in ipairs(XAutoAuctionList) do
+            for _, item in ipairs(XItemList) do
                 if item['itemname'] == itemName then
                     if not item['enabled'] then
                         table.insert(disabledList, itemName)
@@ -1841,14 +1841,14 @@ end
 
 itemSortClick = function(this)
     local index = this.frame.index
-    XUISortDialog.show('XAuctionCenter_Sort', XAutoAuctionList, index, function()
+    XUISortDialog.show('XAuctionCenter_Sort', XItemList, index, function()
         filterDisplayList()
     end)
 end
 
 itemMailClick = function(this)
     local index = this.frame.index
-    local item = XAutoAuctionList[index];
+    local item = XItemList[index];
     if not item then return end
 
     local count = 5
@@ -1860,7 +1860,7 @@ end
 
 itemReceiveClick = function(this)
     local index = this.frame.index
-    local item = XAutoAuctionList[index];
+    local item = XItemList[index];
     if not item then return end
 
     if IsLeftShiftKeyDown() then
@@ -1873,7 +1873,7 @@ end
 
 itemToBankClick = function(this)
     local index = this.frame.index
-    local item = XAutoAuctionList[index];
+    local item = XItemList[index];
     if not item then return end
 
     if IsShiftKeyDown() then
@@ -1886,7 +1886,7 @@ end
 
 itemToBagClick = function(this)
     local index = this.frame.index
-    local item = XAutoAuctionList[index];
+    local item = XItemList[index];
     if not item then return end
 
     if IsShiftKeyDown() then
@@ -1899,7 +1899,7 @@ end
 
 itemNameClick = function(this)
     local index = this.frame.index
-    local item = XAutoAuctionList[index];
+    local item = XItemList[index];
     if not item then return end
 
     if IsLeftAltKeyDown() then
@@ -1919,18 +1919,18 @@ end
 
 itemDeleteClick = function(this)
     local index = this.frame.index
-    local item = XAutoAuctionList[index]
+    local item = XItemList[index]
     if not item then return end
 
     XUIConfirmDialog.show(moduleName, '删除', '是否确定删除：' .. item['itemname'], function()
-        table.remove(XAutoAuctionList, index)
+        table.remove(XItemList, index)
         filterDisplayList()
     end)
 end
 
 itemRubbishClick = function(this)
     local index = this.frame.index
-    local item = XAutoAuctionList[index]
+    local item = XItemList[index]
     if not item then return end
 
     XUIConfirmDialog.show(moduleName, '确认', '是否确认设为垃圾', function()
@@ -1942,7 +1942,7 @@ end
 
 itemSettingClick = function(this)
     local index = this.frame.index
-    local item = XAutoAuctionList[index]
+    local item = XItemList[index]
     if not item then return end
 
     XUIInputDialog.show(moduleName, function(data)
@@ -1973,7 +1973,7 @@ end
 
 itemEnableClick = function(this)
     local index = this.frame.index
-    local item = XAutoAuctionList[index];
+    local item = XItemList[index];
     if not item then return end
 
     if item['enabled'] ~= true then
@@ -1986,7 +1986,7 @@ end
 
 itemStarClick = function(this)
     local index = this.frame.index
-    local item = XAutoAuctionList[index];
+    local item = XItemList[index];
     if not item then return end
 
     if item['star'] == nil or item['star'] == false then
@@ -1999,7 +1999,7 @@ end
 
 itemCanCraftClick = function(this)
     local index = this.frame.index
-    local item = XAutoAuctionList[index];
+    local item = XItemList[index];
     if not item then return end
 
     item['cancraft'] = not item['cancraft']
@@ -2008,7 +2008,7 @@ end
 
 itemRefreshClick = function(this)
     local index = this.frame.index
-    local item = XAutoAuctionList[index];
+    local item = XItemList[index];
     if not item then return end
 
     addQueryTaskByIndex(index, IsShiftKeyDown())
@@ -2016,7 +2016,7 @@ end
 
 itemCleanClick = function(this)
     local index = this.frame.index
-    local item = XAutoAuctionList[index];
+    local item = XItemList[index];
     if not item then return end
 
     cleanLower(item['itemname'])
@@ -2063,7 +2063,7 @@ processQueryTask = function(task)
     XInfo.reloadBag()
     XInfo.reloadAuction()
     local index = task['index']
-    local item = XAutoAuctionList[index]
+    local item = XItemList[index]
     local auctionItem = XInfo.getAuctionItem(item['itemname'])
     local myMaxPrice = 0
     if auctionItem then myMaxPrice = auctionItem['maxprice'] end
@@ -2277,7 +2277,7 @@ processMaterialQueryTask = function(task)
             itemIndex = itemIndex + 1
         end
 
-        for _, item in ipairs(XAutoBuyList) do
+        for _, item in ipairs(XBuyList) do
             if task['itemname'] == item['itemname'] then
                 item['minbuyoutprice'] = minBuyoutPrice
                 item['updatetime'] = time()
@@ -2285,7 +2285,7 @@ processMaterialQueryTask = function(task)
             end
         end
 
-        if autoBuyEnabled then
+        if buyEnabled then
             task['status'] = 'buying'
         else
             finishTask()
@@ -2293,7 +2293,7 @@ processMaterialQueryTask = function(task)
             return
         end
     elseif task['status'] == 'buying' then
-        local buyingItem = XAutoBuy.getItem(task['itemname'])
+        local buyingItem = XBuy.getItem(task['itemname'])
         if buyingItem == nil then
             finishTask()
             startNextTask()
@@ -2397,31 +2397,26 @@ local function onFastUpdate()
 end
 
 -- Events
-XAutoAuction.registerEventCallback(moduleName, 'ADDON_LOADED', function()
+XJewTool.registerEventCallback(moduleName, 'ADDON_LOADED', function()
     initData()
     initUI()
     filterDisplayList()
     refreshUI()
 end)
 
-XAutoAuction.registerEventCallback(moduleName, 'AUCTION_ITEM_LIST_UPDATE', onQueryItemListUpdate)
-XAutoAuction.registerEventCallback(moduleName, 'UI_ERROR_MESSAGE', function(_, _, code, message)
+XJewTool.registerEventCallback(moduleName, 'AUCTION_ITEM_LIST_UPDATE', onQueryItemListUpdate)
+XJewTool.registerEventCallback(moduleName, 'UI_ERROR_MESSAGE', function(_, _, code, message)
     if code == 28 and message == '未找到指定物品' then
         onMaterialBuyFailed()
     end
 end)
 
--- XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_SHOW', function(self, event, text, context)
---     stop()
---     if mainFrame then mainFrame:Show() end
--- end)
-
-XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_CLOSED', function()
+XJewTool.registerEventCallback(moduleName, 'AUCTION_HOUSE_CLOSED', function()
     stop()
     if mainFrame then mainFrame:Hide() end
 end)
 
-XAutoAuction.registerEventCallback(moduleName, 'CHAT_MSG_SYSTEM', function(...)
+XJewTool.registerEventCallback(moduleName, 'CHAT_MSG_SYSTEM', function(...)
     local text = select(3, ...)
     if text == ERR_AUCTION_STARTED then
         -- TODO 这里干嘛用的
@@ -2429,8 +2424,8 @@ XAutoAuction.registerEventCallback(moduleName, 'CHAT_MSG_SYSTEM', function(...)
     elseif XUtils.stringStartsWith(text, '你拍卖的') and XUtils.stringEndsWith(text, '已经售出。') then
         local itemname = string.sub(text, string.len('你拍卖的') + 1, string.len(text) - string.len('已经售出。'))
         local tindex = nil
-        for i = 1, #XAutoAuctionList do
-            if XAutoAuctionList[i]['itemname'] == itemname then
+        for i = 1, #XItemList do
+            if XItemList[i]['itemname'] == itemname then
                 tindex = i
                 break
             end
@@ -2442,10 +2437,10 @@ XAutoAuction.registerEventCallback(moduleName, 'CHAT_MSG_SYSTEM', function(...)
     end
 end)
 
-XAutoAuction.registerUpdateCallback(moduleName, onUpdate)
-XAutoAuction.registerFastUpdateCallback(moduleName, onFastUpdate)
+XJewTool.registerUpdateCallback(moduleName, onUpdate)
+XJewTool.registerFastUpdateCallback(moduleName, onFastUpdate)
 
-XAutoAuction.registerRefreshCallback(moduleName, refreshUI)
+XJewTool.registerRefreshCallback(moduleName, refreshUI)
 
 -- Commands
 SlashCmdList['XAUCTIONCENTER'] = function()

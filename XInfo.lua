@@ -546,17 +546,17 @@ local function onItemInfoReceived(...)
 end
 
 -- Events
-XAutoAuction.registerEventCallback(moduleName, 'ADDON_LOADED', function()
+XJewTool.registerEventCallback(moduleName, 'ADDON_LOADED', function()
     XInfo.reloadBag()
 end)
 
-XAutoAuction.registerEventCallback(moduleName, 'BAG_UPDATE', XInfo.reloadBag)
+XJewTool.registerEventCallback(moduleName, 'BAG_UPDATE', XInfo.reloadBag)
 
-XAutoAuction.registerEventCallback(moduleName, 'GET_ITEM_INFO_RECEIVED', onItemInfoReceived)
+XJewTool.registerEventCallback(moduleName, 'GET_ITEM_INFO_RECEIVED', onItemInfoReceived)
 
-XAutoAuction.registerUpdateCallback(moduleName, onUpdate, dft_interval)
+XJewTool.registerUpdateCallback(moduleName, onUpdate, dft_interval)
 
-XAutoAuction.registerRefreshCallback(moduleName, function()
+XJewTool.registerRefreshCallback(moduleName, function()
     XInfo.reloadBag()
     XInfo.reloadAuction()
 end)

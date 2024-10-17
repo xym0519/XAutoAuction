@@ -350,7 +350,7 @@ printPrice = function(isAll)
     local str = ''
     local total = 0
     for _, itemName in ipairs(itemList) do
-        local price = XAutoBuy.getItemField(itemName, 'price', 0) / 10000
+        local price = XBuy.getItemField(itemName, 'price', 0) / 10000
         local count = 0
         if isAll then
             count = XInfo.getItemTotalCount(itemName)
@@ -371,16 +371,16 @@ printPrice = function(isAll)
 end
 
 -- Events
-XAutoAuction.registerEventCallback(moduleName, 'ADDON_LOADED', function()
+XJewTool.registerEventCallback(moduleName, 'ADDON_LOADED', function()
     initUI()
     refreshUI()
 end)
 
-XAutoAuction.registerEventCallback(moduleName, 'AUCTION_HOUSE_CLOSED', function()
+XJewTool.registerEventCallback(moduleName, 'AUCTION_HOUSE_CLOSED', function()
     if mainFrame then mainFrame:Hide() end
 end)
 
-XAutoAuction.registerRefreshCallback(moduleName, refreshUI)
+XJewTool.registerRefreshCallback(moduleName, refreshUI)
 
 -- Commands
 SlashCmdList['XJEWCOUNT'] = function()

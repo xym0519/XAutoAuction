@@ -613,7 +613,7 @@ end
 XAPI.Auctionator_Search = function(search)
     if Auctionator then
         if Auctionator.API.v1.MultiSearch then
-            return Auctionator.API.v1.MultiSearch('XAutoAuction', { search })
+            return Auctionator.API.v1.MultiSearch('XJewTool', { search })
         else
             xdebug.error('简单搜索接口未找到')
         end
@@ -626,7 +626,7 @@ end
 XAPI.Auctionator_SearchExact = function(search)
     if Auctionator then
         if Auctionator.API.v1.MultiSearchExact then
-            return Auctionator.API.v1.MultiSearchExact('XAutoAuction', { search })
+            return Auctionator.API.v1.MultiSearchExact('XJewTool', { search })
         else
             xdebug.error('精确搜索接口未找到')
         end
@@ -639,7 +639,7 @@ end
 XAPI.Auctionator_GetAuctionPriceByItemId = function(itemId)
     if Auctionator then
         if Auctionator.API.v1.MultiSearchExact then
-            return Auctionator.API.v1.GetAuctionPriceByItemID('XAutoAuction', itemId)
+            return Auctionator.API.v1.GetAuctionPriceByItemID('XJewTool', itemId)
         else
             xdebug.error('获取价格接口未找到')
         end
