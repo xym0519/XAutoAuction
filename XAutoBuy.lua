@@ -20,6 +20,7 @@ local refreshUI
 local getItem
 local getItemField
 local addItem
+local reset
 
 -- Function implemention
 initUI = function()
@@ -50,11 +51,7 @@ initUI = function()
     local resetButton = XUI.createButton(mainFrame, dft_buttonWidth, '清')
     resetButton:SetPoint('LEFT', nextButton, 'RIGHT', dft_buttonGap, 0)
     resetButton:SetScript('OnClick', function()
-        for _, item in ipairs(XAutoBuyList) do
-            item['minbuyoutprice'] = dft_minPrice
-            item['updatetime'] = 0
-        end
-        refreshUI()
+        reset()
     end)
 
     local refreshButton = XUI.createButton(mainFrame, dft_buttonWidth, '刷')
@@ -346,6 +343,14 @@ addItem = function(itemName, price)
     refreshUI()
 end
 
+reset = function()
+    for _, item in ipairs(XAutoBuyList) do
+        item['minbuyoutprice'] = dft_minPrice
+        item['updatetime'] = 0
+    end
+    refreshUI()
+end
+
 -- Events
 XAutoAuction.registerEventCallback(moduleName, 'ADDON_LOADED', function()
     initUI()
@@ -377,3 +382,4 @@ SLASH_XAUTOBUYHIDE1 = '/xautobuy_close'
 -- Interface
 XAutoBuy.getItem = getItem
 XAutoBuy.getItemField = getItemField
+XAutoBuy.reset = reset

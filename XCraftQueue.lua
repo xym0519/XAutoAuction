@@ -44,7 +44,7 @@ initUI = function()
     local startButton = XUI.createButton(mainFrame, 35, '起')
     startButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -30)
     startButton:SetScript('OnClick', function()
-        start()
+        start(true)
     end)
     mainFrame.startButton = startButton
 
@@ -336,12 +336,17 @@ finishCurTask = function()
     lastTaskFinishTime = time()
 end
 
-start = function()
+start = function(_reset)
     if not isRunning then
         if not XInfo.reloadTradeSkill('珠宝加工') then
             refreshUI()
             return
         end
+    end
+    if _reset == nil then _reset = false end
+    if _reset then
+        finishCurTask()
+        craftQueue = {}
     end
     isRunning = not isRunning
     refreshUI()
