@@ -211,3 +211,18 @@ SLASH_XJEWTOOLREFRESH1 = '/xjewtool_refresh'
 
 SlashCmdList['XJEWTOOLUPDATE'] = onUpdate
 SLASH_XJEWTOOLUPDATE1 = '/xjewtool_update'
+
+SlashCmdList['XJEWTOOLSKILL'] = onUpdate
+SLASH_XJEWTOOLSKILL1 = '/xjewtool_skill'
+
+SlashCmdList['XJEWTOOLCAST'] = onUpdate
+SLASH_XJEWTOOLCAST1 = '/xjewtool_cast'
+
+SlashCmdList['XJEWTOOLMAGIC'] = onUpdate
+SLASH_XJEWTOOLMAGIC1 = '/xjewtool_magic'
+
+SlashCmdList['XJEWTOOLFANG'] = onUpdate
+SLASH_XJEWTOOLFANG1 = '/xjewtool_fang'
+
+SlashCmdList['XJEWTOOLFANG'] = onUpdate
+SLASH_XJEWTOOLFANG1 = '/xjewtool_fang'
