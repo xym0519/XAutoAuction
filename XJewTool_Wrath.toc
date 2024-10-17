@@ -11,7 +11,7 @@ XUtils.lua
 XDebug.lua
 XAPI.lua
 XUI.lua
-XAutoAuction.lua
+XJewTool.lua
 XExternal.lua
 
 XUIInputDialog.lua
@@ -20,11 +20,11 @@ XUIConfirmDialog.lua
 
 XInfo.lua
 XAuctionTip.lua
-XAutoSpeak.lua
+XSpeakWord.lua
 XAuctionBoard.lua
 XCraftQueue.lua
 XAuctionCenter.lua
-XAutoBuy.lua
+XBuy.lua
 XJewWords.lua
 XJewCount.lua
 
