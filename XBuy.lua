@@ -42,7 +42,7 @@ initUI = function()
     local nextButton = XUI.createButton(mainFrame, dft_buttonWidth, '下')
     nextButton:SetPoint('LEFT', preButton, 'RIGHT', dft_buttonGap, 0)
     nextButton:SetScript('OnClick', function()
-        if displayPageNo < math.ceil(#XBuyList / displayPageSize) - 1 then
+        if displayPageNo < math.ceil(#XBuyItemList / displayPageSize) - 1 then
             displayPageNo = displayPageNo + 1
             refreshUI()
         end
@@ -82,7 +82,7 @@ initUI = function()
     importButton:SetPoint('LEFT', settingButton, 'RIGHT', dft_buttonGap, 0)
     importButton:SetScript('OnClick', function()
         XUIConfirmDialog.show(moduleName, '确认', '确认从Auctionator导入', function()
-            for _, item in ipairs(XBuyList) do
+            for _, item in ipairs(XBuyItemList) do
                 if item['enabled'] then
                     local itemId = XInfo.getItemInfoField(item['itemname'], 'itemid')
                     local price = XAPI.Auctionator_GetAuctionPriceByItemId(itemId)
@@ -111,7 +111,7 @@ initUI = function()
         indexButton:SetPoint('LEFT', frame, 'LEFT', 15, 0)
         indexButton:SetScript('OnClick', function()
             local idx = displayPageNo * displayPageSize + i
-            XUISortDialog.show('XBuy_Sort', XBuyList, idx, function()
+            XUISortDialog.show('XBuy_Sort', XBuyItemList, idx, function()
                 refreshUI()
             end)
         end)
@@ -125,7 +125,7 @@ initUI = function()
         itemNameButton:SetPoint('LEFT', icon, 'RIGHT', 3, 0)
         itemNameButton:SetScript('OnClick', function()
             local idx = displayPageNo * displayPageSize + i
-            displaySettingItem = XBuyList[idx]
+            displaySettingItem = XBuyItemList[idx]
 
             if IsLeftControlKeyDown() then
                 XInfo.printBuyHistory(displaySettingItem['itemname'])
@@ -150,7 +150,7 @@ initUI = function()
         end)
         itemNameButton:SetScript("OnEnter", function(self)
             local idx = displayPageNo * displayPageSize + i
-            local item = XBuyList[idx]
+            local item = XBuyItemList[idx]
             if not item then return end
             local itemid = XInfo.getItemId(item['itemname'])
             if itemid > 0 then
@@ -183,12 +183,12 @@ initUI = function()
         deleteButton:SetPoint('LEFT', label4, 'RIGHT', 3, 0)
         deleteButton:SetScript('OnClick', function()
             local idx = displayPageNo * displayPageSize + i
-            if idx <= #XBuyList then
+            if idx <= #XBuyItemList then
                 XUIConfirmDialog.show(moduleName,
                     '确认删除',
-                    '是否确认删除：' .. XBuyList[idx]['itemname'],
+                    '是否确认删除：' .. XBuyItemList[idx]['itemname'],
                     function()
-                        table.remove(XBuyList, idx)
+                        table.remove(XBuyItemList, idx)
                         refreshUI()
                     end)
             end
@@ -198,7 +198,7 @@ initUI = function()
         enableButton:SetPoint('LEFT', deleteButton, 'RIGHT', 1, 0)
         enableButton:SetScript('OnClick', function(self)
             local idx = displayPageNo * displayPageSize + i
-            local item = XBuyList[idx]
+            local item = XBuyItemList[idx]
             if not item then return end
             item['enabled'] = not item['enabled']
             refreshUI()
@@ -209,7 +209,7 @@ initUI = function()
         setPriceButton:SetPoint('LEFT', enableButton, 'RIGHT', 1, 0)
         setPriceButton:SetScript('OnClick', function(self)
             local idx = displayPageNo * displayPageSize + i
-            local item = XBuyList[idx]
+            local item = XBuyItemList[idx]
             if not item then return end
             XAuctionCenter.printItemsByName('*' .. item['itemname'])
             local price = item['minbuyoutprice'];
@@ -258,15 +258,15 @@ refreshUI = function()
     if not mainFrame:IsVisible() then return end
 
     mainFrame.title:SetText('自动购买 (' .. (displayPageNo + 1) .. '/'
-        .. (math.ceil(#XBuyList / displayPageSize)) .. ')')
+        .. (math.ceil(#XBuyItemList / displayPageSize)) .. ')')
 
     XInfo.reloadBag()
 
     for i = 1, displayPageSize do
         local frame = displayFrameList[i]
         local idx = displayPageNo * displayPageSize + i
-        if idx <= #XBuyList then
-            local item = XBuyList[idx]
+        if idx <= #XBuyItemList then
+            local item = XBuyItemList[idx]
             local itemName = item['itemname']
             local itemId = XInfo.getItemId(itemName)
 
@@ -314,7 +314,7 @@ refreshUI = function()
 end
 
 getItem = function(itemName)
-    for _, item in ipairs(XBuyList) do
+    for _, item in ipairs(XBuyItemList) do
         if item['itemname'] == itemName then
             return item
         end
@@ -339,12 +339,12 @@ addItem = function(itemName, price)
         minprice = dft_minPrice,
         updatetime = 0
     }
-    table.insert(XBuyList, item)
+    table.insert(XBuyItemList, item)
     refreshUI()
 end
 
 reset = function()
-    for _, item in ipairs(XBuyList) do
+    for _, item in ipairs(XBuyItemList) do
         item['minbuyoutprice'] = dft_minPrice
         item['updatetime'] = 0
     end

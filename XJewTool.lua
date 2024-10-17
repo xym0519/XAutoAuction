@@ -4,7 +4,7 @@ local moduleName = 'XJewTool'
 
 -- Global variables definition
 XItemList = {}
-XBuyList = {}
+XBuyItemList = {}
 XSpeakWordList = {}
 XJewWordList = {}
 XJewWordSetting = {}

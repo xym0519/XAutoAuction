@@ -851,7 +851,7 @@ refreshUI = function()
     end
     materialFrames = {}
     local enabledBuyList = {}
-    for _, item in ipairs(XBuyList) do
+    for _, item in ipairs(XBuyItemList) do
         if item['enabled'] then
             table.insert(enabledBuyList, item)
         end
@@ -1132,11 +1132,11 @@ startNextTask = function()
     if buyPriceEnabled then
         if lastMaterialTaskTime + dft_materialTaskInterval < time() then
             lastMaterialTaskTime = time()
-            if #XBuyList > 0 then
+            if #XBuyItemList > 0 then
                 local item = nil
-                for idx = 0, #XBuyList - 1 do
-                    local tIndex = ((materialQueryIndex + idx) % #XBuyList) + 1
-                    item = XBuyList[tIndex]
+                for idx = 0, #XBuyItemList - 1 do
+                    local tIndex = ((materialQueryIndex + idx) % #XBuyItemList) + 1
+                    item = XBuyItemList[tIndex]
                     if item ~= nil then
                         if item['enabled'] then
                             materialQueryIndex = tIndex
@@ -2277,7 +2277,7 @@ processMaterialQueryTask = function(task)
             itemIndex = itemIndex + 1
         end
 
-        for _, item in ipairs(XBuyList) do
+        for _, item in ipairs(XBuyItemList) do
             if task['itemname'] == item['itemname'] then
                 item['minbuyoutprice'] = minBuyoutPrice
                 item['updatetime'] = time()

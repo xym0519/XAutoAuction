@@ -4,7 +4,7 @@
 ## Author: Broche
 ## Notes: 珠宝小工具(V3)
 ## SavedVariables: XInfoBagList, XInfoBankList, XInfoMailList
-## SavedVariablesPerCharacter: XInfoTradeSkillList, XSpeakWordList, XItemList, XAutoAuctionList, XBuyList, XAutoBuyList, XJewWordList, XJewWordSetting, XAuctionBoardList, XFrameLevel
+## SavedVariablesPerCharacter: XInfoTradeSkillList, XSpeakWordList, XItemList, XBuyItemList, XJewWordList, XJewWordSetting, XAuctionBoardList, XFrameLevel
 ## Dependencies: XJewTool_Data
 
 XUtils.lua
