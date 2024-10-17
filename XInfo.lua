@@ -312,11 +312,11 @@ XInfo.reloadTradeSkill = function(type)
     return true
 end
 
--- Auction Info
+-- Item Info
 XInfo.getItemInfo = function(itemName)
-    if XAuctionInfoList then
-        if XAuctionInfoList[itemName] then
-            return XAuctionInfoList[itemName]
+    if XItemInfoList then
+        if XItemInfoList[itemName] then
+            return XItemInfoList[itemName]
         end
     end
     return nil

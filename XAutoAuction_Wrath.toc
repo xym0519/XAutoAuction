@@ -1,11 +1,11 @@
 ## Interface: 40400
 ## Version: 1.0.0
-## Title: XAutoAuction
+## Title: XJewTool
 ## Author: Broche
-## Notes: 自动拍卖(V3)
+## Notes: 珠宝小工具(V3)
 ## SavedVariables: XInfoBagList, XInfoBankList, XInfoMailList
 ## SavedVariablesPerCharacter: XInfoTradeSkillList, XSpeakWordList, XAutoAuctionList, XAutoBuyList, XJewWordList, XJewWordSetting, XAuctionBoardList, XFrameLevel
-## Dependencies: XAutoAuction_Data
+## Dependencies: XJewTool_Data
 
 XUtils.lua
 XDebug.lua

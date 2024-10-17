@@ -107,7 +107,7 @@ end
 XExternal.updateItemInfo = function(itemName, itemId, itemLink, category, class, vendorPrice, quality, level, icon)
     if not itemName then return end
     if not XItemUpdateList then return end
-    if not XAuctionInfoList then return end
+    if not XItemInfoList then return end
 
     if not itemId then itemId = -1 end
     if not itemLink then itemLink = '' end
@@ -118,8 +118,8 @@ XExternal.updateItemInfo = function(itemName, itemId, itemLink, category, class,
     if not level then level = -1 end
     if not icon then icon = -1 end
 
-    if XAuctionInfoList[itemName] then
-        local auctionInfo = XAuctionInfoList[itemName]
+    if XItemInfoList[itemName] then
+        local auctionInfo = XItemInfoList[itemName]
         if auctionInfo.itemid and auctionInfo.itemid > 0 then
             if auctionInfo.itemlink and auctionInfo.itemlink ~= '' then
                 if itemId and itemId > 0 then
