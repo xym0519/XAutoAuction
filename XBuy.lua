@@ -25,7 +25,7 @@ local itemChanged
 
 -- Function implemention
 initUI = function()
-    mainFrame = XUI.createFrame('XBuyMainFrame', 570, 425)
+    mainFrame = XUI.createFrame('XBuyMainFrame', 655, 425)
     mainFrame.title:SetText('自动购买')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
     mainFrame:Hide()
@@ -68,32 +68,19 @@ initUI = function()
         XUIInputDialog.show(moduleName, function(data)
             local name = nil
             local price = nil
+            local sellPrice = nil
             for _, item in ipairs(data) do
                 if item.Name == '物品' then name = item.Value end
-                if item.Name == '价格' then price = tonumber(item.Value) end
+                if item.Name == '收购价格' then price = tonumber(item.Value) end
+                if item.Name == '出售价格' then sellPrice = tonumber(item.Value) end
             end
-            if name and price then
-                addItem(name, price)
+            if name and price and sellPrice then
+                addItem(name, price, sellPrice)
                 refreshUI()
             end
-        end, { { Name = '物品' }, { Name = '价格' } }, '自动购买设置')
+        end, { { Name = '物品' }, { Name = '收购价格' }, { Name = '出售价格' } }, '购买设置')
     end)
 
-    local importButton = XUI.createButton(mainFrame, dft_buttonWidth, '导')
-    importButton:SetPoint('LEFT', settingButton, 'RIGHT', dft_buttonGap, 0)
-    importButton:SetScript('OnClick', function()
-        XUIConfirmDialog.show(moduleName, '确认', '确认从Auctionator导入', function()
-            for _, item in ipairs(XBuyItemList) do
-                if item['enabled'] then
-                    local itemId = XInfo.getItemInfoField(item['itemname'], 'itemid')
-                    local price = XAPI.Auctionator_GetAuctionPriceByItemId(itemId)
-                    item['minbuyoutprice'] = price
-                    item['updatetime'] = time()
-                end
-            end
-            refreshUI()
-        end)
-    end)
 
     local lastWidget = preButton
     for i = 1, displayPageSize do
@@ -135,17 +122,24 @@ initUI = function()
                     function(data)
                         local name = nil
                         local price = nil
+                        local sellPrice = nil
                         for _, item in ipairs(data) do
                             if item.Name == '物品' then name = item.Value end
-                            if item.Name == '价格' then price = tonumber(item.Value) end
+                            if item.Name == '收购价格' then price = tonumber(item.Value) end
+                            if item.Name == '出售价格' then sellPrice = tonumber(item.Value) end
                         end
-                        if name and price then
+                        if name and price and sellPrice then
                             displaySettingItem['itemname'] = name
                             displaySettingItem['price'] = price
+                            displaySettingItem['sellprice'] = sellPrice
                             refreshUI()
                         end
                     end,
-                    { { Name = '物品', Value = displaySettingItem['itemname'] }, { Name = '价格', Value = displaySettingItem['price'] } },
+                    {
+                        { Name = '物品', Value = displaySettingItem['itemname'] },
+                        { Name = '收购价格', Value = displaySettingItem['price'] },
+                        { Name = '出售价格', Value = displaySettingItem['sellprice'] }
+                    },
                     '自动购买设置')
             end
         end)
@@ -164,24 +158,28 @@ initUI = function()
         end)
         frame.itemNameButton = itemNameButton
 
-        local labelt = XUI.createLabel(frame, 50, '')
-        labelt:SetPoint('LEFT', itemNameButton, 'RIGHT', 8, 0)
-        frame.labelt = labelt
+        local labelTime = XUI.createLabel(frame, 50, '')
+        labelTime:SetPoint('LEFT', itemNameButton, 'RIGHT', 8, 0)
+        frame.labelTime = labelTime
 
-        local label = XUI.createLabel(frame, 50, '')
-        label:SetPoint('LEFT', labelt, 'RIGHT', 0, 0)
-        frame.label = label
+        local labelCount = XUI.createLabel(frame, 65, '')
+        labelCount:SetPoint('LEFT', labelTime, 'RIGHT', 0, 0)
+        frame.labelCount = labelCount
 
-        local label2 = XUI.createLabel(frame, 55, '')
-        label2:SetPoint('LEFT', label, 'RIGHT', 0, 0)
-        frame.label2 = label2
+        local labelPrice = XUI.createLabel(frame, 60, '')
+        labelPrice:SetPoint('LEFT', labelCount, 'RIGHT', 0, 0)
+        frame.labelPrice = labelPrice
 
-        local label4 = XUI.createLabel(frame, 55, '')
-        label4:SetPoint('LEFT', label2, 'RIGHT', 0, 0)
-        frame.label4 = label4
+        local labelSellPrice = XUI.createLabel(frame, 60, '')
+        labelSellPrice:SetPoint('LEFT', labelPrice, 'RIGHT', 0, 0)
+        frame.labelSellPrice = labelSellPrice
+
+        local labelCurPrice = XUI.createLabel(frame, 60, '')
+        labelCurPrice:SetPoint('LEFT', labelSellPrice, 'RIGHT', 0, 0)
+        frame.labelCurPrice = labelCurPrice
 
         local deleteButton = XUI.createButton(frame, 32, '删')
-        deleteButton:SetPoint('LEFT', label4, 'RIGHT', 3, 0)
+        deleteButton:SetPoint('LEFT', labelCurPrice, 'RIGHT', 3, 0)
         deleteButton:SetScript('OnClick', function()
             local idx = displayPageNo * displayPageSize + i
             if idx <= #XBuyItemList then
@@ -274,35 +272,39 @@ refreshUI = function()
             local itemId = XInfo.getItemId(itemName)
 
             local price = item['price']
-            local priceStr = XUI.White .. XUtils.priceToString(price)
+            local priceStr = 'B' .. XUtils.priceToString(price)
+
+            local sellPrice = item['sellprice']
+            local sellPriceStr = 'S' .. XUtils.priceToString(sellPrice)
 
             local minBuyoutPrice = dft_minPrice
             if item['minbuyoutprice'] then minBuyoutPrice = item['minbuyoutprice'] end
-            local minBuyoutPriceStr = XUI.White .. XUtils.priceToString(minBuyoutPrice)
+            local minBuyoutPriceStr = 'C' .. XUtils.priceToString(minBuyoutPrice)
             if minBuyoutPrice <= price then
-                minBuyoutPriceStr = XUI.White .. XUtils.priceToString(minBuyoutPrice)
+                minBuyoutPriceStr = XUI.White .. minBuyoutPriceStr
             elseif minBuyoutPrice <= price * 1.2 then
-                minBuyoutPriceStr = XUI.Yellow .. XUtils.priceToString(minBuyoutPrice)
+                minBuyoutPriceStr = XUI.Yellow .. minBuyoutPriceStr
             elseif minBuyoutPrice <= price * 1.5 then
-                minBuyoutPriceStr = XUI.Orange .. XUtils.priceToString(minBuyoutPrice)
+                minBuyoutPriceStr = XUI.Orange .. minBuyoutPriceStr
             else
-                minBuyoutPriceStr = XUI.Red .. XUtils.priceToString(minBuyoutPrice)
+                minBuyoutPriceStr = XUI.Red .. minBuyoutPriceStr
             end
 
             local bagCount = XInfo.getBagItemCount(itemName)
             local bagCountStr = XUI.getColor_MaterialCount(bagCount) .. bagCount
-            local bankCount = XInfo.getBankItemCount(itemName)
-            local bankCountStr = XUI.getColor_MaterialCount(bankCount) .. bankCount
+            local totalCount = XInfo.getItemTotalCountAll(itemName)
+            local totalCountStr = XUI.getColor_MaterialTotalCount(totalCount) .. totalCount
 
             local updateTimeStr = XUtils.formatTime(item['updatetime'])
 
             frame.indexButton:SetText(idx)
             frame.icon:SetTexture(XAPI.GetItemIcon(itemId))
             frame.itemNameButton:SetText(string.sub(itemName, 1, 18))
-            frame.labelt:SetText(updateTimeStr)
-            frame.label:SetText(bagCountStr .. XUI.White .. '/' .. bankCountStr)
-            frame.label2:SetText(priceStr)
-            frame.label4:SetText(minBuyoutPriceStr)
+            frame.labelTime:SetText(updateTimeStr)
+            frame.labelCount:SetText(bagCountStr .. XUI.White .. ' / ' .. totalCountStr)
+            frame.labelPrice:SetText(priceStr)
+            frame.labelSellPrice:SetText(sellPriceStr)
+            frame.labelCurPrice:SetText(minBuyoutPriceStr)
 
             if item['enabled'] ~= true then
                 frame.enableButton:SetText(XUI.Red .. '停')
@@ -333,11 +335,12 @@ getItemField = function(itemName, fieldName, defaultValue)
     return item[fieldName]
 end
 
-addItem = function(itemName, price)
+addItem = function(itemName, price, sellPrice)
     if getItem(itemName) then return end
     local item = {
         itemname = itemName,
         price = price,
+        sellprice = sellPrice,
         minbuyoutprice = dft_minPrice,
         minprice = dft_minPrice,
         updatetime = 0

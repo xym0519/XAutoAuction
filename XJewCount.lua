@@ -22,13 +22,19 @@ local receiverList = {
     }
 }
 
-local categoryIndex = 1
+local categoryIndex = 2
 local jewList = {
     {
-        category = '默认',
+        category = '全部',
         receiver = nil,
         issell = 0,
         list = { {}, {} }
+    },
+    {
+        category = '常用',
+        receiver = nil,
+        issell = 0,
+        list = { { '太阳水晶', '血石', '玉髓石', '萨隆邪铁矿石', '永恒之土', '钴矿石' }, { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石', '冰冻宝珠' } }
     },
     {
         category = '白龙',
@@ -36,6 +42,14 @@ local jewList = {
         issell = 1,
         list = {
             { '太阳水晶', '血石', '玉髓石' }, { '萨隆邪铁矿石', '永恒之土', '钴矿石' }
+        }
+    },
+    {
+        category = '云殇',
+        receiver = '醉云殇',
+        issell = 1,
+        list = {
+            { '蛇信草', '冰棘草', '永恒生命' }, { '金苜蓿', '卷丹', '死亡荨麻', '塔兰德拉的玫瑰' }
         }
     },
     {
@@ -253,7 +267,7 @@ end
 
 initUI = function()
     mainFrame = XUI.createFrame('XJewCountMainFrame', 580, 255)
-    mainFrame.title:SetText('默认')
+    mainFrame.title:SetText('常用')
     mainFrame:SetPoint('BOTTOM', UIParent, 'BOTTOM', 0, 60)
     mainFrame:Hide()
     XJewCount.mainFrame = mainFrame
@@ -341,7 +355,7 @@ initUI = function()
     for index, jewItem in ipairs(jewList) do
         local category = jewItem['category']
         local categoryButton = XUI.createButton(mainFrame, 60, XUI.Red .. category)
-        if index == 1 then
+        if index == 2 then
             categoryButton:SetText(XUI.Green .. category)
         end
         categoryButton:SetHeight(20)
@@ -357,6 +371,12 @@ initUI = function()
             end
             categoryIndex = self.index
             self:SetText(XUI.Green .. jewList[self.index]['category'])
+
+            local title = jewList[self.index]['category']
+            if jewList[self.index]['receiver'] then
+                title = title .. ' (' .. jewList[self.index]['receiver'] .. ')'
+            end
+            mainFrame.title:SetText(title)
             reloadLabels()
             refreshUI()
         end)
@@ -376,7 +396,6 @@ refreshUI = function()
 
     XInfo.reloadBag()
 
-    mainFrame.title:SetText(jewList[categoryIndex]['category'])
     for _, label in ipairs(labels) do
         label:Refresh()
     end

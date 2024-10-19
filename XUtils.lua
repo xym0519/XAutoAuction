@@ -248,7 +248,7 @@ XUtils.sendMail = function(itemName, stackCount, fullStack, receiver, money, sub
     end
 
     if money == 'auto' then
-        local price = XBuy.getItemField(itemName, 'price', 0)
+        local price = XBuy.getItemField(itemName, 'sellprice', 0)
         if price <= 0 then
             xdebug.error(itemName .. '没有设置单价')
             return

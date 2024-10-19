@@ -204,7 +204,6 @@ XJewTool.registerUIUpdateCallback(moduleName, XJewTool.refreshUI, 1)
 -- Commands
 SlashCmdList['XJEWTOOLREFRESH'] = function()
     XInfo.reloadCount()
-    XInfo.reloadTradeSkill()
     XJewTool.refreshUI()
 end
 SLASH_XJEWTOOLREFRESH1 = '/xjewtool_refresh'
