@@ -21,6 +21,7 @@ local getItem
 local getItemField
 local addItem
 local reset
+local itemChanged
 
 -- Function implemention
 initUI = function()
@@ -190,6 +191,7 @@ initUI = function()
                     function()
                         table.remove(XBuyItemList, idx)
                         refreshUI()
+                        itemChanged()
                     end)
             end
         end)
@@ -202,6 +204,7 @@ initUI = function()
             if not item then return end
             item['enabled'] = not item['enabled']
             refreshUI()
+            itemChanged()
         end)
         frame.enableButton = enableButton
 
@@ -341,6 +344,7 @@ addItem = function(itemName, price)
     }
     table.insert(XBuyItemList, item)
     refreshUI()
+    itemChanged()
 end
 
 reset = function()
@@ -349,6 +353,20 @@ reset = function()
         item['updatetime'] = 0
     end
     refreshUI()
+end
+
+-- Observes
+local itemChangeCallbacks = {}
+XBuy.registerItemChangeCallback = function(key, callback)
+    itemChangeCallbacks[key] = callback
+end
+
+itemChanged = function()
+    for _, callback in pairs(itemChangeCallbacks) do
+        if type(callback) == 'function' then
+            callback()
+        end
+    end
 end
 
 -- Events

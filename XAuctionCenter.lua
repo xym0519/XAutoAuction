@@ -52,6 +52,7 @@ local cleaningItems = {}
 local initData
 local resetData
 local initUI
+local reloadBuyList
 local filterDisplayList
 local refreshUI
 
@@ -122,7 +123,7 @@ resetData = function()
     starQueryIndex = 1
     queryStarFlag = true
 
-    materialQueryIndex = 1
+    materialQueryIndex = 0
     lastMaterialTaskTime = time()
 end
 
@@ -730,6 +731,83 @@ filterDisplayList = function()
     end
 end
 
+reloadBuyList = function()
+    if not mainFrame then return end
+    for _, item in ipairs(materialFrames) do
+        item:Hide()
+    end
+    materialFrames = {}
+    local enabledBuyList = {}
+    for _, item in ipairs(XBuyItemList) do
+        if item['enabled'] then
+            table.insert(enabledBuyList, item)
+        end
+    end
+    local preRowFrame = mainFrame
+    local preFrame = mainFrame
+    for _index, item in ipairs(enabledBuyList) do
+        local tprice = item['minbuyoutprice']
+        if tprice > 1000000 then
+            tprice = math.floor(tprice / 10000)
+        else
+            tprice = math.floor(tprice / 1000) / 10
+        end
+
+        local bagCount = XInfo.getBagItemCount(item['itemname'])
+        local bagCountStr = XUI.getColor_MaterialCount(bagCount) .. bagCount
+
+        local materialItemFrame = XAPI.CreateFrame('Frame', nil, mainFrame)
+        materialItemFrame:SetSize(93, 30)
+
+        if _index == 1 then
+            materialItemFrame:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -95)
+            preRowFrame = materialItemFrame
+            preFrame = materialItemFrame
+        elseif _index % dft_buyPerRow == 1 then
+            materialItemFrame:SetPoint('TOPLEFT', preRowFrame, 'BottomLeft', 0, 0)
+            preRowFrame = materialItemFrame
+            preFrame = materialItemFrame
+        else
+            materialItemFrame:SetPoint('LEFT', preFrame, 'RIGHT', 3, 0)
+            preFrame = materialItemFrame
+        end
+
+        materialItemFrame.itemName = item['itemname']
+
+        local icon = XUI.createItemIcon(materialItemFrame, 25, 25, item['itemname'])
+        icon:SetPoint('LEFT', materialItemFrame, 'LEFT', 0, 0)
+
+        local countLabel = XUI.createLabel(materialItemFrame, 60,
+            tprice .. '(' .. bagCountStr .. XUI.White .. ')', 'LEFT')
+        countLabel:SetPoint('LEFT', icon, 'RIGHT', 3, 0)
+
+        materialItemFrame:SetScript("OnEnter", function(self)
+            local itemid = XInfo.getItemId(self.itemName)
+            if itemid > 0 then
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                GameTooltip:SetHyperlink("item:" .. itemid) -- 显示物品信息
+            end
+        end)
+        materialItemFrame:SetScript("OnLeave", function(self)
+            GameTooltip:Hide()
+        end)
+
+        materialItemFrame:SetScript('OnMouseDown', function(self)
+            if IsLeftAltKeyDown() then
+                XAPI.Auctionator_SearchExact(self.itemName)
+            elseif IsLeftShiftKeyDown() then
+                addMaterialQueryTaskByItemName(self.itemName)
+                refreshUI()
+            elseif IsLeftControlKeyDown() then
+                XInfo.printBuyHistory(self.itemName)
+            end
+        end)
+
+        table.insert(materialFrames, materialItemFrame)
+    end
+    mainFrame:SetHeight(mainFrameHeight + (math.ceil(#enabledBuyList / dft_buyPerRow)) * 30)
+end
+
 refreshUI = function()
     if not mainFrame then return end
     if not mainFrame:IsVisible() then return end
@@ -846,79 +924,79 @@ refreshUI = function()
     mainFrame:setTitle(7, XUI.Green .. emptyBagCountStr)
     mainFrame:setTitle(8, XUI.Green .. craftCountStr)
 
-    for _, item in ipairs(materialFrames) do
-        item:Hide()
-    end
-    materialFrames = {}
-    local enabledBuyList = {}
-    for _, item in ipairs(XBuyItemList) do
-        if item['enabled'] then
-            table.insert(enabledBuyList, item)
-        end
-    end
-    local preRowFrame = mainFrame
-    local preFrame = mainFrame
-    for _index, item in ipairs(enabledBuyList) do
-        local tprice = item['minbuyoutprice']
-        if tprice > 1000000 then
-            tprice = math.floor(tprice / 10000)
-        else
-            tprice = math.floor(tprice / 1000) / 10
-        end
+    -- for _, item in ipairs(materialFrames) do
+    --     item:Hide()
+    -- end
+    -- materialFrames = {}
+    -- local enabledBuyList = {}
+    -- for _, item in ipairs(XBuyItemList) do
+    --     if item['enabled'] then
+    --         table.insert(enabledBuyList, item)
+    --     end
+    -- end
+    -- local preRowFrame = mainFrame
+    -- local preFrame = mainFrame
+    -- for _index, item in ipairs(enabledBuyList) do
+    --     local tprice = item['minbuyoutprice']
+    --     if tprice > 1000000 then
+    --         tprice = math.floor(tprice / 10000)
+    --     else
+    --         tprice = math.floor(tprice / 1000) / 10
+    --     end
 
-        local bagCount = XInfo.getBagItemCount(item['itemname'])
-        local bagCountStr = XUI.getColor_MaterialCount(bagCount) .. bagCount
+    --     local bagCount = XInfo.getBagItemCount(item['itemname'])
+    --     local bagCountStr = XUI.getColor_MaterialCount(bagCount) .. bagCount
 
-        local materialItemFrame = XAPI.CreateFrame('Frame', nil, mainFrame)
-        materialItemFrame:SetSize(93, 30)
+    --     local materialItemFrame = XAPI.CreateFrame('Frame', nil, mainFrame)
+    --     materialItemFrame:SetSize(93, 30)
 
-        if _index == 1 then
-            materialItemFrame:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -95)
-            preRowFrame = materialItemFrame
-            preFrame = materialItemFrame
-        elseif _index % dft_buyPerRow == 1 then
-            materialItemFrame:SetPoint('TOPLEFT', preRowFrame, 'BottomLeft', 0, 0)
-            preRowFrame = materialItemFrame
-            preFrame = materialItemFrame
-        else
-            materialItemFrame:SetPoint('LEFT', preFrame, 'RIGHT', 3, 0)
-            preFrame = materialItemFrame
-        end
+    --     if _index == 1 then
+    --         materialItemFrame:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -95)
+    --         preRowFrame = materialItemFrame
+    --         preFrame = materialItemFrame
+    --     elseif _index % dft_buyPerRow == 1 then
+    --         materialItemFrame:SetPoint('TOPLEFT', preRowFrame, 'BottomLeft', 0, 0)
+    --         preRowFrame = materialItemFrame
+    --         preFrame = materialItemFrame
+    --     else
+    --         materialItemFrame:SetPoint('LEFT', preFrame, 'RIGHT', 3, 0)
+    --         preFrame = materialItemFrame
+    --     end
 
-        materialItemFrame.itemName = item['itemname']
+    --     materialItemFrame.itemName = item['itemname']
 
-        local icon = XUI.createItemIcon(materialItemFrame, 25, 25, item['itemname'])
-        icon:SetPoint('LEFT', materialItemFrame, 'LEFT', 0, 0)
+    --     local icon = XUI.createItemIcon(materialItemFrame, 25, 25, item['itemname'])
+    --     icon:SetPoint('LEFT', materialItemFrame, 'LEFT', 0, 0)
 
-        local countLabel = XUI.createLabel(materialItemFrame, 60,
-            tprice .. '(' .. bagCountStr .. XUI.White .. ')', 'LEFT')
-        countLabel:SetPoint('LEFT', icon, 'RIGHT', 3, 0)
+    --     local countLabel = XUI.createLabel(materialItemFrame, 60,
+    --         tprice .. '(' .. bagCountStr .. XUI.White .. ')', 'LEFT')
+    --     countLabel:SetPoint('LEFT', icon, 'RIGHT', 3, 0)
 
-        materialItemFrame:SetScript("OnEnter", function(self)
-            local itemid = XInfo.getItemId(self.itemName)
-            if itemid > 0 then
-                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                GameTooltip:SetHyperlink("item:" .. itemid) -- 显示物品信息
-            end
-        end)
-        materialItemFrame:SetScript("OnLeave", function(self)
-            GameTooltip:Hide()
-        end)
+    --     materialItemFrame:SetScript("OnEnter", function(self)
+    --         local itemid = XInfo.getItemId(self.itemName)
+    --         if itemid > 0 then
+    --             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    --             GameTooltip:SetHyperlink("item:" .. itemid) -- 显示物品信息
+    --         end
+    --     end)
+    --     materialItemFrame:SetScript("OnLeave", function(self)
+    --         GameTooltip:Hide()
+    --     end)
 
-        materialItemFrame:SetScript('OnMouseDown', function(self)
-            if IsLeftAltKeyDown() then
-                XAPI.Auctionator_SearchExact(self.itemName)
-            elseif IsLeftShiftKeyDown() then
-                addMaterialQueryTaskByItemName(self.itemName)
-                refreshUI()
-            elseif IsLeftControlKeyDown() then
-                XInfo.printBuyHistory(self.itemName)
-            end
-        end)
+    --     materialItemFrame:SetScript('OnMouseDown', function(self)
+    --         if IsLeftAltKeyDown() then
+    --             XAPI.Auctionator_SearchExact(self.itemName)
+    --         elseif IsLeftShiftKeyDown() then
+    --             addMaterialQueryTaskByItemName(self.itemName)
+    --             refreshUI()
+    --         elseif IsLeftControlKeyDown() then
+    --             XInfo.printBuyHistory(self.itemName)
+    --         end
+    --     end)
 
-        table.insert(materialFrames, materialItemFrame)
-    end
-    mainFrame:SetHeight(mainFrameHeight + (math.ceil(#enabledBuyList / dft_buyPerRow)) * 30)
+    --     table.insert(materialFrames, materialItemFrame)
+    -- end
+    -- mainFrame:SetHeight(mainFrameHeight + (math.ceil(#enabledBuyList / dft_buyPerRow)) * 30)
 
     for idx, item in ipairs(displayList) do
         local frame = scrollView:GetItemFrame(idx)
@@ -2400,6 +2478,7 @@ end
 XJewTool.registerEventCallback(moduleName, 'ADDON_LOADED', function()
     initData()
     initUI()
+    reloadBuyList()
     filterDisplayList()
     refreshUI()
 end)
@@ -2441,6 +2520,10 @@ XJewTool.registerUpdateCallback(moduleName, onUpdate)
 XJewTool.registerFastUpdateCallback(moduleName, onFastUpdate)
 
 XJewTool.registerRefreshCallback(moduleName, refreshUI)
+
+XBuy.registerItemChangeCallback(moduleName, function()
+    reloadBuyList()
+end)
 
 -- Commands
 SlashCmdList['XAUCTIONCENTER'] = function()

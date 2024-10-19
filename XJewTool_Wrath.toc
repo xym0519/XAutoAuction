@@ -23,7 +23,7 @@ XAuctionTip.lua
 XSpeakWord.lua
 XAuctionBoard.lua
 XCraftQueue.lua
-XAuctionCenter.lua
 XBuy.lua
+XAuctionCenter.lua
 XJewWords.lua
 XJewCount.lua

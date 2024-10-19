@@ -2,14 +2,11 @@ XJewCount = {}
 local moduleName = 'XJewCount'
 
 -- Variable definition
-local dft_receiver1 = '阿肌'
-local dft_receiver2 = '默法'
-local dft_receiverItemList2 = { '萨隆邪铁矿石', '血石', '茶晶石', '太阳水晶', '黑玉', '玉髓石', '暗影水晶', '永恒之土', '钴矿石', '冰冻宝珠' }
-local dft_receiverSell = '小灬白龙'
--- local dft_receiverSell = '咖喱骑士'
 
 local mainFrame = nil
+local categoryButtons = {}
 local labels = {}
+local initData
 local initUI
 local refreshUI
 local createLabel
@@ -17,28 +14,69 @@ local reloadLabels
 
 local printPrice
 
-local categories = { '默认', '出售', '原石', '炸矿' }
+local dft_defaultReceiver = '阿肌'
+local receiverList = {
+    {
+        receiver = '默法',
+        list = { '萨隆邪铁矿石', '血石', '茶晶石', '太阳水晶', '黑玉', '玉髓石', '暗影水晶', '永恒之土', '钴矿石', '冰冻宝珠' }
+    }
+}
+
 local categoryIndex = 1
-local categoryItemList = {
+local jewList = {
     {
-        { '太阳水晶', '萨隆邪铁矿石', '永恒之土', '钴矿石', '冰冻宝珠' },
-        { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石' }
+        category = '默认',
+        receiver = nil,
+        issell = 0,
+        list = { {}, {} }
     },
     {
-        { '太阳水晶', '萨隆邪铁矿石' },
-        { '永恒之土', '钴矿石' }
+        category = '白龙',
+        receiver = '小灬白龙',
+        issell = 1,
+        list = {
+            { '太阳水晶', '血石', '玉髓石' }, { '萨隆邪铁矿石', '永恒之土', '钴矿石' }
+        }
     },
     {
-        { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼', '巨锆石', '恐惧石' },
-        { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石' }
+        category = '原石',
+        receiver = nil,
+        issell = 0,
+        list = {
+            { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼', '巨锆石', '恐惧石' },
+            { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石' }
+        }
     },
     {
-        { '血石', '茶晶石', '太阳水晶', '黑玉', '玉髓石', '暗影水晶', '泰坦神铁矿石' },
-        { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石', '萨隆邪铁矿石' }
+        category = '炸矿',
+        receiver = nil,
+        issell = 0,
+        list = {
+            { '血石', '茶晶石', '太阳水晶', '黑玉', '玉髓石', '暗影水晶', '泰坦神铁矿石' },
+            { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石', '萨隆邪铁矿石' }
+        }
     }
 }
 
 -- Function implemention
+initData = function()
+    local list1 = {}
+    local list2 = {}
+    for _, buyItem in ipairs(XBuyItemList) do
+        if buyItem['enabled'] then
+            table.insert(list1, buyItem['itemname'])
+        end
+    end
+    local startIndex = math.floor(#list1 / 2) + 1
+    local endIndex = #list1
+    for i = endIndex, startIndex, -1 do
+        table.insert(list2, 1, list1[i])
+        list1[i] = nil
+    end
+    jewList[1]['list'][1] = list1
+    jewList[1]['list'][2] = list2
+end
+
 createLabel = function(itemName)
     local itemId = XInfo.getItemId(itemName)
 
@@ -50,35 +88,33 @@ createLabel = function(itemName)
     local sendMailButton = XUI.createButton(frame, 30, 'U')
     sendMailButton:SetPoint('LEFT', frame, 'LEFT', 0, 0)
     sendMailButton:SetScript('OnClick', function(self)
-        local category = categories[categoryIndex]
-        if category == '出售' then
-            XInfo.reloadBag()
-            local item = XInfo.getBagItem(self.frame.itemName)
-            if item then
-                XUtils.sendMail(self.frame.itemName, #item['positions'], false, dft_receiverSell, 'auto')
-            end
+        XInfo.reloadBag()
+        local category = jewList[categoryIndex]
+        local _itemName = self.frame.itemName
+        local item = XInfo.getBagItem(_itemName)
+        if not item then
+            xdebug.error(_itemName .. '未找到')
+            return
+        end
+        local count = 0
+        if item then count = #item['positions'] end
+
+        if category['issell'] and IsLeftShiftKeyDown() then
+            local receiver = category['receiver']
+            XUtils.sendMail(_itemName, count, false, receiver, 'auto')
         else
-            local count = 1
-            local fullStack = true
+            local receiver = dft_defaultReceiver
+            for _, receiverItem in ipairs(receiverList) do
+                if XUtils.inArray(_itemName, receiverItem['list']) then
+                    receiver = receiverItem['receiver']
+                    break
+                end
+            end
             if IsLeftControlKeyDown() then
-                fullStack = false
-                if IsShiftKeyDown() then
-                    XInfo.reloadBag()
-                    local item = XInfo.getBagItem(self.frame.itemName)
-                    if item then count = #item['positions'] end
-                end
+                XUtils.sendMail(_itemName, count, false, receiver)
             else
-                if IsShiftKeyDown() then
-                    XInfo.reloadBag()
-                    local item = XInfo.getBagItem(self.frame.itemName)
-                    if item then count = #item['positions'] - 1 end
-                end
+                XUtils.sendMail(_itemName, 1, true, receiver)
             end
-            local receiver = dft_receiver1
-            if XUtils.inArray(self.frame.itemName, dft_receiverItemList2) then
-                receiver = dft_receiver2
-            end
-            XUtils.sendMail(self.frame.itemName, count, fullStack, receiver)
         end
         refreshUI()
     end)
@@ -176,10 +212,10 @@ end
 
 reloadLabels = function()
     if mainFrame == nil then return end
-    if not categoryItemList[categoryIndex] then return end
+    if not jewList[categoryIndex] then return end
 
-    local col1 = categoryItemList[categoryIndex][1]
-    local col2 = categoryItemList[categoryIndex][2]
+    local col1 = jewList[categoryIndex]['list'][1]
+    local col2 = jewList[categoryIndex]['list'][2]
 
     for _, item in ipairs(labels) do
         item:Hide()
@@ -212,11 +248,11 @@ reloadLabels = function()
 
     local count = #col1
     if #col2 > count then count = #col2 end
-    mainFrame:SetHeight(count * 30 + 50)
+    mainFrame:SetHeight(count * 30 + 55)
 end
 
 initUI = function()
-    mainFrame = XUI.createFrame('XJewCountMainFrame', 580, 250)
+    mainFrame = XUI.createFrame('XJewCountMainFrame', 580, 255)
     mainFrame.title:SetText('默认')
     mainFrame:SetPoint('BOTTOM', UIParent, 'BOTTOM', 0, 60)
     mainFrame:Hide()
@@ -302,8 +338,12 @@ initUI = function()
     end)
 
     local lastWidget = mainFrame
-    for index, category in ipairs(categories) do
-        local categoryButton = XUI.createButton(mainFrame, 60, category)
+    for index, jewItem in ipairs(jewList) do
+        local category = jewItem['category']
+        local categoryButton = XUI.createButton(mainFrame, 60, XUI.Red .. category)
+        if index == 1 then
+            categoryButton:SetText(XUI.Green .. category)
+        end
         categoryButton:SetHeight(20)
         categoryButton.index = index
         if index == 1 then
@@ -312,11 +352,16 @@ initUI = function()
             categoryButton:SetPoint('RIGHT', lastWidget, 'LEFT', -3, 0)
         end
         categoryButton:SetScript('OnClick', function(self)
+            for _, button in ipairs(categoryButtons) do
+                button:SetText(XUI.Red .. jewList[button.index]['category'])
+            end
             categoryIndex = self.index
-            self:SetText(categories[self.index])
+            self:SetText(XUI.Green .. jewList[self.index]['category'])
             reloadLabels()
             refreshUI()
         end)
+
+        table.insert(categoryButtons, categoryButton)
         lastWidget = categoryButton
     end
 
@@ -331,7 +376,7 @@ refreshUI = function()
 
     XInfo.reloadBag()
 
-    mainFrame.title:SetText(categories[categoryIndex])
+    mainFrame.title:SetText(jewList[categoryIndex]['category'])
     for _, label in ipairs(labels) do
         label:Refresh()
     end
@@ -339,10 +384,10 @@ end
 
 printPrice = function(isAll)
     local itemList = {}
-    for _, itemName in ipairs(categoryItemList[categoryIndex][1]) do
+    for _, itemName in ipairs(jewList[categoryIndex]['list'][1]) do
         table.insert(itemList, itemName)
     end
-    for _, itemName in ipairs(categoryItemList[categoryIndex][2]) do
+    for _, itemName in ipairs(jewList[categoryIndex]['list'][2]) do
         table.insert(itemList, itemName)
     end
 
@@ -353,7 +398,7 @@ printPrice = function(isAll)
         local price = XBuy.getItemField(itemName, 'price', 0) / 10000
         local count = 0
         if isAll then
-            count = XInfo.getItemTotalCount(itemName)
+            count = XInfo.getItemTotalCountAll(itemName)
         else
             count = XInfo.getBagItemCount(itemName)
         end
@@ -372,6 +417,7 @@ end
 
 -- Events
 XJewTool.registerEventCallback(moduleName, 'ADDON_LOADED', function()
+    initData()
     initUI()
     refreshUI()
 end)
@@ -381,6 +427,12 @@ XJewTool.registerEventCallback(moduleName, 'AUCTION_HOUSE_CLOSED', function()
 end)
 
 XJewTool.registerRefreshCallback(moduleName, refreshUI)
+
+XBuy.registerItemChangeCallback(moduleName, function()
+    initData()
+    reloadLabels()
+    refreshUI()
+end)
 
 -- Commands
 SlashCmdList['XJEWCOUNT'] = function()

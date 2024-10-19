@@ -202,6 +202,11 @@ XUtils.sendMail = function(itemName, stackCount, fullStack, receiver, money, sub
         return
     end
 
+    if stackCount <= 0 then
+        xdebug.error('发送数量不能小于0')
+        return
+    end
+
     if #bagItem['positions'] < stackCount then
         xdebug.error(itemName .. '数量不足')
         return
