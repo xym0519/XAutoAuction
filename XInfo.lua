@@ -458,8 +458,8 @@ XInfo.printBuyHistory = function(itemName, count)
     if not count then count = 30 end
     xdebug.info(itemName, '购买记录')
     local pcount = 0
-    for i = #XBuyItemList, 1, -1 do
-        local item = XBuyItemList[i]
+    for i = #XBuyList, 1, -1 do
+        local item = XBuyList[i]
         if item['itemname'] == itemName then
             xdebug.info(XUtils.formatTime(item['time']) ..
                 '    ' .. XUtils.priceToMoneyString(item['price']) .. '    ' .. item['count'])

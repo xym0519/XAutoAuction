@@ -113,7 +113,7 @@ createLabel = function(itemName)
         local count = 0
         if item then count = #item['positions'] end
 
-        if category['issell'] and IsLeftShiftKeyDown() then
+        if category['issell'] and category['issell'] == 1 and IsLeftShiftKeyDown() then
             local receiver = category['receiver']
             XUtils.sendMail(_itemName, count, false, receiver, 'auto')
         else
