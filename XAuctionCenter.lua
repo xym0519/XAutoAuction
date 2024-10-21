@@ -800,15 +800,22 @@ reloadBuyList = function()
         end)
 
         materialItemFrame.refreshUI = function(self)
-            local tprice = XBuy.getItemField(self.itemName, 'minbuyoutprice', 0)
-            if tprice > 1000000 then
-                tprice = math.floor(tprice / 10000)
+            local cprice = XBuy.getItemField(self.itemName, 'minbuyoutprice', 0)
+            local bprice = XBuy.getItemField(self.itemName, 'price', 0)
+            local cpriceStr = ''
+            if cprice > 1000000 then
+                cpriceStr = math.floor(cprice / 10000) .. ''
             else
-                tprice = math.floor(tprice / 1000) / 10
+                cpriceStr = (math.floor(cprice / 1000) / 10) .. ''
+            end
+            if cprice > bprice then
+                cpriceStr = XUI.Color_Bad .. cpriceStr
+            else
+                cpriceStr = XUI.Color_Good .. cpriceStr
             end
             local bagCount = XInfo.getBagItemCount(self.itemName)
             local bagCountStr = XUI.getColor_MaterialCount(bagCount) .. bagCount
-            self.countLabel:SetText(tprice .. '(' .. bagCountStr .. XUI.White .. ')')
+            self.countLabel:SetText(cpriceStr .. XUI.White .. '(' .. bagCountStr .. XUI.White .. ')')
         end
 
         table.insert(materialFrames, materialItemFrame)
