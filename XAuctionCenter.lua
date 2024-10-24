@@ -351,19 +351,19 @@ initUI = function()
         refreshUI()
     end)
 
-    local filter2Button = XUI.createButton(mainFrame, dft_buttonWidth, '量大')
+    local filter2Button = XUI.createButton(mainFrame, dft_buttonWidth, '缺货')
     filter2Button:SetPoint('LEFT', filter1Button, 'RIGHT', dft_buttonGap, 0)
     filter2Button:SetScript('OnClick', function()
-        XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '量大')
+        XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '缺货')
         mainFrame.filterBox:SetText('')
         filterDisplayList()
         refreshUI()
     end)
 
-    local filter3Button = XUI.createButton(mainFrame, dft_buttonWidth, '缺货')
+    local filter3Button = XUI.createButton(mainFrame, dft_buttonWidth, '量大')
     filter3Button:SetPoint('LEFT', filter2Button, 'RIGHT', dft_buttonGap, 0)
     filter3Button:SetScript('OnClick', function()
-        XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '缺货')
+        XAPI.UIDropDownMenu_SetText(mainFrame.filterDropDown, '量大')
         mainFrame.filterBox:SetText('')
         filterDisplayList()
         refreshUI()
@@ -1158,18 +1158,32 @@ startNextTask = function()
         if lastMaterialTaskTime + dft_materialTaskInterval < time() then
             lastMaterialTaskTime = time()
             if #XBuyItemList > 0 then
-                local item = nil
+                local tEnabledIndex = -1
+                local tAvailableIndex = -1
                 for idx = 0, #XBuyItemList - 1 do
                     local tIndex = ((materialQueryIndex + idx) % #XBuyItemList) + 1
-                    item = XBuyItemList[tIndex]
+                    local item = XBuyItemList[tIndex]
                     if item ~= nil then
                         if item['enabled'] then
-                            materialQueryIndex = tIndex
-                            break
+                            if tEnabledIndex == -1 then
+                                tEnabledIndex = tIndex
+                            end
+                        end
+                        if item['minbuyoutprice'] <= item['price'] then
+                            if tAvailableIndex == -1 then
+                                tAvailableIndex = tIndex
+                            end
                         end
                     end
                 end
 
+                if tAvailableIndex ~= -1 then
+                    materialQueryIndex = tAvailableIndex
+                elseif tEnabledIndex ~= -1 then
+                    materialQueryIndex = tEnabledIndex
+                end
+
+                local item = XBuyItemList[materialQueryIndex]
                 if item then
                     addMaterialQueryTaskByItemName(item['itemname'])
                     curTask = taskList[1]

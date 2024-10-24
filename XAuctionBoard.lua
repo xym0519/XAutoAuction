@@ -141,7 +141,11 @@ refreshUI = function()
 
     table.sort(itemList, function(a, b)
         if a['dealcount'] == b['dealcount'] then
-            return a['craftcount'] > b['craftcount']
+            if a['craftcount'] == b['craftcount'] then
+                return a['buycount'] > b['buycount']
+            else
+                return a['craftcount'] > b['craftcount']
+            end
         else
             return a['dealcount'] > b['dealcount']
         end
