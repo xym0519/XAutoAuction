@@ -53,6 +53,13 @@ local jewList = {
         }
     },
     {
+        category = '咖喱',
+        receiver = '咖喱贼',
+        issell = 1,
+        fixedprice = 100,
+        list = { { '太阳水晶', '血石', '玉髓石', '萨隆邪铁矿石', '永恒之土', '土之结晶', '钴矿石', '损坏的项链' }, { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石', '冰冻宝珠' } }
+    },
+    {
         category = '原石',
         receiver = nil,
         issell = 0,
@@ -115,7 +122,11 @@ createLabel = function(itemName)
 
         if category['issell'] and category['issell'] == 1 and IsLeftShiftKeyDown() then
             local receiver = category['receiver']
-            XUtils.sendMail(_itemName, count, false, receiver, 'auto')
+            local money = 'auto'
+            if category['fixedprice'] then
+                money = category['fixedprice']
+            end
+            XUtils.sendMail(_itemName, count, false, receiver, money)
         else
             local receiver = dft_defaultReceiver
             for _, receiverItem in ipairs(receiverList) do

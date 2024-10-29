@@ -1891,7 +1891,14 @@ itemMailClick = function(this)
     if not item then return end
 
     local count = 5
-    if IsShiftKeyDown() then count = 12 end
+    if IsShiftKeyDown() then
+        local bagItem = XInfo.getBagItem(item['itemname'])
+        if not bagItem then
+            xdebug.error('背包中未找到该物品')
+            return
+        end
+        count = #bagItem['positions']
+    end
 
     XUtils.sendMail(item['itemname'], count)
     refreshUI()

@@ -9,8 +9,11 @@ local dft_largetime = 1.5
 local dft_taskInterval = 1
 local dft_emptySlotCount = 2
 local dft_rubbishList = {
-    '致密天蓝石',
-    '裂纹森林翡翠'
+    { itemname = '水晶玉髓石项圈', materialcount = 0 },
+    { itemname = '烈日石戒', materialcount = 0 },
+    { itemname = '血石指环', materialcount = 0 },
+    { itemname = '致密天蓝石', materialcount = 20 },
+    { itemname = '裂纹森林翡翠', materialcount = 20 },
 }
 
 local craftRubbish = false
@@ -222,8 +225,8 @@ refreshUI = function()
     end
 
     local rubbishCount = 0
-    for _, _itemName in ipairs(dft_rubbishList) do
-        rubbishCount = rubbishCount + XInfo.getBagItemCount(_itemName)
+    for _, _item in ipairs(dft_rubbishList) do
+        rubbishCount = rubbishCount + XInfo.getBagItemCount(_item['itemname'])
     end
     local rubbishCountStr = 'R' .. rubbishCount
     if rubbishCount > 10 then
@@ -398,9 +401,9 @@ local function onUpdate()
     if #craftQueue <= 0 then
         if craftRubbish and XInfo.emptyBagCount > dft_emptySlotCount then
             local found = false
-            for _, _itemName in ipairs(dft_rubbishList) do
-                if XInfo.getMaterialBagCount(_itemName) > 20 then
-                    addItem(_itemName)
+            for _, _item in ipairs(dft_rubbishList) do
+                if XInfo.getMaterialBagCount(_item['itemname']) > _item['materialcount'] then
+                    addItem(_item['itemname'])
                     found = true
                     break
                 end

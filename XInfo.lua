@@ -366,8 +366,21 @@ XInfo.materialListS = { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '
 XInfo.materialListB = { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼', '巨锆石', '恐惧石' }
 XInfo.materialListO = { '天焰钻石', '大地侵攻钻石' }
 XInfo.mineList = { '萨隆邪铁矿石', '泰坦神铁矿石' }
+XInfo.recipeList = {
+    { itemname = '水晶玉髓石项圈', materialname = '玉髓石' },
+    { itemname = '烈日石戒', materialname = '太阳水晶' },
+    { itemname = '血石指环', materialname = '血石' },
+}
 XInfo.getMaterialName = function(itemName)
     local materialName = nil
+    for _, item in ipairs(XInfo.recipeList) do
+        if item['itemname'] == itemName then
+            materialName = item['materialname']
+            break
+        end
+    end
+    if materialName then return materialName end
+
     for i = 1, #XInfo.materialList do
         if XUtils.stringContains(itemName, XInfo.materialList[i]) then
             materialName = XInfo.materialList[i]
