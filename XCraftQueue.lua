@@ -7,7 +7,7 @@ local mainFrame
 local dft_smalltime = 5
 local dft_largetime = 1.5
 local dft_taskInterval = 1
-local dft_emptySlotCount = 2
+local dft_emptySlotCount = 1
 local dft_rubbishList = {
     { itemname = '水晶玉髓石项圈', materialcount = 0 },
     { itemname = '烈日石戒', materialcount = 0 },
@@ -94,7 +94,7 @@ initUI = function()
         XJewTool.refreshUI()
     end)
 
-    local rubbishCountLabel = XUI.createLabel(mainFrame, 30)
+    local rubbishCountLabel = XUI.createLabel(mainFrame, 70)
     rubbishCountLabel:SetPoint('LEFT', refreshButton, 'RIGHT', 10, 0)
     mainFrame.rubbishCountLabel = rubbishCountLabel
 
@@ -238,7 +238,19 @@ refreshUI = function()
     else
         rubbishCountStr = XUI.Color_Good .. rubbishCountStr
     end
-    mainFrame.rubbishCountLabel:SetText(rubbishCountStr)
+
+    local emptyBagCountStr = 'E' .. XInfo.emptyBagCount1
+    if XInfo.emptyBagCount1 > 10 then
+        emptyBagCountStr = XUI.Color_Good .. emptyBagCountStr
+    elseif XInfo.emptyBagCount1 > 5 then
+        emptyBagCountStr = XUI.Color_Fair .. emptyBagCountStr
+    elseif XInfo.emptyBagCount1 > 0 then
+        emptyBagCountStr = XUI.Color_Poor .. emptyBagCountStr
+    else
+        emptyBagCountStr = XUI.Color_Bad .. emptyBagCountStr
+    end
+    mainFrame.rubbishCountLabel:SetText(rubbishCountStr
+        .. XUI.White .. ' / ' .. emptyBagCountStr)
 
     for i = 1, displayPageSize do
         local frame = displayFrameList[i]
@@ -399,16 +411,22 @@ local function onUpdate()
     end
 
     if #craftQueue <= 0 then
-        if craftRubbish and XInfo.emptyBagCount > dft_emptySlotCount then
-            local found = false
-            for _, _item in ipairs(dft_rubbishList) do
-                if XInfo.getMaterialBagCount(_item['itemname']) > _item['materialcount'] then
-                    addItem(_item['itemname'])
-                    found = true
-                    break
+        if craftRubbish then
+            if XInfo.emptyBagCount1 > dft_emptySlotCount then
+                local found = false
+                for _, _item in ipairs(dft_rubbishList) do
+                    if XInfo.getMaterialBagCount(_item['itemname']) > _item['materialcount'] then
+                        addItem(_item['itemname'])
+                        found = true
+                        break
+                    end
                 end
-            end
-            if not found then
+                if not found then
+                    refreshUI()
+                    return
+                end
+            else
+                XUtils.sortJewsInBag0()
                 refreshUI()
                 return
             end
@@ -446,6 +464,8 @@ local function onUpdate()
     end
 
     XAPI.DoTradeSkill(tradeSkillItem['index'], count)
+
+    XUtils.sortJewsInBag0()
 end
 
 local function onStart(...)

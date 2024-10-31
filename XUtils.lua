@@ -473,8 +473,8 @@ XUtils.moveToBank = function(itemNames, stackCount, exceptions, fullStack)
     MoveToBagBank(itemNames, 'tobank', stackCount, exceptions, fullStack)
 end
 
-XUtils.sortBag = function()
-    XJewTool.registerUIUpdateCallback(moduleName .. '_sortBag', function()
+XUtils.shrinkBag = function()
+    XJewTool.registerUIUpdateCallback(moduleName .. '_shrinkBag', function()
         local notFullList = {}
         local lastItemList = {}
 
@@ -503,8 +503,95 @@ XUtils.sortBag = function()
             end
         end
         if not found then
-            XJewTool.unRegisterUIUpdateCallback(moduleName .. '_sortBag')
+            XJewTool.unRegisterUIUpdateCallback(moduleName .. '_shrinkBag')
             xdebug.info('整理完成')
         end
     end, 0.2)
+end
+
+XUtils.fulfilBag = function()
+    if not XAPI.IsBankOpen() then
+        xdebug.error('银行未打开')
+        return
+    end
+
+    for i = 0, XAPI.NUM_BAG_SLOTS do
+        local bagSlotCount = XAPI.C_Container_GetContainerNumSlots(i)
+        for j = 1, bagSlotCount do
+            local itemBag = XAPI.C_Container_GetContainerItemInfo(i, j)
+            if itemBag then
+                local itemName = itemBag.itemName
+                local count = itemBag.stackCount
+                local stackCount = XInfo.getStackCount(itemName)
+                if XUtils.inArray(itemName, XInfo.materialList) then
+                    if count < stackCount then
+                        local subCount = stackCount - count
+                        for x = -1, XAPI.NUM_BAG_SLOTS + XAPI.NUM_BANKBAGSLOTS do
+                            if count < stackCount then
+                                if x < 0 or x > XAPI.NUM_BAG_SLOTS then
+                                    local bankSlotCount = XAPI.C_Container_GetContainerNumSlots(x)
+                                    for y = 1, bankSlotCount do
+                                        local itemBank = XAPI.C_Container_GetContainerItemInfo(x, y)
+                                        if itemBank then
+                                            local itemName2 = itemBank.itemName
+                                            local count2 = itemBank.stackCount
+                                            if itemName2 == itemName then
+                                                if count2 <= subCount then
+                                                    XAPI.C_Container_PickupContainerItem(x, y)
+                                                    count = count + count2
+                                                else
+                                                    XAPI.C_Container_SplitContainerItem(x, y, subCount)
+                                                    count = count + subCount
+                                                end
+                                                XAPI.C_Container_PickupContainerItem(i, j)
+                                                if count >= stackCount then
+                                                    break
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                            else
+                                break
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+XUtils.sortJewsInBag0 = function()
+    local slotCount0 = XAPI.C_Container_GetContainerNumSlots(0)
+    local sourceList = {}
+    for j = 1, slotCount0 do
+        local itemBag = XAPI.C_Container_GetContainerItemInfo(0, j)
+        if itemBag then
+            local _, _, _, _, _, itemCategory = XAPI.GetItemInfo(itemBag['itemName'])
+            if itemCategory == '珠宝' then
+                table.insert(sourceList, { x = 0, y = j })
+            end
+        end
+    end
+
+    local sourceIndex = 1
+    for i = 1, XAPI.NUM_BAG_SLOTS do
+        if sourceIndex > #sourceList then
+            break
+        end
+        local bagSlotCount = XAPI.C_Container_GetContainerNumSlots(i)
+        for j = 1, bagSlotCount do
+            if sourceIndex > #sourceList then
+                break
+            end
+            local itemBag = XAPI.C_Container_GetContainerItemInfo(i, j)
+            if not itemBag then
+                local tPosition = sourceList[sourceIndex]
+                XAPI.C_Container_PickupContainerItem(tPosition['x'], tPosition['y'])
+                XAPI.C_Container_PickupContainerItem(i, j)
+                sourceIndex = sourceIndex + 1
+            end
+        end
+    end
 end

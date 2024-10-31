@@ -288,56 +288,7 @@ initUI = function()
     fulfilStackButton:SetHeight(20)
     fulfilStackButton:SetPoint('TOPRIGHT', mainFrame, 'TOPRIGHT', -30, -1)
     fulfilStackButton:SetScript('OnClick', function()
-        if not XAPI.IsBankOpen() then
-            xdebug.error('银行未打开')
-            return
-        end
-
-        for i = 0, XAPI.NUM_BAG_SLOTS do
-            local bagSlotCount = XAPI.C_Container_GetContainerNumSlots(i)
-            for j = 1, bagSlotCount do
-                local itemBag = XAPI.C_Container_GetContainerItemInfo(i, j)
-                if itemBag then
-                    local itemName = itemBag.itemName
-                    local count = itemBag.stackCount
-                    local stackCount = XInfo.getStackCount(itemName)
-                    if XUtils.inArray(itemName, XInfo.materialList) then
-                        if count < stackCount then
-                            local subCount = stackCount - count
-                            for x = -1, XAPI.NUM_BAG_SLOTS + XAPI.NUM_BANKBAGSLOTS do
-                                if count < stackCount then
-                                    if x < 0 or x > XAPI.NUM_BAG_SLOTS then
-                                        local bankSlotCount = XAPI.C_Container_GetContainerNumSlots(x)
-                                        for y = 1, bankSlotCount do
-                                            local itemBank = XAPI.C_Container_GetContainerItemInfo(x, y)
-                                            if itemBank then
-                                                local itemName2 = itemBank.itemName
-                                                local count2 = itemBank.stackCount
-                                                if itemName2 == itemName then
-                                                    if count2 <= subCount then
-                                                        XAPI.C_Container_PickupContainerItem(x, y)
-                                                        count = count + count2
-                                                    else
-                                                        XAPI.C_Container_SplitContainerItem(x, y, subCount)
-                                                        count = count + subCount
-                                                    end
-                                                    XAPI.C_Container_PickupContainerItem(i, j)
-                                                    if count >= stackCount then
-                                                        break
-                                                    end
-                                                end
-                                            end
-                                        end
-                                    end
-                                else
-                                    break
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end
+        XUtils.fulfilBag()
         xdebug.info('补充完成')
     end)
 
@@ -345,7 +296,15 @@ initUI = function()
     shrinkButton:SetHeight(20)
     shrinkButton:SetPoint('RIGHT', fulfilStackButton, 'LEFT', -3, 0)
     shrinkButton:SetScript('OnClick', function()
-        XUtils.sortBag()
+        XUtils.shrinkBag()
+    end)
+
+    local sortButton = XUI.createButton(mainFrame, 60, '排列')
+    sortButton:SetHeight(20)
+    sortButton:SetPoint('RIGHT', shrinkButton, 'LEFT', -3, 0)
+    sortButton:SetScript('OnClick', function()
+        XUtils.sortJewsInBag0()
+        xdebug.info('排列完成')
     end)
 
     local bagPriceButton = XUI.createButton(mainFrame, 60, '包价')

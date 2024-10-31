@@ -5,6 +5,7 @@ local moduleName = 'XInfo'
 XInfoBagList = {}
 XInfoBankList = {}
 XInfo.emptyBagCount = 0
+XInfo.emptyBagCount1 = 0
 XInfo.emptyBankCount = 0
 
 XInfo.reloadCount = function()
@@ -100,6 +101,7 @@ function ReloadBagBank(type)
 
     local list = {}
     local emptyBagCount = 0
+    local emptyBagCount1 = 0
     local emptyBankCount = 0
 
     for _, i in ipairs(slotIdList) do
@@ -119,6 +121,9 @@ function ReloadBagBank(type)
             else
                 if isBag then
                     emptyBagCount = emptyBagCount + 1
+                    if i == 0 then
+                        emptyBagCount1 = emptyBagCount1 + 1
+                    end
                 else
                     emptyBankCount = emptyBankCount + 1
                 end
@@ -129,6 +134,7 @@ function ReloadBagBank(type)
     if type == 'bag' then
         XInfoBagList[XInfo.myName] = list
         XInfo.emptyBagCount = emptyBagCount
+        XInfo.emptyBagCount1 = emptyBagCount1
     else
         XInfoBankList[XInfo.myName] = list
         XInfo.emptyBankCount = emptyBankCount

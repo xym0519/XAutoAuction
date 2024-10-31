@@ -1442,22 +1442,30 @@ addCraftQueue = function()
             if not inQuery then
                 if item['minpriceother'] >= item['baseprice'] then
                     local bagCount = XInfo.getBagItemCount(item['itemname'])
-                    local auctionCount = XInfo.getAuctionItemCount(item['itemname'])
+                    -- local auctionCount = XInfo.getAuctionItemCount(item['itemname'])
                     local itemTotalCount = XInfo.getItemTotalCount(item['itemname'])
                     local stackCount = item['stackcount']
                     local materialCount = XInfo.getMaterialBagCount(item['itemname'])
+                    local dealCount = XInfo.getItemInfoField(item['itemname'], 'dealcount', 0)
 
-                    local subCount = 0
-                    if checkImportant(item) then
-                        subCount = stackCount - bagCount
-                    else
-                        subCount = stackCount - auctionCount - bagCount
-                    end
-                    -- if not item['star'] then
-                    if subCount > dft_maxCraftCount - itemTotalCount then
-                        subCount = dft_maxCraftCount - itemTotalCount
-                    end
+                    -- local subCount = 0
+                    -- if checkImportant(item) then
+                    --     subCount = stackCount - bagCount
+                    -- else
+                    --     subCount = stackCount - auctionCount - bagCount
                     -- end
+                    local subCount = stackCount - bagCount
+                    local maxCount = math.ceil(dealCount / 10)
+                    if checkImportant(item) then
+                        maxCount = dft_maxCraftCount
+                    elseif maxCount < 1 then
+                        maxCount = 1
+                    elseif maxCount > dft_maxCraftCount then
+                        maxCount = dft_maxCraftCount
+                    end
+                    if subCount > maxCount - itemTotalCount then
+                        subCount = maxCount - itemTotalCount
+                    end
                     if subCount > materialCount then subCount = materialCount end
                     if subCount > 0 then
                         XCraftQueue.addItem(item['itemname'], subCount, 'fulfil')
