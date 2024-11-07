@@ -296,8 +296,6 @@ XUtils.receiveMail = function(itemName, receiveAll, onlyAH)
         return
     end
 
-    local stackCount = XInfo.getStackCount(itemName)
-    local emptyCount = XInfo.emptyBagCount * stackCount
     local count = 0
 
     if receiveAll then
@@ -307,7 +305,8 @@ XUtils.receiveMail = function(itemName, receiveAll, onlyAH)
                 return
             end
             local found = false
-            for idx = mailCount, 1, -1 do
+            mailCount = XAPI.GetInboxNumItems()
+            for idx = 1, mailCount do
                 local mailInfo = { XAPI.GetInboxHeaderInfo(idx) }
                 local subject = mailInfo[4]
                 if subject ~= nil then
@@ -338,7 +337,7 @@ XUtils.receiveMail = function(itemName, receiveAll, onlyAH)
                     end
                 end
             end
-            if not found or count >= emptyCount then
+            if not found then
                 XJewTool.unRegisterUIUpdateCallback(moduleName .. '_receiveMail')
                 xdebug.info('收取' .. itemName .. ' ' .. count)
                 XInfo.reloadBag()
@@ -346,8 +345,10 @@ XUtils.receiveMail = function(itemName, receiveAll, onlyAH)
             end
         end, 0.1)
     else
+        local mailIndex = -1
+        local itemIndex = -1
+        local curCount = 99999
         for idx = 1, mailCount do
-            local found = false
             local mailInfo = { XAPI.GetInboxHeaderInfo(idx) }
             local subject = mailInfo[4]
             if subject ~= nil then
@@ -368,19 +369,22 @@ XUtils.receiveMail = function(itemName, receiveAll, onlyAH)
                     for iidx = 1, 12 do
                         local _itemName, _, _, _count = XAPI.GetInboxItem(idx, iidx)
                         if _itemName == itemName then
-                            found = true
-                            XAPI.TakeInboxItem(idx, iidx)
-                            count = count + _count
-                            break
+                            if _count < curCount then
+                                mailIndex = idx
+                                itemIndex = iidx
+                                curCount = _count
+                            end
                         end
                     end
                 end
             end
-            if found then break end
         end
-        xdebug.info('收取' .. itemName .. ' ' .. count)
-        XInfo.reloadBag()
-        XInfo.reloadMail()
+        if mailIndex ~= -1 and itemIndex ~= -1 then
+            XAPI.TakeInboxItem(mailIndex, itemIndex)
+            xdebug.info('收取' .. itemName .. ' ' .. curCount)
+            XInfo.reloadBag()
+            XInfo.reloadMail()
+        end
     end
 end
 
@@ -595,3 +599,12 @@ XUtils.sortJewsInBag0 = function()
         end
     end
 end
+
+XJewTool.registerEventCallback(moduleName, 'UI_ERROR_MESSAGE', function(_, _, code, message)
+    if code == 3 then
+        XJewTool.unRegisterUIUpdateCallback(moduleName .. '_receiveMail')
+        xdebug.error('包裹已满')
+        XInfo.reloadBag()
+        XInfo.reloadMail()
+    end
+end)

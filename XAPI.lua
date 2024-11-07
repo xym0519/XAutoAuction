@@ -18,6 +18,12 @@ XAPI.FeeRate = 0.15
 XAPI.TaxRate = 0.05
 XAPI.ProfitRate = 1 - XAPI.TaxRate
 
+-- UI_ERROR_MESSAGE
+XAPI.UI_ERROR_MESSAGE = {}
+XAPI.UI_ERROR_MESSAGE[3] = '物品栏已满。'
+XAPI.UI_ERROR_MESSAGE[28] = '未找到指定物品'
+XAPI.UI_ERROR_MESSAGE[453] = '内部拍卖错误'
+
 -- 问号图标
 XAPI.Texture_QuestionMark = 'Interface/Icons/INV_Misc_QuestionMark'
 

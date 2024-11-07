@@ -31,6 +31,7 @@ local mainFrameHeight = dft_mainFrameHeightL
 local displayList = {}
 
 local isStarted = false
+local err453Count = 0
 local taskList = {}
 local curTask = nil
 local lastTaskFinishTime = 0
@@ -264,6 +265,7 @@ initUI = function()
         XUIConfirmDialog.show(moduleName, '确认', '是否确认重置所有数据', function()
             resetData()
             XBuy.reset()
+            XAuctionBoard.draft()
             refreshUI()
         end)
     end)
@@ -993,7 +995,7 @@ refreshUI = function()
         end
 
         if star then
-            itemNameStr = XUI.Green .. '*' .. itemNameStr
+            itemNameStr = XUI.White .. ' ★ ' .. itemNameStr
         end
 
         if not recipe then
@@ -1106,6 +1108,7 @@ end
 
 start = function()
     isStarted = true
+    err453Count = 0
     taskList = {}
     curTask = nil
     lastTaskFinishTime = 0
@@ -1613,7 +1616,7 @@ puton = function(isForce)
                 end
             end
             if isForce or bagCount > 0 then
-                if item['minpriceother'] >= item['baseprice'] and validCount < stackCount then
+                if item['minpriceother'] >= item['baseprice'] and validCount < stackCount and XCraftQueue.getCurItemName() ~= item['itemname'] then
                     table.insert(queue, i)
                     count = count + 1
                 end
@@ -2099,6 +2102,7 @@ local function onQueryItemListUpdate(...)
         end
         if itemName == curTask['itemname'] then
             curTask['status'] = 'loaded'
+            err453Count = 0
             break
         end
         itemIndex = itemIndex + 1
@@ -2461,8 +2465,13 @@ end)
 
 XJewTool.registerEventCallback(moduleName, 'AUCTION_ITEM_LIST_UPDATE', onQueryItemListUpdate)
 XJewTool.registerEventCallback(moduleName, 'UI_ERROR_MESSAGE', function(_, _, code, message)
-    if code == 28 and message == '未找到指定物品' then
+    if code == 28 then
         onMaterialBuyFailed()
+    elseif code == 453 then
+        err453Count = err453Count + 1
+        if err453Count > 30 then
+            stop()
+        end
     end
 end)
 

@@ -13,6 +13,8 @@ local refreshUI
 local addItem
 local getItem
 local getItemCount
+local clean
+local draft
 
 -- Function implemention
 initUI = function()
@@ -27,9 +29,7 @@ initUI = function()
     cleanButton:SetPoint("TOPLEFT", mainFrame, "TOPLEFT", 15, -30)
     cleanButton:SetScript("OnClick", function()
         XUIConfirmDialog.show(moduleName, '确认', '确认清除', function()
-            XAuctionBoardList = { { starttime = time(), data = {} } }
-            displayIndex = 1
-            refreshUI()
+            clean()
         end)
     end)
 
@@ -43,11 +43,7 @@ initUI = function()
     draftButton:SetPoint("LEFT", refreshButton, "RIGHT", 5, 0)
     draftButton:SetScript("OnClick", function()
         XUIConfirmDialog.show(moduleName, '确认', '确认暂存', function()
-            if #XAuctionBoardList > 0 then
-                XAuctionBoardList[1]['endtime'] = time()
-            end
-            table.insert(XAuctionBoardList, 1, { starttime = time(), data = {} })
-            refreshUI()
+            draft()
         end)
     end)
 
@@ -300,6 +296,19 @@ getItemCount = function(itemName, type)
     return 0
 end
 
+clean = function()
+    XAuctionBoardList = { { starttime = time(), data = {} } }
+    displayIndex = 1
+    refreshUI()
+end
+
+draft = function()
+    if #XAuctionBoardList > 0 then
+        XAuctionBoardList[1]['endtime'] = time()
+    end
+    table.insert(XAuctionBoardList, 1, { starttime = time(), data = {} })
+    refreshUI()
+end
 
 -- Events
 XJewTool.registerEventCallback(moduleName, 'ADDON_LOADED', function()
@@ -336,3 +345,5 @@ XAuctionBoard.addItem = addItem
 XAuctionBoard.getItem = getItem
 XAuctionBoard.getItemCount = getItemCount
 XAuctionBoard.toggle = function() XUI.toggleVisible(mainFrame) end
+XAuctionBoard.clean = clean
+XAuctionBoard.draft = draft

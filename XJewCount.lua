@@ -18,14 +18,20 @@ local dft_defaultReceiver = '阿肌'
 local receiverList = {
     {
         receiver = '默法',
-        list = { '萨隆邪铁矿石', '血石', '茶晶石', '太阳水晶', '黑玉', '玉髓石', '暗影水晶', '永恒之土', '钴矿石', '冰冻宝珠' }
+        list = { '萨隆邪铁矿石', '血石', '茶晶石', '太阳水晶', '黑玉', '玉髓石', '暗影水晶', '永恒之土', '土之结晶', '钴矿石', '冰冻宝珠' }
     }
 }
 
-local categoryIndex = 2
+local categoryIndex = 3
 local jewList = {
     {
         category = '全部',
+        receiver = nil,
+        issell = 0,
+        list = { {}, {} }
+    },
+    {
+        category = '起用',
         receiver = nil,
         issell = 0,
         list = { {}, {} }
@@ -81,21 +87,33 @@ local jewList = {
 
 -- Function implemention
 initData = function()
-    local list1 = {}
-    local list2 = {}
+    local list11 = {}
+    local list12 = {}
+    local list21 = {}
+    local list22 = {}
     for _, buyItem in ipairs(XBuyItemList) do
+        table.insert(list11, buyItem['itemname'])
         if buyItem['enabled'] then
-            table.insert(list1, buyItem['itemname'])
+            table.insert(list21, buyItem['itemname'])
         end
     end
-    local startIndex = math.floor(#list1 / 2) + 1
-    local endIndex = #list1
+    local startIndex = math.floor(#list11 / 2) + 1
+    local endIndex = #list11
     for i = endIndex, startIndex, -1 do
-        table.insert(list2, 1, list1[i])
-        list1[i] = nil
+        table.insert(list12, 1, list11[i])
+        list11[i] = nil
     end
-    jewList[1]['list'][1] = list1
-    jewList[1]['list'][2] = list2
+    jewList[1]['list'][1] = list11
+    jewList[1]['list'][2] = list12
+
+    startIndex = math.floor(#list21 / 2) + 1
+    endIndex = #list21
+    for i = endIndex, startIndex, -1 do
+        table.insert(list22, 1, list21[i])
+        list21[i] = nil
+    end
+    jewList[2]['list'][1] = list21
+    jewList[2]['list'][2] = list22
 end
 
 createLabel = function(itemName)
@@ -325,7 +343,7 @@ initUI = function()
     for index, jewItem in ipairs(jewList) do
         local category = jewItem['category']
         local categoryButton = XUI.createButton(mainFrame, 60, XUI.Red .. category)
-        if index == 2 then
+        if index == categoryIndex then
             categoryButton:SetText(XUI.Green .. category)
         end
         categoryButton:SetHeight(20)

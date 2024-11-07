@@ -485,12 +485,12 @@ local function onSuccess(...)
 
     XAuctionBoard.addItem(curTask['itemname'], 'craft')
     if curTask['count'] <= 1 then
-        local item = XAuctionCenter.getItem(curTask['itemname'])
-        if item then
-            if #item['myvalidlist'] < item['stackcount'] then
-                XAuctionCenter.addQueryTaskByItemName(curTask['itemname'])
-            end
-        end
+        -- local item = XAuctionCenter.getItem(curTask['itemname'])
+        -- if item then
+        --     if #item['myvalidlist'] < item['stackcount'] then
+        --         XAuctionCenter.addQueryTaskByItemName(curTask['itemname'])
+        --     end
+        -- end
         finishCurTask()
     else
         curTask['count'] = curTask['count'] - 1
@@ -573,4 +573,12 @@ end
 XCraftQueue.toggle = function() XUI.toggleVisible(mainFrame) end
 XCraftQueue.getItemCount = function()
     return #craftQueue
+end
+XCraftQueue.getCurItemName = function()
+    if not curTask then return nil end
+    if isRunning then
+        return curTask['itemname']
+    else
+        return nil
+    end
 end

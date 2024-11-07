@@ -367,6 +367,7 @@ XUI.Color_Fair = XUI.Yellow
 XUI.Color_Normal = XUI.White
 XUI.Color_Good = XUI.Green
 XUI.Color_Great = XUI.Cyan
+XUI.Color_None = XUI.Blue
 
 -- <20%(>5): 红 / 20%-33%(3~5): 黄 / 33%-50%(2~3): 绿 / >50%(<2) 青
 XUI.getColor_DealRate = function(dealRate)
@@ -413,7 +414,7 @@ XUI.getColor_BagStackCount = function(bagCount, stackCount)
     elseif bagCount > 0 then
         res = XUI.Color_Fair
     else
-        res = XUI.Color_Bad
+        res = XUI.Color_None
     end
     return res
 end
@@ -433,7 +434,7 @@ XUI.getColor_AuctionStackCount = function(auctionCount, stackCount)
     elseif auctionCount > 0 then
         res = XUI.Color_Fair
     else
-        res = XUI.Color_Bad
+        res = XUI.Color_None
     end
     return res
 end

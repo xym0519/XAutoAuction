@@ -7,11 +7,11 @@
 ## SavedVariablesPerCharacter: XInfoTradeSkillList, XSpeakWordList, XItemList, XBuyItemList, XJewWordList, XJewWordSetting, XAuctionBoardList, XFrameLevel
 ## Dependencies: XJewTool_Data
 
-XUtils.lua
-XDebug.lua
 XAPI.lua
 XUI.lua
 XJewTool.lua
+XUtils.lua
+XDebug.lua
 XExternal.lua
 
 XUIInputDialog.lua
