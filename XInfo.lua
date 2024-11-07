@@ -466,7 +466,7 @@ XInfo.isMe = function(characterName)
     return XUtils.inArray(characterName, XInfo.characterList)
 end
 
-XInfo.partnerList = { '嘿丶小十六', '京城顽主', '小灬白龙' }
+XInfo.partnerList = { '嘿丶小十六', '京城顽主', '小灬白龙', '暗影肌', '奔波丶霸' }
 XInfo.isPartner = function(characterName)
     -- return true
     return XUtils.inArray(characterName, XInfo.partnerList)

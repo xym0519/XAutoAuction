@@ -8,6 +8,8 @@ local materialFrames = {}
 
 local dft_mainFrameHeightL = 600
 local dft_mainFrameHeightS = 300
+local dft_mainFrameWidthL = 1325
+local dft_mainFrameWidthS = 800
 local dft_buyPerRow = 13
 local dft_minPrice = 9999999
 local dft_maxPrice = 2180000
@@ -28,6 +30,8 @@ local dft_sectionGap = 10
 
 local mainFrameHeightType = 1
 local mainFrameHeight = dft_mainFrameHeightL
+local mainFrameWidthType = 1
+local mainFrameWidth = dft_mainFrameWidthL
 local displayList = {}
 
 local isStarted = false
@@ -102,6 +106,8 @@ local itemStarClick
 local itemCanCraftClick
 local itemRefreshClick
 local itemCleanClick
+local itemOnEnter
+local itemOnLeave
 
 local processQueryTask
 local processMaterialQueryTask
@@ -129,7 +135,7 @@ resetData = function()
 end
 
 initUI = function()
-    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', 1325, mainFrameHeight)
+    mainFrame = XUI.createFrame('XAuctionCenterMainFrame', mainFrameWidth, mainFrameHeight)
     mainFrame:SetFrameStrata('HIGH')
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
     mainFrame.title:SetText('')
@@ -179,6 +185,23 @@ initUI = function()
         mainFrame.listFrame:SetHeight(mainFrameHeight - 100)
         scrollView:SetHeight(mainFrame.listFrame:GetHeight() - mainFrame.listFrame.labelFrame:GetHeight())
         refreshUI()
+    end)
+
+    local widthTypeButton = XUI.createButton(mainFrame, 30, 'W')
+    widthTypeButton:SetPoint('TOPRIGHT', mainFrame, 'TOPRIGHT', 0, -30)
+    widthTypeButton:SetScript('OnClick', function(self)
+        -- if scrollView == nil then return end
+
+        -- mainFrameHeightType = mainFrameHeightType % 2 + 1
+        -- if mainFrameHeightType == 1 then
+        --     mainFrameHeight = dft_mainFrameHeightL
+        -- else
+        --     mainFrameHeight = dft_mainFrameHeightS
+        -- end
+        -- mainFrame:SetHeight(mainFrameHeight + mainFrame.materialFrame:GetHeight())
+        -- mainFrame.listFrame:SetHeight(mainFrameHeight - 100)
+        -- scrollView:SetHeight(mainFrame.listFrame:GetHeight() - mainFrame.listFrame.labelFrame:GetHeight())
+        -- refreshUI()
     end)
 
     local auctionBoardButton = XUI.createButton(mainFrame, dft_buttonWidth, '面板')
@@ -451,7 +474,7 @@ initUI = function()
     local indexLabel = XUI.createLabel(labelFrame, 35, '序号', 'CENTER')
     indexLabel:SetPoint('LEFT', labelFrame, 'LEFT', 5, 0)
 
-    local nameLabel = XUI.createLabel(labelFrame, 150, '名称', 'CENTER')
+    local nameLabel = XUI.createLabel(labelFrame, 75, '名称', 'CENTER')
     nameLabel:SetPoint('LEFT', indexLabel, 'RIGHT', 150, 0)
 
     local timeLabel = XUI.createLabel(labelFrame, 50, '时间', 'CENTER')
@@ -468,6 +491,9 @@ initUI = function()
 
     local priceLabel = XUI.createLabel(labelFrame, 210, '现/上/高/基', 'CENTER')
     priceLabel:SetPoint('LEFT', dealLabel, 'RIGHT', 3, 0)
+
+    local sellerLabel = XUI.createLabel(labelFrame, 80, '卖家', 'CENTER')
+    sellerLabel:SetPoint('LEFT', priceLabel, 'RIGHT', 3, 0)
 
     scrollView = XUI.createScrollView(listFrame, listFrame:GetWidth(),
         listFrame:GetHeight() - labelFrame:GetHeight())
@@ -629,30 +655,35 @@ filterDisplayList = function()
         itemToBagButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
         itemToBagButton:SetScript('OnLeave', function(self) self.frame.bg:Hide() end)
 
-        local itemNameButton = XUI.createButton(frame, 180, '')
-        itemNameButton:SetPoint('LEFT', itemToBagButton, 'RIGHT', 2, 0)
+        local itemIcon = XUI.createIcon(frame, 25, 25)
+        itemIcon:SetPoint('LEFT', itemToBagButton, 'RIGHT', 2, 0)
+        itemIcon:SetScript("OnEnter", itemOnEnter)
+        itemIcon:SetScript("OnLeave", itemOnLeave)
+        frame.itemIcon = itemIcon
+        itemIcon.frame = frame
+
+        local itemNameButton = XUI.createButton(frame, 80, '')
+        itemNameButton:SetPoint('LEFT', itemIcon, 'RIGHT', 0, 0)
         itemNameButton:SetScript('OnClick', itemNameClick)
-        itemNameButton:SetScript("OnEnter", function(self)
-            local tindex = self.frame.index
-            local titem = XItemList[tindex];
-            if not titem then return end
-            local itemid = XInfo.getItemId(titem['itemname'])
-            if itemid > 0 then
-                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                GameTooltip:SetHyperlink("item:" .. itemid) -- 显示物品信息
+        itemNameButton:SetScript("OnEnter", itemOnEnter)
+        itemNameButton:SetScript("OnLeave", itemOnLeave)
+
+        local itemNameButtonBorderLeft = itemNameButton:CreateTexture(nil, 'OVERLAY')
+        itemNameButtonBorderLeft:SetColorTexture(1, 1, 0, 0)
+        itemNameButtonBorderLeft:SetPoint('TOPLEFT', itemNameButton, 'TOPLEFT', 5, -5)
+        itemNameButtonBorderLeft:SetPoint('BOTTOMRIGHT', itemNameButton, 'BOTTOMLEFT', 8, 5)
+        itemNameButton.borderLeft = itemNameButtonBorderLeft
+
+        itemNameButton.SetHighlight = function(self, highlight)
+            if highlight then
+                self.borderLeft:SetColorTexture(1, 1, 0, 1)
+            else
+                self.borderLeft:SetColorTexture(1, 1, 0, 0)
             end
-            self.frame.bg:Show()
-        end)
-        itemNameButton:SetScript("OnLeave", function(self)
-            GameTooltip:Hide()
-            self.frame.bg:Hide()
-        end)
+        end
+
         frame.itemNameButton = itemNameButton
         itemNameButton.frame = frame
-
-        local icon = XUI.createIcon(frame, 25, 25)
-        icon:SetPoint('LEFT', itemNameButton, 'LEFT', 3, 0)
-        frame.icon = icon
 
         local labelTime = XUI.createLabel(frame, 50, '', 'CENTER')
         labelTime:SetPoint('LEFT', itemNameButton, 'RIGHT', 3, 0)
@@ -678,8 +709,13 @@ filterDisplayList = function()
         frame.labelPrice = labelPrice
         labelPrice.frame = frame
 
+        local labelSeller = XUI.createLabel(frame, 80, '', 'CENTER')
+        labelSeller:SetPoint('LEFT', labelPrice, 'RIGHT', 3, 0)
+        frame.labelSeller = labelSeller
+        labelSeller.frame = frame
+
         local deleteButton = XUI.createButton(frame, 30, '删')
-        deleteButton:SetPoint('LEFT', labelPrice, 'RIGHT', 0, 0)
+        deleteButton:SetPoint('LEFT', labelSeller, 'RIGHT', 3, 0)
         deleteButton:SetScript('OnClick', itemDeleteClick)
         deleteButton.frame = frame
         deleteButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
@@ -959,6 +995,7 @@ refreshUI = function()
         if canCraft == nil then canCraft = false end
         local basePrice = item['baseprice']
         local minPriceOther = item['minpriceother']
+        local minPriceSeller = item['minpriceseller']
         local maxPriceOther = item['maxpriceother']
         local lastPriceOther = item['lastpriceother']
         local stackCount = item['stackcount']
@@ -979,7 +1016,7 @@ refreshUI = function()
 
         local recipe = XInfo.getTradeSkillItem(itemName)
 
-        local itemNameStr = string.sub(itemName, 1, 18);
+        local itemNameStr = string.sub(itemName, 1, 6);
         if not enabled then
             itemNameStr = XUI.Gray .. itemNameStr
         elseif minPriceOther < basePrice then
@@ -992,10 +1029,6 @@ refreshUI = function()
             itemNameStr = XUI.Green .. itemNameStr
         else
             itemNameStr = XUI.Cyan .. itemNameStr
-        end
-
-        if star then
-            itemNameStr = XUI.White .. ' ★ ' .. itemNameStr
         end
 
         if not recipe then
@@ -1068,9 +1101,16 @@ refreshUI = function()
 
         local basePriceStr = XUI.White .. XUtils.priceToString(basePrice)
 
+        if XUtils.inArray(minPriceSeller, XInfo.partnerList) then
+            minPriceSeller = XUI.Orange .. string.sub(minPriceSeller, 1, 12)
+        else
+            minPriceSeller = string.sub(minPriceSeller, 1, 12)
+        end
+
         frame.itemIndexButton:SetText(idx)
-        frame.icon:SetTexture(XAPI.GetItemIcon(itemId))
+        frame.itemIcon:SetTexture(XAPI.GetItemIcon(itemId))
         frame.itemNameButton:SetText(itemNameStr)
+        frame.itemNameButton:SetHighlight(star)
 
         frame.labelTime:SetText(updateTimeStr)
         frame.labelBag:SetText(bankCountStr .. ' / ' .. mailCountStr
@@ -1085,6 +1125,7 @@ refreshUI = function()
         frame.labelPrice:SetText(minPriceOtherStr
             .. XUI.White .. ' / ' .. lastPriceOtherStr
             .. XUI.White .. ' / ' .. maxPriceOtherStr .. ' / ' .. basePriceStr)
+        frame.labelSeller:SetText(minPriceSeller)
 
         if enabled then
             frame.enableButton:SetText(XUI.Green .. '起')
@@ -1224,6 +1265,7 @@ addItem = function(itemName, basePrice, defaultPrice, stackCount)
         lowercount = 0,
         pricelowcount = 0,
         minpriceother = dft_minPrice,
+        minpriceseller = '',
         minpriceotherispartner = false,
         maxpriceother = 0,
         lastpriceother = 0,
@@ -1244,6 +1286,7 @@ resetItem = function(item, keepUpdateTime)
         item['lastpriceother'] = item['minpriceother']
     end
     item['minpriceother'] = dft_minPrice
+    item['minpriceseller'] = ''
     item['minpriceotherispartner'] = false
     item['maxpriceother'] = 0
     if not keepUpdateTime then
@@ -2079,6 +2122,23 @@ itemCleanClick = function(this)
     cleanLower(item['itemname'])
 end
 
+itemOnEnter = function(self)
+    local tindex = self.frame.index
+    local titem = XItemList[tindex];
+    if not titem then return end
+    local itemid = XInfo.getItemId(titem['itemname'])
+    if itemid > 0 then
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetHyperlink("item:" .. itemid) -- 显示物品信息
+    end
+    self.frame.bg:Show()
+end
+
+itemOnLeave = function(self)
+    GameTooltip:Hide()
+    self.frame.bg:Hide()
+end
+
 -- Event callback
 local function onQueryItemListUpdate(...)
     if not curTask then return end
@@ -2180,6 +2240,7 @@ processQueryTask = function(task)
                             end
                             item['myvalidlist'] = newPriceList
                             item['minpriceother'] = buyoutPrice
+                            item['minpriceseller'] = seller
                             item['minpriceotherispartner'] = XInfo.isPartner(seller)
                         elseif buyoutPrice == item['minpriceother'] then
                             if not item['minpriceotherispartner'] then
