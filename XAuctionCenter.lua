@@ -9,8 +9,7 @@ local materialFrames = {}
 local dft_mainFrameHeightL = 600
 local dft_mainFrameHeightS = 300
 local dft_mainFrameWidthL = 1325
-local dft_mainFrameWidthS = 800
-local dft_buyPerRow = 13
+local dft_mainFrameWidthS = 1000
 local dft_minPrice = 9999999
 local dft_maxPrice = 2180000
 local dft_basePriceRate = 1.5
@@ -20,7 +19,7 @@ local dft_filterList = { '全部', '星星', '优质', '可售', '缺货', '有�
 local dft_deltaPrice = 10
 local dft_postdelay = 2
 local dft_oldInterval = 1800
-local dft_maxCraftCount = 20
+local dft_maxCraftCount = 12
 local dft_materialTaskInterval = 30
 local dft_multiSellList = { '单倍', '双倍', '全部' }
 
@@ -57,6 +56,7 @@ local cleaningItems = {}
 local initData
 local resetData
 local initUI
+local reloadUI
 local reloadBuyList
 local filterDisplayList
 local refreshUI
@@ -170,38 +170,48 @@ initUI = function()
     mainFrame:addTitle('制造')
     tinsert(UISpecialFrames, mainFrame:GetName())
 
-    local heightTypeButton = XUI.createButton(mainFrame, 30, 'H')
-    heightTypeButton:SetPoint('TOPRIGHT', mainFrame, 'TOPRIGHT', 0, -30)
-    heightTypeButton:SetScript('OnClick', function(self)
-        if scrollView == nil then return end
+    local widthTypeButton = XUI.createButton(mainFrame, 30, 'W')
+    widthTypeButton:SetPoint('TOPRIGHT', mainFrame, 'TOPRIGHT', 0, -30)
+    widthTypeButton:SetScript('OnClick', function(self)
+        mainFrameWidthType = mainFrameWidthType % 2 + 1
+        if mainFrameWidthType == 1 then
+            mainFrameWidth = dft_mainFrameWidthL
+        else
+            mainFrameWidth = dft_mainFrameWidthS
+        end
+        reloadUI()
+    end)
 
+    local heightTypeButton = XUI.createButton(mainFrame, 30, 'H')
+    heightTypeButton:SetPoint('TOPLEFT', widthTypeButton, 'BOTTOMLEFT', 0, -2)
+    heightTypeButton:SetScript('OnClick', function(self)
         mainFrameHeightType = mainFrameHeightType % 2 + 1
         if mainFrameHeightType == 1 then
             mainFrameHeight = dft_mainFrameHeightL
         else
             mainFrameHeight = dft_mainFrameHeightS
         end
-        mainFrame:SetHeight(mainFrameHeight + mainFrame.materialFrame:GetHeight())
-        mainFrame.listFrame:SetHeight(mainFrameHeight - 100)
-        scrollView:SetHeight(mainFrame.listFrame:GetHeight() - mainFrame.listFrame.labelFrame:GetHeight())
-        refreshUI()
+        reloadUI()
     end)
 
-    local widthTypeButton = XUI.createButton(mainFrame, 30, 'W')
-    widthTypeButton:SetPoint('TOPRIGHT', mainFrame, 'TOPRIGHT', 0, -30)
-    widthTypeButton:SetScript('OnClick', function(self)
-        -- if scrollView == nil then return end
+    local largeUIButton = XUI.createButton(mainFrame, 30, 'L')
+    largeUIButton:SetPoint('TOPLEFT', heightTypeButton, 'BOTTOMLEFT', 0, -2)
+    largeUIButton:SetScript('OnClick', function(self)
+        mainFrameWidthType = 1
+        mainFrameHeightType = 1
+        mainFrameHeight = dft_mainFrameHeightL
+        mainFrameWidth = dft_mainFrameWidthL
+        reloadUI()
+    end)
 
-        -- mainFrameHeightType = mainFrameHeightType % 2 + 1
-        -- if mainFrameHeightType == 1 then
-        --     mainFrameHeight = dft_mainFrameHeightL
-        -- else
-        --     mainFrameHeight = dft_mainFrameHeightS
-        -- end
-        -- mainFrame:SetHeight(mainFrameHeight + mainFrame.materialFrame:GetHeight())
-        -- mainFrame.listFrame:SetHeight(mainFrameHeight - 100)
-        -- scrollView:SetHeight(mainFrame.listFrame:GetHeight() - mainFrame.listFrame.labelFrame:GetHeight())
-        -- refreshUI()
+    local smallUIButton = XUI.createButton(mainFrame, 30, 'S')
+    smallUIButton:SetPoint('TOPLEFT', largeUIButton, 'BOTTOMLEFT', 0, -2)
+    smallUIButton:SetScript('OnClick', function(self)
+        mainFrameWidthType = 2
+        mainFrameHeightType = 2
+        mainFrameHeight = dft_mainFrameHeightS
+        mainFrameWidth = dft_mainFrameWidthS
+        reloadUI()
     end)
 
     local auctionBoardButton = XUI.createButton(mainFrame, dft_buttonWidth, '面板')
@@ -343,7 +353,7 @@ initUI = function()
     local allToBagButton = XUI.createButton(mainFrame, dft_buttonWidth, '全取')
     allToBagButton:SetPoint('LEFT', allToBankButton, 'RIGHT', dft_buttonGap, 0)
     allToBagButton:SetScript('OnClick', function()
-        local itemNames = { '简易研磨器' }
+        local itemNames = { '简易研磨器', '珠宝制作工具' }
         for _, item in ipairs(XItemList) do
             table.insert(itemNames, item['itemname'])
         end
@@ -457,12 +467,12 @@ initUI = function()
     priceAdjustButton:SetScript('OnClick', priceAdjustClick)
 
     local materialFrame = XAPI.CreateFrame('Frame', nil, mainFrame)
-    materialFrame:SetSize(mainFrame:GetWidth(), 0)
+    materialFrame:SetSize(mainFrameWidth, 0)
     materialFrame:SetPoint('TOP', mainFrame, 'TOP', 0, -95)
     mainFrame.materialFrame = materialFrame
 
     local listFrame = XAPI.CreateFrame('Frame', nil, mainFrame)
-    listFrame:SetSize(mainFrame:GetWidth() - 20, mainFrameHeight - 100)
+    listFrame:SetSize(mainFrameWidth - 20, mainFrameHeight - 100)
     listFrame:SetPoint('Bottom', mainFrame, 'Bottom', 0, 10)
     mainFrame.listFrame = listFrame
 
@@ -473,31 +483,61 @@ initUI = function()
 
     local indexLabel = XUI.createLabel(labelFrame, 35, '序号', 'CENTER')
     indexLabel:SetPoint('LEFT', labelFrame, 'LEFT', 5, 0)
+    labelFrame.indexLabel = indexLabel
 
     local nameLabel = XUI.createLabel(labelFrame, 75, '名称', 'CENTER')
     nameLabel:SetPoint('LEFT', indexLabel, 'RIGHT', 150, 0)
+    labelFrame.nameLabel = nameLabel
 
     local timeLabel = XUI.createLabel(labelFrame, 50, '时间', 'CENTER')
     timeLabel:SetPoint('LEFT', nameLabel, 'RIGHT', 3, 0)
+    labelFrame.timeLabel = timeLabel
 
     local bagLabel = XUI.createLabel(labelFrame, 130, '银/邮/包/总', 'CENTER')
     bagLabel:SetPoint('LEFT', timeLabel, 'RIGHT', 3, 0)
+    labelFrame.bagLabel = bagLabel
 
     local auctionLabel = XUI.createLabel(labelFrame, 150, '卖/我/低/底', 'CENTER')
     auctionLabel:SetPoint('LEFT', bagLabel, 'RIGHT', 3, 0)
+    labelFrame.auctionLabel = auctionLabel
 
     local dealLabel = XUI.createLabel(labelFrame, 130, '率/次/今/堆', 'CENTER')
     dealLabel:SetPoint('LEFT', auctionLabel, 'RIGHT', 3, 0)
+    labelFrame.dealLabel = dealLabel
 
     local priceLabel = XUI.createLabel(labelFrame, 210, '现/上/高/基', 'CENTER')
     priceLabel:SetPoint('LEFT', dealLabel, 'RIGHT', 3, 0)
+    labelFrame.priceLabel = priceLabel
 
     local sellerLabel = XUI.createLabel(labelFrame, 80, '卖家', 'CENTER')
     sellerLabel:SetPoint('LEFT', priceLabel, 'RIGHT', 3, 0)
+    labelFrame.sellerLabel = sellerLabel
 
     scrollView = XUI.createScrollView(listFrame, listFrame:GetWidth(),
         listFrame:GetHeight() - labelFrame:GetHeight())
     scrollView:SetPoint('TOPLEFT', labelFrame, 'BottomLeft', 0, 0)
+
+    refreshUI()
+end
+
+reloadUI = function()
+    if mainFrame == nil then return end
+    if scrollView == nil then return end
+
+    mainFrame:SetWidth(mainFrameWidth)
+    mainFrame:SetHeight(mainFrameHeight + mainFrame.materialFrame:GetHeight())
+
+    mainFrame.materialFrame:SetWidth(mainFrameWidth)
+
+    mainFrame.listFrame:SetWidth(mainFrameWidth - 20)
+    mainFrame.listFrame:SetHeight(mainFrameHeight - 100)
+    mainFrame.listFrame.labelFrame:SetWidth(mainFrame.listFrame:GetWidth())
+
+    scrollView:SetWidth(mainFrame.listFrame:GetWidth())
+    scrollView:SetHeight(mainFrame.listFrame:GetHeight() - mainFrame.listFrame.labelFrame:GetHeight())
+
+    filterDisplayList()
+    reloadBuyList()
 
     refreshUI()
 end
@@ -560,15 +600,15 @@ filterDisplayList = function()
                 disFlag = true
             end
         elseif displayFilter == '量大' then
-            if auctionCount >= 10 and (IsLeftShiftKeyDown() or minPriceOther >= basePrice) then
+            if auctionCount >= 8 and (IsLeftShiftKeyDown() or (enabled and minPriceOther >= basePrice)) then
                 disFlag = true
             end
         elseif displayFilter == '邮寄' then
-            if bagCount > 5 and (IsLeftShiftKeyDown() or minPriceOther >= basePrice) then
+            if bagCount > 5 and (IsLeftShiftKeyDown() or (enabled and minPriceOther >= basePrice)) then
                 disFlag = true
             end
         elseif displayFilter == '收件' then
-            if mailCount > 0 and (IsLeftShiftKeyDown() or minPriceOther >= basePrice) then
+            if mailCount > 0 and (IsLeftShiftKeyDown() or (enabled and minPriceOther >= basePrice)) then
                 disFlag = true
             end
         elseif displayFilter == '垃圾' then
@@ -599,6 +639,66 @@ filterDisplayList = function()
     end
     displayList = dataList;
 
+    local labelFrame = mainFrame.listFrame.labelFrame
+    if mainFrameWidthType == 1 then
+        labelFrame.indexLabel:SetWidth(35)
+        labelFrame.indexLabel:SetPoint('LEFT', labelFrame, 'LEFT', 5, 0)
+
+        labelFrame.nameLabel:SetWidth(75)
+        labelFrame.nameLabel:SetPoint('LEFT', labelFrame.indexLabel, 'RIGHT', 150, 0)
+
+        labelFrame.timeLabel:SetWidth(50)
+        labelFrame.timeLabel:SetPoint('LEFT', labelFrame.nameLabel, 'RIGHT', 3, 0)
+
+        labelFrame.bagLabel:SetWidth(130)
+        labelFrame.bagLabel:SetPoint('LEFT', labelFrame.timeLabel, 'RIGHT', 3, 0)
+        labelFrame.bagLabel:SetText('银/邮/包/总')
+
+        labelFrame.auctionLabel:SetWidth(150)
+        labelFrame.auctionLabel:SetPoint('LEFT', labelFrame.bagLabel, 'RIGHT', 3, 0)
+        labelFrame.auctionLabel:SetText('卖/我/低/底')
+
+        labelFrame.dealLabel:SetWidth(130)
+        labelFrame.dealLabel:SetPoint('LEFT', labelFrame.auctionLabel, 'RIGHT', 3, 0)
+        labelFrame.dealLabel:SetText('率/次/今/堆')
+
+        labelFrame.priceLabel:SetWidth(210)
+        labelFrame.priceLabel:SetPoint('LEFT', labelFrame.dealLabel, 'RIGHT', 3, 0)
+        labelFrame.priceLabel:SetText('现/上/高/基')
+
+        labelFrame.sellerLabel:SetWidth(80)
+        labelFrame.sellerLabel:SetPoint('LEFT', labelFrame.priceLabel, 'RIGHT', 3, 0)
+        labelFrame.sellerLabel:SetText('卖家')
+    else
+        labelFrame.indexLabel:SetWidth(0)
+
+        labelFrame.nameLabel:SetWidth(75)
+        labelFrame.nameLabel:SetPoint('LEFT', labelFrame, 'LEFT', 68, 0)
+
+        labelFrame.timeLabel:SetWidth(50)
+        labelFrame.timeLabel:SetPoint('LEFT', labelFrame.nameLabel, 'RIGHT', 3, 0)
+
+        labelFrame.bagLabel:SetWidth(110)
+        labelFrame.bagLabel:SetPoint('LEFT', labelFrame.timeLabel, 'RIGHT', 3, 0)
+        labelFrame.bagLabel:SetText('邮/包/总')
+
+        labelFrame.auctionLabel:SetWidth(80)
+        labelFrame.auctionLabel:SetPoint('LEFT', labelFrame.bagLabel, 'RIGHT', 3, 0)
+        labelFrame.auctionLabel:SetText('卖/我')
+
+        labelFrame.dealLabel:SetWidth(130)
+        labelFrame.dealLabel:SetPoint('LEFT', labelFrame.auctionLabel, 'RIGHT', 3, 0)
+        labelFrame.dealLabel:SetText('率/次/今/堆')
+
+        labelFrame.priceLabel:SetWidth(210)
+        labelFrame.priceLabel:SetPoint('LEFT', labelFrame.dealLabel, 'RIGHT', 3, 0)
+        labelFrame.priceLabel:SetText('现/上/高/基')
+
+        labelFrame.sellerLabel:SetWidth(150)
+        labelFrame.sellerLabel:SetPoint('LEFT', labelFrame.priceLabel, 'RIGHT', 3, 0)
+        labelFrame.sellerLabel:SetText('卖家')
+    end
+
     scrollView:ClearContents()
     for _, item in ipairs(dataList) do
         local frame = scrollView:CreateFrame(mainFrame:GetWidth() - 20, 30)
@@ -615,48 +715,66 @@ filterDisplayList = function()
         frameBG:Hide()
         frame.bg = frameBG
 
-        local itemIndexButton = XUI.createButton(frame, 35, '999')
-        itemIndexButton:SetPoint('LEFT', frame, 'LEFT', 0, 0)
-        itemIndexButton:SetScript('OnClick', itemSortClick)
-        frame.itemIndexButton = itemIndexButton
-        itemIndexButton.frame = frame
-        itemIndexButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
-        itemIndexButton:SetScript('OnLeave', function(self) self.frame.bg:Hide() end)
+        local itemIndexButton = nil
+        if mainFrameWidthType == 1 then
+            itemIndexButton = XUI.createButton(frame, 35, '999')
+            itemIndexButton:SetPoint('LEFT', frame, 'LEFT', 0, 0)
+            itemIndexButton:SetScript('OnClick', itemSortClick)
+            frame.itemIndexButton = itemIndexButton
+            itemIndexButton.frame = frame
+            itemIndexButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
+            itemIndexButton:SetScript('OnLeave', function(self) self.frame.bg:Hide() end)
+        end
 
-        local itemMailButton = XUI.createButton(frame, 30, 'U')
-        itemMailButton:SetPoint('LEFT', itemIndexButton, 'RIGHT', 0, 0)
-        itemMailButton:SetScript('OnClick', itemMailClick)
-        frame.itemMailButton = itemMailButton
-        itemMailButton.frame = frame
-        itemMailButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
-        itemMailButton:SetScript('OnLeave', function(self) self.frame.bg:Hide() end)
+        local itemMailButton = nil
+        if mainFrameWidthType == 1 then
+            itemMailButton = XUI.createButton(frame, 30, 'U')
+            itemMailButton:SetPoint('LEFT', itemIndexButton, 'RIGHT', 0, 0)
+            itemMailButton:SetScript('OnClick', itemMailClick)
+            frame.itemMailButton = itemMailButton
+            itemMailButton.frame = frame
+            itemMailButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
+            itemMailButton:SetScript('OnLeave', function(self) self.frame.bg:Hide() end)
+        end
 
         local itemReceiveButton = XUI.createButton(frame, 30, 'R')
-        itemReceiveButton:SetPoint('LEFT', itemMailButton, 'RIGHT', 0, 0)
+        if mainFrameWidthType == 1 then
+            itemReceiveButton:SetPoint('LEFT', itemMailButton, 'RIGHT', 0, 0)
+        else
+            itemReceiveButton:SetPoint('LEFT', frame, 'LEFT', 0, 0)
+        end
         itemReceiveButton:SetScript('OnClick', itemReceiveClick)
         frame.itemReceiveButton = itemReceiveButton
         itemReceiveButton.frame = frame
         itemReceiveButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
         itemReceiveButton:SetScript('OnLeave', function(self) self.frame.bg:Hide() end)
 
-        local itemToBankButton = XUI.createButton(frame, 30, 'O')
-        itemToBankButton:SetPoint('LEFT', itemReceiveButton, 'RIGHT', 0, 0)
-        itemToBankButton:SetScript('OnClick', itemToBankClick)
-        frame.itemToBankButton = itemToBankButton
-        itemToBankButton.frame = frame
-        itemToBankButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
-        itemToBankButton:SetScript('OnLeave', function(self) self.frame.bg:Hide() end)
+        local itemToBankButton = nil
+        local itemToBagButton = nil
+        if mainFrameWidthType == 1 then
+            itemToBankButton = XUI.createButton(frame, 30, 'O')
+            itemToBankButton:SetPoint('LEFT', itemReceiveButton, 'RIGHT', 0, 0)
+            itemToBankButton:SetScript('OnClick', itemToBankClick)
+            frame.itemToBankButton = itemToBankButton
+            itemToBankButton.frame = frame
+            itemToBankButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
+            itemToBankButton:SetScript('OnLeave', function(self) self.frame.bg:Hide() end)
 
-        local itemToBagButton = XUI.createButton(frame, 30, 'I')
-        itemToBagButton:SetPoint('LEFT', itemToBankButton, 'RIGHT', 0, 0)
-        itemToBagButton:SetScript('OnClick', itemToBagClick)
-        frame.itemToBagButton = itemToBagButton
-        itemToBagButton.frame = frame
-        itemToBagButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
-        itemToBagButton:SetScript('OnLeave', function(self) self.frame.bg:Hide() end)
+            itemToBagButton = XUI.createButton(frame, 30, 'I')
+            itemToBagButton:SetPoint('LEFT', itemToBankButton, 'RIGHT', 0, 0)
+            itemToBagButton:SetScript('OnClick', itemToBagClick)
+            frame.itemToBagButton = itemToBagButton
+            itemToBagButton.frame = frame
+            itemToBagButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
+            itemToBagButton:SetScript('OnLeave', function(self) self.frame.bg:Hide() end)
+        end
 
         local itemIcon = XUI.createIcon(frame, 25, 25)
-        itemIcon:SetPoint('LEFT', itemToBagButton, 'RIGHT', 2, 0)
+        if mainFrameWidthType == 1 then
+            itemIcon:SetPoint('LEFT', itemToBagButton, 'RIGHT', 2, 0)
+        else
+            itemIcon:SetPoint('LEFT', itemReceiveButton, 'RIGHT', 2, 0)
+        end
         itemIcon:SetScript("OnEnter", itemOnEnter)
         itemIcon:SetScript("OnLeave", itemOnLeave)
         frame.itemIcon = itemIcon
@@ -690,11 +808,17 @@ filterDisplayList = function()
         frame.labelTime = labelTime
 
         local labelBag = XUI.createLabel(frame, 130, '', 'CENTER')
+        if mainFrameWidthType == 2 then
+            labelBag:SetWidth(110)
+        end
         labelBag:SetPoint('LEFT', labelTime, 'RIGHT', 3, 0)
         frame.labelBag = labelBag
         labelBag.frame = frame
 
         local labelAuction = XUI.createLabel(frame, 150, '', 'CENTER')
+        if mainFrameWidthType == 2 then
+            labelAuction:SetWidth(80)
+        end
         labelAuction:SetPoint('LEFT', labelBag, 'RIGHT', 3, 0)
         frame.labelAuction = labelAuction
         labelAuction.frame = frame
@@ -710,57 +834,82 @@ filterDisplayList = function()
         labelPrice.frame = frame
 
         local labelSeller = XUI.createLabel(frame, 80, '', 'CENTER')
+        if mainFrameWidthType == 2 then
+            labelSeller:SetWidth(150)
+        end
         labelSeller:SetPoint('LEFT', labelPrice, 'RIGHT', 3, 0)
         frame.labelSeller = labelSeller
         labelSeller.frame = frame
 
-        local deleteButton = XUI.createButton(frame, 30, '删')
-        deleteButton:SetPoint('LEFT', labelSeller, 'RIGHT', 3, 0)
-        deleteButton:SetScript('OnClick', itemDeleteClick)
-        deleteButton.frame = frame
-        deleteButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
-        deleteButton:SetScript('OnLeave', function(self) self.frame.bg:Hide() end)
+        local deleteButton = nil
+        if mainFrameWidthType == 1 then
+            deleteButton = XUI.createButton(frame, 30, '删')
+            deleteButton:SetPoint('LEFT', labelSeller, 'RIGHT', 3, 0)
+            deleteButton:SetScript('OnClick', itemDeleteClick)
+            deleteButton.frame = frame
+            deleteButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
+            deleteButton:SetScript('OnLeave', function(self) self.frame.bg:Hide() end)
+        end
 
-        local rubbishButton = XUI.createButton(frame, 30, '圾')
-        rubbishButton:SetPoint('LEFT', deleteButton, 'RIGHT', 0, 0)
-        rubbishButton:SetScript('OnClick', itemRubbishClick)
-        rubbishButton.frame = frame
-        rubbishButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
-        rubbishButton:SetScript('OnLeave', function(self) self.frame.bg:Hide() end)
+        local rubbishButton = nil
+        if mainFrameWidthType == 1 then
+            rubbishButton = XUI.createButton(frame, 30, '圾')
+            rubbishButton:SetPoint('LEFT', deleteButton, 'RIGHT', 0, 0)
+            rubbishButton:SetScript('OnClick', itemRubbishClick)
+            rubbishButton.frame = frame
+            rubbishButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
+            rubbishButton:SetScript('OnLeave', function(self) self.frame.bg:Hide() end)
+        end
 
-        local settingButton = XUI.createButton(frame, 30, '设')
-        settingButton:SetPoint('LEFT', rubbishButton, 'RIGHT', 0, 0)
-        settingButton:SetScript('OnClick', itemSettingClick)
-        settingButton.frame = frame
-        settingButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
-        settingButton:SetScript('OnLeave', function(self) self.frame.bg:Hide() end)
+        local settingButton = nil
+        if mainFrameWidthType == 1 then
+            settingButton = XUI.createButton(frame, 30, '设')
+            settingButton:SetPoint('LEFT', rubbishButton, 'RIGHT', 0, 0)
+            settingButton:SetScript('OnClick', itemSettingClick)
+            settingButton.frame = frame
+            settingButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
+            settingButton:SetScript('OnLeave', function(self) self.frame.bg:Hide() end)
+        end
 
-        local enableButton = XUI.createButton(frame, 30, '')
-        enableButton:SetPoint('LEFT', settingButton, 'RIGHT', 0, 0)
-        enableButton:SetScript('OnClick', itemEnableClick)
-        frame.enableButton = enableButton
-        enableButton.frame = frame
-        enableButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
-        enableButton:SetScript('OnLeave', function(self) self.frame.bg:Hide() end)
+        local enableButton = nil
+        if mainFrameWidthType == 1 then
+            enableButton = XUI.createButton(frame, 30, '')
+            enableButton:SetPoint('LEFT', settingButton, 'RIGHT', 0, 0)
+            enableButton:SetScript('OnClick', itemEnableClick)
+            frame.enableButton = enableButton
+            enableButton.frame = frame
+            enableButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
+            enableButton:SetScript('OnLeave', function(self) self.frame.bg:Hide() end)
+        end
 
-        local starButton = XUI.createButton(frame, 30, '星')
-        starButton:SetPoint('LEFT', enableButton, 'RIGHT', 0, 0)
-        starButton:SetScript('OnClick', itemStarClick)
-        frame.starButton = starButton
-        starButton.frame = frame
-        starButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
-        starButton:SetScript('OnLeave', function(self) self.frame.bg:Hide() end)
+        local starButton = nil
+        if mainFrameWidthType == 1 then
+            starButton = XUI.createButton(frame, 30, '星')
+            starButton:SetPoint('LEFT', enableButton, 'RIGHT', 0, 0)
+            starButton:SetScript('OnClick', itemStarClick)
+            frame.starButton = starButton
+            starButton.frame = frame
+            starButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
+            starButton:SetScript('OnLeave', function(self) self.frame.bg:Hide() end)
+        end
 
-        local itemCanCraftButton = XUI.createButton(frame, 30, '造')
-        itemCanCraftButton:SetPoint('LEFT', starButton, 'RIGHT', 0, 0)
-        itemCanCraftButton:SetScript('OnClick', itemCanCraftClick)
-        frame.itemCanCraftButton = itemCanCraftButton
-        itemCanCraftButton.frame = frame
-        itemCanCraftButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
-        itemCanCraftButton:SetScript('OnLeave', function(self) self.frame.bg:Hide() end)
+        local itemCanCraftButton = nil
+        if mainFrameWidthType == 1 then
+            itemCanCraftButton = XUI.createButton(frame, 30, '造')
+            itemCanCraftButton:SetPoint('LEFT', starButton, 'RIGHT', 0, 0)
+            itemCanCraftButton:SetScript('OnClick', itemCanCraftClick)
+            frame.itemCanCraftButton = itemCanCraftButton
+            itemCanCraftButton.frame = frame
+            itemCanCraftButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
+            itemCanCraftButton:SetScript('OnLeave', function(self) self.frame.bg:Hide() end)
+        end
 
         local itemRefreshButton = XUI.createButton(frame, 30, '刷')
-        itemRefreshButton:SetPoint('LEFT', itemCanCraftButton, 'RIGHT', 0, 0)
+        if mainFrameWidthType == 1 then
+            itemRefreshButton:SetPoint('LEFT', itemCanCraftButton, 'RIGHT', 0, 0)
+        else
+            itemRefreshButton:SetPoint('LEFT', labelSeller, 'RIGHT', 3, 0)
+        end
         itemRefreshButton:SetScript('OnClick', itemRefreshClick)
         itemRefreshButton.frame = frame
         itemRefreshButton:SetScript('OnEnter', function(self) self.frame.bg:Show() end)
@@ -787,6 +936,7 @@ reloadBuyList = function()
             table.insert(enabledBuyList, item)
         end
     end
+    local buyPerRow = math.floor(mainFrameWidth / 96)
     local preRowFrame = mainFrame.materialFrame
     local preFrame = mainFrame.materialFrame
     for _index, item in ipairs(enabledBuyList) do
@@ -797,7 +947,7 @@ reloadBuyList = function()
             materialItemFrame:SetPoint('TOPLEFT', mainFrame.materialFrame, 'TOPLEFT', 15, 0)
             preRowFrame = materialItemFrame
             preFrame = materialItemFrame
-        elseif _index % dft_buyPerRow == 1 then
+        elseif _index % buyPerRow == 1 then
             materialItemFrame:SetPoint('TOPLEFT', preRowFrame, 'BottomLeft', 0, 0)
             preRowFrame = materialItemFrame
             preFrame = materialItemFrame
@@ -858,7 +1008,7 @@ reloadBuyList = function()
 
         table.insert(materialFrames, materialItemFrame)
     end
-    local height = (math.ceil(#enabledBuyList / dft_buyPerRow)) * 30
+    local height = (math.ceil(#enabledBuyList / buyPerRow)) * 30
     mainFrame.materialFrame:SetHeight(height)
     mainFrame:SetHeight(mainFrameHeight + height)
 end
@@ -1104,45 +1254,71 @@ refreshUI = function()
         if XUtils.inArray(minPriceSeller, XInfo.partnerList) then
             minPriceSeller = XUI.Orange .. string.sub(minPriceSeller, 1, 12)
         else
-            minPriceSeller = string.sub(minPriceSeller, 1, 12)
+            if minPriceSeller then
+                minPriceSeller = string.sub(minPriceSeller, 1, 12)
+            else
+                minPriceSeller = ''
+            end
         end
 
-        frame.itemIndexButton:SetText(idx)
+        if frame.itemIndexButton then
+            frame.itemIndexButton:SetText(idx)
+        end
         frame.itemIcon:SetTexture(XAPI.GetItemIcon(itemId))
         frame.itemNameButton:SetText(itemNameStr)
         frame.itemNameButton:SetHighlight(star)
 
         frame.labelTime:SetText(updateTimeStr)
-        frame.labelBag:SetText(bankCountStr .. ' / ' .. mailCountStr
-            .. XUI.White .. ' / ' .. bagCountStr .. XUI.White .. ' / ' .. totalCountStr)
-        frame.labelAuction:SetText(auctionCountStr .. XUI.White .. ' / ' .. validCountStr
-            .. XUI.White .. ' / ' .. priceLowerCountStr
-            .. XUI.White .. ' / ' .. lowerCountStr .. XUI.White)
-        frame.labelDeal:SetText(dealRateStr
-            .. XUI.White .. ' / ' .. dealCountStr
-            .. XUI.White .. ' / ' .. cDealCountStr
-            .. XUI.White .. ' / ' .. stackCountStr)
-        frame.labelPrice:SetText(minPriceOtherStr
-            .. XUI.White .. ' / ' .. lastPriceOtherStr
-            .. XUI.White .. ' / ' .. maxPriceOtherStr .. ' / ' .. basePriceStr)
-        frame.labelSeller:SetText(minPriceSeller)
-
-        if enabled then
-            frame.enableButton:SetText(XUI.Green .. '起')
+        if mainFrameWidthType == 1 then
+            frame.labelBag:SetText(bankCountStr .. ' / ' .. mailCountStr
+                .. XUI.White .. ' / ' .. bagCountStr .. XUI.White .. ' / ' .. totalCountStr)
+            frame.labelAuction:SetText(auctionCountStr .. XUI.White .. ' / ' .. validCountStr
+                .. XUI.White .. ' / ' .. priceLowerCountStr
+                .. XUI.White .. ' / ' .. lowerCountStr .. XUI.White)
+            frame.labelDeal:SetText(dealRateStr
+                .. XUI.White .. ' / ' .. dealCountStr
+                .. XUI.White .. ' / ' .. cDealCountStr
+                .. XUI.White .. ' / ' .. stackCountStr)
+            frame.labelPrice:SetText(minPriceOtherStr
+                .. XUI.White .. ' / ' .. lastPriceOtherStr
+                .. XUI.White .. ' / ' .. maxPriceOtherStr .. ' / ' .. basePriceStr)
+            frame.labelSeller:SetText(minPriceSeller)
         else
-            frame.enableButton:SetText(XUI.Red .. '停')
+            frame.labelBag:SetText(mailCountStr
+                .. XUI.White .. ' / ' .. bagCountStr .. XUI.White .. ' / ' .. totalCountStr)
+            frame.labelAuction:SetText(auctionCountStr .. XUI.White .. ' / ' .. validCountStr)
+            frame.labelDeal:SetText(dealRateStr
+                .. XUI.White .. ' / ' .. dealCountStr
+                .. XUI.White .. ' / ' .. cDealCountStr
+                .. XUI.White .. ' / ' .. stackCountStr)
+            frame.labelPrice:SetText(minPriceOtherStr
+                .. XUI.White .. ' / ' .. lastPriceOtherStr
+                .. XUI.White .. ' / ' .. maxPriceOtherStr .. ' / ' .. basePriceStr)
+            frame.labelSeller:SetText(minPriceSeller)
         end
 
-        if star then
-            frame.starButton:SetText(XUI.Green .. '星')
-        else
-            frame.starButton:SetText(XUI.Red .. '星')
+        if frame.enableButton then
+            if enabled then
+                frame.enableButton:SetText(XUI.Green .. '起')
+            else
+                frame.enableButton:SetText(XUI.Red .. '停')
+            end
         end
 
-        if canCraft then
-            frame.itemCanCraftButton:SetText(XUI.Green .. '造')
-        else
-            frame.itemCanCraftButton:SetText(XUI.Red .. '禁')
+        if frame.starButton then
+            if star then
+                frame.starButton:SetText(XUI.Green .. '星')
+            else
+                frame.starButton:SetText(XUI.Red .. '星')
+            end
+        end
+
+        if frame.itemCanCraftButton then
+            if canCraft then
+                frame.itemCanCraftButton:SetText(XUI.Green .. '造')
+            else
+                frame.itemCanCraftButton:SetText(XUI.Red .. '禁')
+            end
         end
     end
 end
@@ -2348,10 +2524,20 @@ processQueryTask = function(task)
             return
         end
 
-        XAPI.PostAuction(task['price'], task['price'], 1, 1, task['count'])
+        local stackSize = 1
+        local stackCount = task['count']
+        if XUtils.inArray(item['itemname'], XInfo.materialListSS) then
+            stackSize = task['count']
+            if stackSize > 20 then
+                stackSize = 20
+            end
+            stackCount = 1
+        end
+
+        XAPI.PostAuction(task['price'], task['price'], 1, stackSize, stackCount)
 
         xdebug.info('拍卖：' .. item['itemname'] .. '(' .. XUtils.priceToMoneyString(task['price']) .. ')')
-        for _ = 1, task['count'] do
+        for _ = 1, stackSize * stackCount do
             table.insert(item['myvalidlist'], task['price'])
         end
         finishTask()

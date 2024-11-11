@@ -40,7 +40,7 @@ local jewList = {
         category = '常用',
         receiver = nil,
         issell = 0,
-        list = { { '太阳水晶', '血石', '玉髓石', '萨隆邪铁矿石', '永恒之土', '土之结晶', '钴矿石' }, { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石', '冰冻宝珠' } }
+        list = { { '太阳水晶', '血石', '玉髓石', '萨隆邪铁矿石', '永恒之土', '土之结晶' }, { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石'} }
     },
     {
         category = '白龙',
@@ -315,13 +315,14 @@ initUI = function()
     shrinkButton:SetPoint('RIGHT', fulfilStackButton, 'LEFT', -3, 0)
     shrinkButton:SetScript('OnClick', function()
         XUtils.shrinkBag()
+        xdebug.info('整理完成')
     end)
 
     local sortButton = XUI.createButton(mainFrame, 60, '排列')
     sortButton:SetHeight(20)
     sortButton:SetPoint('RIGHT', shrinkButton, 'LEFT', -3, 0)
     sortButton:SetScript('OnClick', function()
-        XUtils.sortJewsInBag0()
+        XUtils.sortJewsInBag()
         xdebug.info('排列完成')
     end)
 

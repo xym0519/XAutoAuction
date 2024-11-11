@@ -2,10 +2,11 @@ XInfo = {}
 local moduleName = 'XInfo'
 
 -- Bag items
+XInfo.NormalBagCount = 3
 XInfoBagList = {}
 XInfoBankList = {}
 XInfo.emptyBagCount = 0
-XInfo.emptyBagCount1 = 0
+XInfo.emptyBagCountNormal = 0
 XInfo.emptyBankCount = 0
 
 XInfo.reloadCount = function()
@@ -101,7 +102,7 @@ function ReloadBagBank(type)
 
     local list = {}
     local emptyBagCount = 0
-    local emptyBagCount1 = 0
+    local emptyBagCountNormal = 0
     local emptyBankCount = 0
 
     for _, i in ipairs(slotIdList) do
@@ -121,8 +122,8 @@ function ReloadBagBank(type)
             else
                 if isBag then
                     emptyBagCount = emptyBagCount + 1
-                    if i == 0 then
-                        emptyBagCount1 = emptyBagCount1 + 1
+                    if i >= 0 and i < XInfo.NormalBagCount then
+                        emptyBagCountNormal = emptyBagCountNormal + 1
                     end
                 else
                     emptyBankCount = emptyBankCount + 1
@@ -134,7 +135,7 @@ function ReloadBagBank(type)
     if type == 'bag' then
         XInfoBagList[XInfo.myName] = list
         XInfo.emptyBagCount = emptyBagCount
-        XInfo.emptyBagCount1 = emptyBagCount1
+        XInfo.emptyBagCountNormal = emptyBagCountNormal
     else
         XInfoBankList[XInfo.myName] = list
         XInfo.emptyBankCount = emptyBankCount
@@ -369,6 +370,7 @@ XInfo.materialList = { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼',
     '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石',
     '天焰钻石', '大地侵攻钻石' }
 XInfo.materialListS = { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石' }
+XInfo.materialListSS = { '血石', '茶晶石', '太阳水晶', '黑玉', '玉髓石', '暗影水晶' }
 XInfo.materialListB = { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼', '巨锆石', '恐惧石' }
 XInfo.materialListO = { '天焰钻石', '大地侵攻钻石' }
 XInfo.mineList = { '萨隆邪铁矿石', '泰坦神铁矿石' }
@@ -376,6 +378,7 @@ XInfo.recipeList = {
     { itemname = '水晶玉髓石项圈', materialname = '玉髓石' },
     { itemname = '烈日石戒', materialname = '太阳水晶' },
     { itemname = '血石指环', materialname = '血石' },
+    { itemname = '充能暗影水晶', materialname = '暗影水晶' },
 }
 XInfo.getMaterialName = function(itemName)
     local materialName = nil

@@ -401,11 +401,11 @@ end
 
 XUI.getColor_BagStackCount = function(bagCount, stackCount)
     local res = XUI.Color_Normal
-    if bagCount >= 20 then
+    if bagCount >= 16 then
         res = XUI.Color_Worst
-    elseif bagCount >= 15 then
+    elseif bagCount >= 12 then
         res = XUI.Color_Bad
-    elseif bagCount >= 10 then
+    elseif bagCount >= 8 then
         res = XUI.Color_Poor
     elseif bagCount >= stackCount * 2 then
         res = XUI.Color_Great
@@ -421,11 +421,11 @@ end
 
 XUI.getColor_AuctionStackCount = function(auctionCount, stackCount)
     local res = XUI.Color_Normal
-    if auctionCount >= 20 then
+    if auctionCount >= 16 then
         res = XUI.Color_Worst
-    elseif auctionCount >= 15 then
+    elseif auctionCount >= 12 then
         res = XUI.Color_Bad
-    elseif auctionCount >= 10 then
+    elseif auctionCount >= 8 then
         res = XUI.Color_Poor
     elseif auctionCount > stackCount * 2 then
         res = XUI.Color_Great
@@ -455,9 +455,9 @@ end
 
 XUI.getColor_BankCount = function(count)
     local res = XUI.Color_Normal
-    if count > 20 then
+    if count > 16 then
         res = XUI.Color_Worst
-    elseif count > 10 then
+    elseif count > 12 then
         res = XUI.Color_Bad
     elseif count > 5 then
         res = XUI.Color_Poor
@@ -471,7 +471,7 @@ end
 
 XUI.getColor_MailCount = function(count)
     local res = XUI.Color_Normal
-    if count > 20 then
+    if count > 16 then
         res = XUI.Color_Worst
     elseif count > 12 then
         res = XUI.Color_Bad

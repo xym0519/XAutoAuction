@@ -9,14 +9,15 @@ local dft_largetime = 1.5
 local dft_taskInterval = 1
 local dft_emptySlotCount = 1
 local dft_rubbishList = {
+    { itemname = '裂纹森林翡翠', materialcount = 0 },
+    { itemname = '风暴天蓝石', materialcount = 20 },
+    { itemname = '充能暗影水晶', materialcount = 0 },
     { itemname = '水晶玉髓石项圈', materialcount = 0 },
     { itemname = '烈日石戒', materialcount = 0 },
     { itemname = '血石指环', materialcount = 0 },
-    { itemname = '致密天蓝石', materialcount = 20 },
-    { itemname = '裂纹森林翡翠', materialcount = 20 },
 }
 
-local craftRubbish = false
+local craftRubbish = true
 local craftQueue = {}
 local displayPageNo = 0
 local displayPageSize = 3
@@ -69,7 +70,7 @@ initUI = function()
         end
     end)
 
-    local craftRubbishButton = XUI.createButton(mainFrame, 35, XUI.Red .. '造')
+    local craftRubbishButton = XUI.createButton(mainFrame, 35, XUI.Green .. '造')
     craftRubbishButton:SetPoint('LEFT', nextButton, 'RIGHT', 5, 0)
     craftRubbishButton:SetScript('OnClick', function(self)
         craftRubbish = not craftRubbish
@@ -239,12 +240,12 @@ refreshUI = function()
         rubbishCountStr = XUI.Color_Good .. rubbishCountStr
     end
 
-    local emptyBagCountStr = 'E' .. XInfo.emptyBagCount1
-    if XInfo.emptyBagCount1 > 10 then
+    local emptyBagCountStr = 'E' .. XInfo.emptyBagCountNormal
+    if XInfo.emptyBagCountNormal > 10 then
         emptyBagCountStr = XUI.Color_Good .. emptyBagCountStr
-    elseif XInfo.emptyBagCount1 > 5 then
+    elseif XInfo.emptyBagCountNormal > 5 then
         emptyBagCountStr = XUI.Color_Fair .. emptyBagCountStr
-    elseif XInfo.emptyBagCount1 > 0 then
+    elseif XInfo.emptyBagCountNormal > 0 then
         emptyBagCountStr = XUI.Color_Poor .. emptyBagCountStr
     else
         emptyBagCountStr = XUI.Color_Bad .. emptyBagCountStr
@@ -381,6 +382,8 @@ end
 
 -- Event callback
 local function onUpdate()
+    XUtils.shrinkBag()
+
     if not isRunning then return end
 
     if curTask then
@@ -412,13 +415,21 @@ local function onUpdate()
 
     if #craftQueue <= 0 then
         if craftRubbish then
-            if XInfo.emptyBagCount1 > dft_emptySlotCount then
+            if XInfo.emptyBagCountNormal > dft_emptySlotCount then
                 local found = false
-                for _, _item in ipairs(dft_rubbishList) do
+                for _index, _item in ipairs(dft_rubbishList) do
                     if XInfo.getMaterialBagCount(_item['itemname']) > _item['materialcount'] then
-                        addItem(_item['itemname'])
-                        found = true
-                        break
+                        if _index <= 3 then
+                            addItem(_item['itemname'])
+                            found = true
+                            break
+                        else
+                            if XInfo.getBagItemCount('土之结晶') >= 2 then -- TODO 土之结晶特殊处理
+                                addItem(_item['itemname'])
+                                found = true
+                                break
+                            end
+                        end
                     end
                 end
                 if not found then
@@ -426,7 +437,7 @@ local function onUpdate()
                     return
                 end
             else
-                XUtils.sortJewsInBag0()
+                XUtils.sortJewsInBag()
                 refreshUI()
                 return
             end
@@ -465,7 +476,7 @@ local function onUpdate()
 
     XAPI.DoTradeSkill(tradeSkillItem['index'], count)
 
-    XUtils.sortJewsInBag0()
+    XUtils.sortJewsInBag()
 end
 
 local function onStart(...)

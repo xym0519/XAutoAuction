@@ -508,7 +508,6 @@ XUtils.shrinkBag = function()
         end
         if not found then
             XJewTool.unRegisterUIUpdateCallback(moduleName .. '_shrinkBag')
-            xdebug.info('整理完成')
         end
     end, 0.2)
 end
@@ -566,21 +565,25 @@ XUtils.fulfilBag = function()
     end
 end
 
-XUtils.sortJewsInBag0 = function()
-    local slotCount0 = XAPI.C_Container_GetContainerNumSlots(0)
+XUtils.sortJewsInBag = function(bagIndex)
+    -- TODO bagIndex 需要配置
+    if bagIndex == nil then bagIndex = XInfo.NormalBagCount - 1 end
     local sourceList = {}
-    for j = 1, slotCount0 do
-        local itemBag = XAPI.C_Container_GetContainerItemInfo(0, j)
-        if itemBag then
-            local _, _, _, _, _, itemCategory = XAPI.GetItemInfo(itemBag['itemName'])
-            if itemCategory == '珠宝' then
-                table.insert(sourceList, { x = 0, y = j })
+    for i = 0, bagIndex do
+        local slotCount = XAPI.C_Container_GetContainerNumSlots(i)
+        for j = 1, slotCount do
+            local itemBag = XAPI.C_Container_GetContainerItemInfo(i, j)
+            if itemBag then
+                local _, _, _, _, _, itemCategory = XAPI.GetItemInfo(itemBag['itemName'])
+                if itemCategory == '珠宝' then
+                    table.insert(sourceList, { x = i, y = j })
+                end
             end
         end
     end
 
     local sourceIndex = 1
-    for i = 1, XAPI.NUM_BAG_SLOTS do
+    for i = XAPI.NUM_BAG_SLOTS, bagIndex+ 1, -1 do
         if sourceIndex > #sourceList then
             break
         end
