@@ -519,18 +519,8 @@ onJewCrafingUpdate = function()
     if not jewCrafting then return end
     XInfo.reloadBag()
 
-    if XInfo.getBagItemCount('永恒之土') <= 0 and XInfo.getBagItemCount('土之结晶') < 10 and XInfo.getMailItemCount('永恒之土') > 0 then
-        XUtils.receiveMail('永恒之土')
-        return
-    end
-
     local rubbishList = XCraftQueue.getRubbishList()
     for _, item in ipairs(rubbishList) do
-        local materialName = XInfo.getMaterialName(item['itemname'])
-        if XInfo.getBagItemCount(materialName) < 20 and XInfo.getMailItemCount(materialName) > 0 then
-            XUtils.receiveMail(materialName)
-            return
-        end
         if XInfo.getBagItemCount(item['itemname']) >= 5 then
             XUtils.sendMail(item['itemname'], 5)
             return
@@ -539,6 +529,17 @@ onJewCrafingUpdate = function()
             XUtils.sendMail('完美' .. item['itemname'], 5)
             return
         end
+    end
+    for _, item in ipairs(rubbishList) do
+        local materialName = XInfo.getMaterialName(item['itemname'])
+        if XInfo.getBagItemCount(materialName) < 20 and XInfo.getMailItemCount(materialName) > 0 then
+            XUtils.receiveMail(materialName)
+            return
+        end
+    end
+    if XInfo.getBagItemCount('永恒之土') <= 0 and XInfo.getBagItemCount('土之结晶') < 10 and XInfo.getMailItemCount('永恒之土') > 0 then
+        XUtils.receiveMail('永恒之土')
+        return
     end
 
     XUtils.shrinkBag()

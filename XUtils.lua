@@ -348,6 +348,7 @@ XUtils.receiveMail = function(itemName, receiveAll, onlyAH)
         local mailIndex = -1
         local itemIndex = -1
         local curCount = 99999
+        local attCount = 99999
         for idx = 1, mailCount do
             local mailInfo = { XAPI.GetInboxHeaderInfo(idx) }
             local subject = mailInfo[4]
@@ -366,14 +367,26 @@ XUtils.receiveMail = function(itemName, receiveAll, onlyAH)
                     canReceive = true
                 end
                 if canReceive then
+                    local tAttCount = 0
+                    local tCurCount = 99999
+                    local tiidx = -1
                     for iidx = 1, 12 do
                         local _itemName, _, _, _count = XAPI.GetInboxItem(idx, iidx)
                         if _itemName == itemName then
-                            if _count < curCount then
-                                mailIndex = idx
-                                itemIndex = iidx
-                                curCount = _count
+                            tAttCount = tAttCount + 1
+                            if _count < tCurCount then
+                                tCurCount = _count
+                                tiidx = iidx
                             end
+                        end
+                    end
+                    if tAttCount < attCount then
+                        mailIndex = idx
+                        itemIndex = tiidx
+                    elseif tAttCount == attCount then
+                        if tCurCount < curCount then
+                            mailIndex = idx
+                            itemIndex = tiidx
                         end
                     end
                 end
@@ -583,7 +596,7 @@ XUtils.sortJewsInBag = function(bagIndex)
     end
 
     local sourceIndex = 1
-    for i = XAPI.NUM_BAG_SLOTS, bagIndex+ 1, -1 do
+    for i = XAPI.NUM_BAG_SLOTS, bagIndex + 1, -1 do
         if sourceIndex > #sourceList then
             break
         end
