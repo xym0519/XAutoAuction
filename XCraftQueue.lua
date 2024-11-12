@@ -20,6 +20,7 @@ local dft_rubbishList = {
 }
 
 local craftRubbish = true
+local craftRubbishCount = 1
 local craftQueue = {}
 local displayPageNo = 0
 local displayPageSize = 3
@@ -354,7 +355,8 @@ finishCurTask = function()
     lastTaskFinishTime = time()
 end
 
-start = function(_reset)
+start = function(_reset, count)
+    if count == nil then count = 1 end
     if not isRunning then
         if not XInfo.reloadTradeSkill('珠宝加工') then
             refreshUI()
@@ -366,6 +368,7 @@ start = function(_reset)
         finishCurTask()
         craftQueue = {}
     end
+    craftRubbishCount = count
     isRunning = not isRunning
     refreshUI()
 end
@@ -422,12 +425,12 @@ local function onUpdate()
                 for _index, _item in ipairs(dft_rubbishList) do
                     if XInfo.getMaterialBagCount(_item['itemname']) > _item['materialcount'] then
                         if _index <= 3 then
-                            addItem(_item['itemname'])
+                            addItem(_item['itemname'], craftRubbishCount)
                             found = true
                             break
                         else
                             if XInfo.getBagItemCount('土之结晶') >= 2 then -- TODO 土之结晶特殊处理
-                                addItem(_item['itemname'])
+                                addItem(_item['itemname'], craftRubbishCount)
                                 found = true
                                 break
                             end

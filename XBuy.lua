@@ -92,7 +92,7 @@ initUI = function()
         XAPI.PutItemInBackpack()
     end)
 
-    local jewCraftModeButton = XUI.createButton(mainFrame, dft_buttonWidth, '制造')
+    local jewCraftModeButton = XUI.createButton(mainFrame, dft_buttonWidth, '垃圾')
     jewCraftModeButton:SetPoint('LEFT', mineCraftModeButton, 'RIGHT', dft_buttonGap, 0)
     jewCraftModeButton:SetScript('OnClick', function(self)
         XAPI.PutItemInBackpack()
@@ -119,11 +119,17 @@ initUI = function()
     end)
     mainFrame.mineCraftStartButton = mineCraftStartButton
 
-    local jewCraftStartButton = XUI.createButton(mainFrame, dft_buttonWidth, XUI.Red .. '制造')
+    local jewCraftStartButton = XUI.createButton(mainFrame, dft_buttonWidth, XUI.Red .. '垃圾')
     jewCraftStartButton:SetPoint('RIGHT', mineCraftStartButton, 'LEFT', dft_buttonGap, 0)
     jewCraftStartButton:SetScript('OnClick', function(self)
-        jewCrafting = not jewCrafting
-        refreshUI()
+        XCraftQueue.start(true, 5)
+        if XCraftQueue.isRunning() then
+            jewCrafting = true
+            refreshUI()
+        else
+            jewCrafting = false
+            refreshUI()
+        end
     end)
     mainFrame.jewCraftStartButton = jewCraftStartButton
 
@@ -366,9 +372,9 @@ refreshUI = function()
         mainFrame.mineCraftStartButton:SetText(XUI.Red .. '炸矿')
     end
     if jewCrafting then
-        mainFrame.jewCraftStartButton:SetText(XUI.Green .. '制造')
+        mainFrame.jewCraftStartButton:SetText(XUI.Green .. '垃圾')
     else
-        mainFrame.jewCraftStartButton:SetText(XUI.Red .. '制造')
+        mainFrame.jewCraftStartButton:SetText(XUI.Red .. '垃圾')
     end
 
     XInfo.reloadBag()
@@ -527,6 +533,10 @@ onJewCrafingUpdate = function()
         end
         if XInfo.getBagItemCount(item['itemname']) >= 5 then
             XUtils.sendMail(item['itemname'], 5)
+            return
+        end
+        if XInfo.getBagItemCount('完美' .. item['itemname']) >= 5 then
+            XUtils.sendMail('完美' .. item['itemname'], 5)
             return
         end
     end
