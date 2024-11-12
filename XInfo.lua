@@ -376,9 +376,11 @@ XInfo.materialListO = { '天焰钻石', '大地侵攻钻石' }
 XInfo.mineList = { '萨隆邪铁矿石', '泰坦神铁矿石' }
 XInfo.recipeList = {
     { itemname = '水晶玉髓石项圈', materialname = '玉髓石' },
+    { itemname = '水晶茶晶石项链', materialname = '茶晶石' },
     { itemname = '烈日石戒', materialname = '太阳水晶' },
     { itemname = '血石指环', materialname = '血石' },
     { itemname = '充能暗影水晶', materialname = '暗影水晶' },
+    { itemname = '坚硬黑玉', materialname = '黑玉' },
 }
 XInfo.getMaterialName = function(itemName)
     local materialName = nil

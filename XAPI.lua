@@ -613,6 +613,35 @@ XAPI.UnitName = function(...)
     return UnitName(...)
 end
 
+-- 动作栏
+-- 拾取宏
+-- https://wowpedia.fandom.com/wiki/API_PickupMacro
+-- Arguments: (index or name)
+--   index : number : The position of the macro in the macro window, from left to right and top to bottom. Slots 1-120 are used for general macros, and 121-138 for character-specific macros.
+--   name : string : The name of the macro, case insensitive.
+XAPI.PickupMacro = function(...)
+    return PickupMacro(...)
+end
+
+-- 放置技能栏
+-- https://wowpedia.fandom.com/wiki/API_PlaceAction
+-- Arguments: (actionSlot)
+--   actionSlot : number : The action slot to place the action into.
+-- Details:
+--   If the cursor is empty, nothing happens, otherwise the action from the cursor is placed in the slot. If the slot was empty then the cursor becomes empty, otherwise the action from the slot is picked up and placed onto the cursor.
+--   If an action is placed on the cursor use API_PutItemInBackpack to remove the action from the cursor without placing it in an action slot
+--   IMPORTANT: You can crash your client if you send an invalid slot number.
+XAPI.PlaceAction = function(...)
+    return PlaceAction(...)
+end
+
+-- 取消选择
+-- https://wowpedia.fandom.com/wiki/API_PutItemInBackpack
+-- Details:
+--   If there is already a partial stack of the item in the backpack, it will attempt to stack them together
+XAPI.PutItemInBackpack = function()
+    return PutItemInBackpack()
+end
 
 -- Auctionator
 -- 简单搜索

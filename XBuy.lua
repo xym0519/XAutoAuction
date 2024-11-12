@@ -4,6 +4,23 @@ local moduleName = 'XBuy'
 -- Variable definition
 local mainFrame = nil
 
+local dft_mineCraftRateS = {
+    { itemname = '血玉石', rate = 0.83 },
+    { itemname = '帝黄晶', rate = 0.93 },
+    { itemname = '秋色石', rate = 1.07 },
+    { itemname = '森林翡翠', rate = 0.79 },
+    { itemname = '天蓝石', rate = 0.79 },
+    { itemname = '曙光猫眼石', rate = 0.7 },
+    { itemname = '血石', rate = 3.34 },
+    { itemname = '茶晶石', rate = 3.55 },
+    { itemname = '太阳水晶', rate = 3.95 },
+    { itemname = '黑玉', rate = 3.75 },
+    { itemname = '玉髓石', rate = 3.75 },
+    { itemname = '暗影水晶', rate = 3.69 },
+}
+local dft_mineCraftPerfectRate = 0.2
+local dft_mineCraftProfitRate = 0.1
+
 local dft_minPrice = 9999999
 
 local dft_buttonWidth = 40
@@ -14,6 +31,11 @@ local displayFrameList = {}
 local displayPageSize = 10
 local displaySettingItem = nil
 
+local mineCrafting = false
+local jewCrafting = false
+local onMineCrafingUpdate
+local onJewCrafingUpdate
+
 -- Function definition
 local initUI
 local refreshUI
@@ -22,6 +44,7 @@ local getItemField
 local addItem
 local reset
 local itemChanged
+local getMineSmallPrice
 
 -- Function implemention
 initUI = function()
@@ -30,6 +53,79 @@ initUI = function()
     mainFrame:SetPoint('CENTER', UIParent, 'CENTER', -50, 0)
     mainFrame:Hide()
     tinsert(UISpecialFrames, mainFrame:GetName())
+
+    local normalModeButton = XUI.createButton(mainFrame, dft_buttonWidth, '普通')
+    normalModeButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, 0)
+    normalModeButton:SetScript('OnClick', function(self)
+        XAPI.PutItemInBackpack()
+        XAPI.PickupMacro('法1')
+        XAPI.PlaceAction(1)
+        XAPI.PickupMacro('法2')
+        XAPI.PlaceAction(2)
+        XAPI.PickupMacro('法3')
+        XAPI.PlaceAction(3)
+        XAPI.PickupMacro('法4')
+        XAPI.PlaceAction(4)
+        XAPI.PickupMacro('法5')
+        XAPI.PlaceAction(5)
+        XAPI.PickupMacro('选矿')
+        XAPI.PlaceAction(6)
+        XAPI.PutItemInBackpack()
+    end)
+
+    local mineCraftModeButton = XUI.createButton(mainFrame, dft_buttonWidth, '炸矿')
+    mineCraftModeButton:SetPoint('LEFT', normalModeButton, 'RIGHT', dft_buttonGap, 0)
+    mineCraftModeButton:SetScript('OnClick', function(self)
+        XAPI.PutItemInBackpack()
+        XAPI.PickupMacro('选矿')
+        XAPI.PlaceAction(1)
+        XAPI.PickupMacro('选矿')
+        XAPI.PlaceAction(2)
+        XAPI.PickupMacro('选矿')
+        XAPI.PlaceAction(3)
+        XAPI.PickupMacro('选矿')
+        XAPI.PlaceAction(4)
+        XAPI.PickupMacro('选矿')
+        XAPI.PlaceAction(5)
+        XAPI.PickupMacro('法1')
+        XAPI.PlaceAction(6)
+        XAPI.PutItemInBackpack()
+    end)
+
+    local jewCraftModeButton = XUI.createButton(mainFrame, dft_buttonWidth, '制造')
+    jewCraftModeButton:SetPoint('LEFT', mineCraftModeButton, 'RIGHT', dft_buttonGap, 0)
+    jewCraftModeButton:SetScript('OnClick', function(self)
+        XAPI.PutItemInBackpack()
+        XAPI.PickupMacro('拆土1')
+        XAPI.PlaceAction(1)
+        XAPI.PickupMacro('拆土2')
+        XAPI.PlaceAction(2)
+        XAPI.PickupMacro('拆土3')
+        XAPI.PlaceAction(3)
+        XAPI.PickupMacro('拆土4')
+        XAPI.PlaceAction(4)
+        XAPI.PickupMacro('拆土5')
+        XAPI.PlaceAction(5)
+        XAPI.PickupMacro('拆土1')
+        XAPI.PlaceAction(6)
+        XAPI.PutItemInBackpack()
+    end)
+
+    local mineCraftStartButton = XUI.createButton(mainFrame, dft_buttonWidth, XUI.Red .. '炸矿')
+    mineCraftStartButton:SetPoint('TOPRIGHT', mainFrame, 'TOPRIGHT', -30, 0)
+    mineCraftStartButton:SetScript('OnClick', function(self)
+        mineCrafting = not mineCrafting
+        refreshUI()
+    end)
+    mainFrame.mineCraftStartButton = mineCraftStartButton
+
+    local jewCraftStartButton = XUI.createButton(mainFrame, dft_buttonWidth, XUI.Red .. '制造')
+    jewCraftStartButton:SetPoint('RIGHT', mineCraftStartButton, 'LEFT', dft_buttonGap, 0)
+    jewCraftStartButton:SetScript('OnClick', function(self)
+        jewCrafting = not jewCrafting
+        refreshUI()
+    end)
+    mainFrame.jewCraftStartButton = jewCraftStartButton
 
     local preButton = XUI.createButton(mainFrame, dft_buttonWidth, '上')
     preButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -30)
@@ -258,8 +354,22 @@ refreshUI = function()
     if not mainFrame then return end
     if not mainFrame:IsVisible() then return end
 
-    mainFrame.title:SetText('自动购买 (' .. (displayPageNo + 1) .. '/'
-        .. (math.ceil(#XBuyItemList / displayPageSize)) .. ')')
+    local mineSmallPrice = getMineSmallPrice()
+    mainFrame.title:SetText('购买清单 (' .. (displayPageNo + 1) .. '/'
+        .. (math.ceil(#XBuyItemList / displayPageSize)) .. ')'
+        .. '    邪铁: ' .. math.floor(mineSmallPrice * (1 - dft_mineCraftProfitRate) / 100)
+        .. '(' .. math.floor(mineSmallPrice / 100) .. ')')
+
+    if mineCrafting then
+        mainFrame.mineCraftStartButton:SetText(XUI.Green .. '炸矿')
+    else
+        mainFrame.mineCraftStartButton:SetText(XUI.Red .. '炸矿')
+    end
+    if jewCrafting then
+        mainFrame.jewCraftStartButton:SetText(XUI.Green .. '制造')
+    else
+        mainFrame.jewCraftStartButton:SetText(XUI.Red .. '制造')
+    end
 
     XInfo.reloadBag()
 
@@ -358,6 +468,73 @@ reset = function()
     refreshUI()
 end
 
+getMineSmallPrice = function()
+    local jewPrice = 31478
+    local tuPrice = XBuy.getItemField('土之结晶', 'price', 0)
+    local r1m = dft_mineCraftRateS[1]['rate'] * XBuy.getItemField(dft_mineCraftRateS[1]['itemname'], 'price', 0)
+    local o1m = dft_mineCraftRateS[2]['rate'] * XBuy.getItemField(dft_mineCraftRateS[2]['itemname'], 'price', 0)
+    local y1m = dft_mineCraftRateS[3]['rate'] * XBuy.getItemField(dft_mineCraftRateS[3]['itemname'], 'price', 0)
+    local g1m = dft_mineCraftRateS[4]['rate'] * XBuy.getItemField(dft_mineCraftRateS[4]['itemname'], 'price', 0)
+    local b1m = dft_mineCraftRateS[5]['rate'] * XBuy.getItemField(dft_mineCraftRateS[5]['itemname'], 'price', 0)
+    local p1m = dft_mineCraftRateS[6]['rate'] * XBuy.getItemField(dft_mineCraftRateS[6]['itemname'], 'price', 0)
+
+    local r0m = dft_mineCraftRateS[7]['rate'] * (jewPrice - tuPrice * 2)
+    local o0m = dft_mineCraftRateS[8]['rate'] * (jewPrice - tuPrice * 2)
+    local y0m = dft_mineCraftRateS[9]['rate'] * (jewPrice - tuPrice * 2)
+    local g0m = dft_mineCraftRateS[10]['rate'] * (1 * dft_mineCraftPerfectRate + 0.5 * (1 - dft_mineCraftPerfectRate))
+    local b0m = dft_mineCraftRateS[11]['rate'] * (jewPrice - tuPrice * 2)
+    local p0m = dft_mineCraftRateS[12]['rate'] * (1 * dft_mineCraftPerfectRate + 0.5 * (1 - dft_mineCraftPerfectRate))
+
+    local total = r1m + o1m + y1m + g1m + b1m + p1m + r0m + o0m + y0m + g0m + b0m + p0m
+    return math.floor(total / 100)
+end
+
+onMineCrafingUpdate = function()
+    if not mineCrafting then return end
+    XInfo.reloadBag()
+
+    if XInfo.getBagItemCount('萨隆邪铁矿石') < 20 and XInfo.getMailItemCount('萨隆邪铁矿石') > 0 then
+        XUtils.receiveMail('萨隆邪铁矿石')
+        return
+    end
+
+    for _, item in ipairs(dft_mineCraftRateS) do
+        if XInfo.getBagItemCount(item['itemname']) >= 60 then
+            XUtils.sendMail(item['itemname'], 3)
+            return
+        end
+    end
+
+    XUtils.shrinkBag()
+    XUtils.sortJewsInBag()
+end
+
+onJewCrafingUpdate = function()
+    if not jewCrafting then return end
+    XInfo.reloadBag()
+
+    if XInfo.getBagItemCount('永恒之土') <= 0 and XInfo.getBagItemCount('土之结晶') < 10 and XInfo.getMailItemCount('永恒之土') > 0 then
+        XUtils.receiveMail('永恒之土')
+        return
+    end
+
+    local rubbishList = XCraftQueue.getRubbishList()
+    for _, item in ipairs(rubbishList) do
+        local materialName = XInfo.getMaterialName(item['itemname'])
+        if XInfo.getBagItemCount(materialName) < 20 and XInfo.getMailItemCount(materialName) > 0 then
+            XUtils.receiveMail(materialName)
+            return
+        end
+        if XInfo.getBagItemCount(item['itemname']) >= 5 then
+            XUtils.sendMail(item['itemname'], 5)
+            return
+        end
+    end
+
+    XUtils.shrinkBag()
+    XUtils.sortJewsInBag()
+end
+
 -- Observes
 local itemChangeCallbacks = {}
 XBuy.registerItemChangeCallback = function(key, callback)
@@ -383,6 +560,9 @@ XJewTool.registerEventCallback(moduleName, 'AUCTION_HOUSE_CLOSED', function()
 end)
 
 XJewTool.registerRefreshCallback(moduleName, refreshUI)
+
+XJewTool.registerFastUpdateCallback(moduleName .. '_mine', onMineCrafingUpdate)
+XJewTool.registerUpdateCallback(moduleName .. '_jew', onJewCrafingUpdate)
 
 -- Commands
 SlashCmdList['XBUY'] = function()

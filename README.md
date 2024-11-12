@@ -34,9 +34,31 @@
 /xjewtooldata_export
 
 # 选矿
-/xjewtool_update
 /cast 选矿
 /use 萨隆邪铁矿石
+
+# 拆土1
+/use 永恒之土
+/xjewtool_update
+
+# 拆土2
+/use 永恒之土
+/xjewtool_skill
+
+# 拆土3
+/use 永恒之土
+/xjewtool_cast
+
+# 拆土4
+/use 永恒之土
+/xjewtool_magic
+
+# 拆土5
+/use 永恒之土
+/xjewtool_fang
+
+# 合土
+/use 土之结晶
 
 # 循环 1
 /xjewtool_update
