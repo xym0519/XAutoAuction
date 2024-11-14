@@ -29,8 +29,8 @@ local dft_sectionGap = 10
 
 local mainFrameHeightType = 1
 local mainFrameHeight = dft_mainFrameHeightL
-local mainFrameWidthType = 1
-local mainFrameWidth = dft_mainFrameWidthL
+local mainFrameWidthType = 2
+local mainFrameWidth = dft_mainFrameWidthS
 local displayList = {}
 
 local isStarted = false
@@ -51,6 +51,8 @@ local lastMaterialTaskTime = time()
 local materialQueryIndex = 0
 
 local cleaningItems = {}
+local cleanMassList = {}
+local lastCleanMassTime = 0
 
 -- Function definition
 local initData
@@ -80,6 +82,7 @@ local checkImportantByName
 local addCraftQueue
 local cleanLower
 local cleanShort
+local cleanMass
 local puton
 local putonNoPrice
 local putonOld
@@ -324,15 +327,15 @@ initUI = function()
         xdebug.info('PutOn: ' .. count)
     end)
 
-    local craftAllButton = XUI.createButton(mainFrame, dft_buttonWidth, '制造')
-    craftAllButton:SetPoint('LEFT', putonOldButton, 'RIGHT', dft_sectionGap, 0)
-    craftAllButton:SetScript('OnClick', function()
-        local count = addCraftQueue()
-        xdebug.info('Craft: ' .. count)
-    end)
+    -- local craftAllButton = XUI.createButton(mainFrame, dft_buttonWidth, '制造')
+    -- craftAllButton:SetPoint('LEFT', putonOldButton, 'RIGHT', dft_sectionGap, 0)
+    -- craftAllButton:SetScript('OnClick', function()
+    --     local count = addCraftQueue()
+    --     xdebug.info('Craft: ' .. count)
+    -- end)
 
     local cleanLowerButton = XUI.createButton(mainFrame, dft_buttonWidth, '清理')
-    cleanLowerButton:SetPoint('LEFT', craftAllButton, 'RIGHT', dft_sectionGap, 0)
+    cleanLowerButton:SetPoint('LEFT', putonOldButton, 'RIGHT', dft_sectionGap, 0)
     cleanLowerButton:SetScript('OnClick', function()
         cleanLower()
     end)
@@ -346,16 +349,7 @@ initUI = function()
     local cleanMassButton = XUI.createButton(mainFrame, dft_buttonWidth, '量大')
     cleanMassButton:SetPoint('LEFT', cleanShortButton, 'RIGHT', dft_buttonGap, 0)
     cleanMassButton:SetScript('OnClick', function()
-        XInfo.reloadAuction()
-        for i, item in ipairs(XItemList) do
-            local itemName = item['itemname']
-            local auctionCount = XInfo.getAuctionItemCount(itemName)
-            local minPriceOther = item['minpriceother']
-            local basePrice = item['baseprice']
-            if auctionCount >= 8 and (IsLeftShiftKeyDown() or (enabled and minPriceOther >= basePrice)) then
-                cleanLower(itemName)
-            end
-        end
+        cleanMass()
     end)
 
     local allToBankButton = XUI.createButton(mainFrame, dft_buttonWidth, '全存')
@@ -1828,6 +1822,43 @@ cleanShort = function()
 
     XInfo.reloadAuction()
     xdebug.warn('清理短期结束')
+end
+
+cleanMass = function()
+    if not XAPI.IsAuctionFrameOpen() then
+        cleanMassList = {}
+        lastCleanMassTime = 0
+        xdebug.warn('拍卖行未打开')
+        return
+    end
+
+    if #cleanMassList < 1 or time() - lastCleanMassTime > 2 then
+        xdebug.warn('清理开始')
+        XInfo.reloadAuction()
+        for _, item in ipairs(XItemList) do
+            local itemName = item['itemname']
+            local enabled = item['enabled']
+            if enabled == nil then enabled = false end
+            local auctionCount = XInfo.getAuctionItemCount(itemName)
+            local minPriceOther = item['minpriceother']
+            local basePrice = item['baseprice']
+            if auctionCount >= 8 and (IsLeftShiftKeyDown() or (enabled and minPriceOther >= basePrice)) then
+                table.insert(cleanMassList, { itemname = itemName, count = auctionCount - 8 - 1 })
+            end
+        end
+    else
+        local target = cleanMassList[1]
+        cleanLower(target['itemname'])
+        if target['count'] <= 1 then
+            table.remove(cleanMassList, 1)
+        else
+            target['count'] = target['count'] - 1
+        end
+        if #cleanMassList < 1 then
+            xdebug.warn('清理结束')
+        end
+    end
+    lastCleanMassTime = time()
 end
 
 puton = function(isForce)
