@@ -304,6 +304,14 @@ XUtils.receiveMail = function(itemName, receiveAll, onlyAH)
                 XJewTool.unRegisterUIUpdateCallback(moduleName .. '_receiveMail')
                 return
             end
+            XInfo.reloadBag()
+            XInfo.reloadMail()
+            if XInfo.emptyBagCount <= 0 then
+                XJewTool.unRegisterUIUpdateCallback(moduleName .. '_receiveMail')
+                xdebug.error('包裹已满')
+                xdebug.info('收取' .. itemName .. ' ' .. count)
+                return
+            end
             local found = false
             mailCount = XAPI.GetInboxNumItems()
             for idx = 1, mailCount do
@@ -330,7 +338,7 @@ XUtils.receiveMail = function(itemName, receiveAll, onlyAH)
                                 found = true
                                 XAPI.TakeInboxItem(idx, iidx)
                                 count = count + _count
-                                break
+                                if count >= XInfo.emptyBagCount then break end
                             end
                         end
                         if found then break end
@@ -380,13 +388,19 @@ XUtils.receiveMail = function(itemName, receiveAll, onlyAH)
                             end
                         end
                     end
-                    if tAttCount < attCount then
-                        mailIndex = idx
-                        itemIndex = tiidx
-                    elseif tAttCount == attCount then
-                        if tCurCount < curCount then
+                    if tAttCount > 0 then
+                        if tAttCount < attCount then
                             mailIndex = idx
                             itemIndex = tiidx
+                            attCount = tAttCount
+                            curCount = tCurCount
+                        elseif tAttCount == attCount then
+                            if tCurCount < curCount then
+                                mailIndex = idx
+                                itemIndex = tiidx
+                                attCount = tAttCount
+                                curCount = tCurCount
+                            end
                         end
                     end
                 end
@@ -614,6 +628,37 @@ XUtils.sortJewsInBag = function(bagIndex)
             end
         end
     end
+end
+
+XUtils.sellItems = function(itemNames)
+    if itemNames == nil then return end
+    if #itemNames < 1 then return end
+    if not XAPI.IsMerchantOpen() then
+        xdebug.error('请先打开商人')
+        return
+    end
+
+    XJewTool.registerUIUpdateCallback(moduleName .. '_sellItem', function()
+        if not XAPI.IsMerchantOpen() then
+            XJewTool.unRegisterUIUpdateCallback(moduleName .. '_sellItem')
+            return
+        end
+        for i = 0, XAPI.NUM_BAG_SLOTS do
+            local slotCount = XAPI.C_Container_GetContainerNumSlots(i)
+            local found = false
+            for j = 1, slotCount do
+                local itemBag = XAPI.C_Container_GetContainerItemInfo(i, j)
+                if itemBag then
+                    if XUtils.inArray(itemBag['itemName'], itemNames) then
+                        XAPI.C_Container_UseContainerItem(i, j)
+                        found = true
+                    end
+                end
+            end
+            if found then return end
+        end
+        XJewTool.unRegisterUIUpdateCallback(moduleName .. '_sellItem')
+    end, 0.5)
 end
 
 XJewTool.registerEventCallback(moduleName, 'UI_ERROR_MESSAGE', function(_, _, code, message)

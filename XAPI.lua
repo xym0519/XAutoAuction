@@ -601,6 +601,11 @@ XAPI.IsMailBoxOpen = function()
     return MailFrame:IsVisible()
 end
 
+-- 判断商人是否打开
+XAPI.IsMerchantOpen = function()
+    return MerchantFrame:IsVisible()
+end
+
 -- 角色
 -- 获取角色名称
 -- https://wowpedia.fandom.com/wiki/API_UnitName
@@ -641,6 +646,11 @@ end
 --   If there is already a partial stack of the item in the backpack, it will attempt to stack them together
 XAPI.PutItemInBackpack = function()
     return PutItemInBackpack()
+end
+
+-- 出售选中物品
+XAPI.SellCursorItem = function()
+    SellCursorItem()
 end
 
 -- Auctionator

@@ -343,6 +343,21 @@ initUI = function()
         cleanShort()
     end)
 
+    local cleanMassButton = XUI.createButton(mainFrame, dft_buttonWidth, '量大')
+    cleanMassButton:SetPoint('LEFT', craftAllButton, 'RIGHT', dft_buttonGap, 0)
+    cleanMassButton:SetScript('OnClick', function()
+        XInfo.reloadAuction()
+        for i, item in ipairs(XItemList) do
+            local itemName = item['itemname']
+            local auctionCount = XInfo.getAuctionItemCount(itemName)
+            local minPriceOther = item['minpriceother']
+            local basePrice = item['baseprice']
+            if auctionCount >= 8 and (IsLeftShiftKeyDown() or (enabled and minPriceOther >= basePrice)) then
+                cleanLower(itemName)
+            end
+        end
+    end)
+
     local allToBankButton = XUI.createButton(mainFrame, dft_buttonWidth, '全存')
     allToBankButton:SetPoint('LEFT', cleanShortButton, 'RIGHT', dft_sectionGap, 0)
     allToBankButton:SetScript('OnClick', function()

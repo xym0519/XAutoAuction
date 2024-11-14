@@ -10,13 +10,13 @@ local dft_taskInterval = 1
 local dft_emptySlotCount = 1
 local dft_rubbishList = {
     { itemname = '裂纹森林翡翠', materialcount = 0 },
-    -- { itemname = '风暴天蓝石', materialcount = 20 },
     { itemname = '充能暗影水晶', materialcount = 0 },
-    { itemname = '坚硬黑玉', materialcount = 0 },
-    { itemname = '水晶玉髓石项圈', materialcount = 0 },
     { itemname = '烈日石戒', materialcount = 0 },
     { itemname = '血石指环', materialcount = 0 },
-    { itemname = '水晶茶晶石项链', materialcount = 0 },
+    { itemname = '坚硬黑玉', materialcount = 0 },
+    -- { itemname = '风暴天蓝石', materialcount = 20 },
+    -- { itemname = '水晶玉髓石项圈', materialcount = 0 },
+    -- { itemname = '水晶茶晶石项链', materialcount = 0 },
 }
 
 local craftRubbish = true

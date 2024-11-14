@@ -476,13 +476,13 @@ end
 
 getMineSmallPrice = function()
     local jewPrice = 31478
-    local tuPrice = XBuy.getItemField('土之结晶', 'price', 0)
-    local r1m = dft_mineCraftRateS[1]['rate'] * XBuy.getItemField(dft_mineCraftRateS[1]['itemname'], 'price', 0)
-    local o1m = dft_mineCraftRateS[2]['rate'] * XBuy.getItemField(dft_mineCraftRateS[2]['itemname'], 'price', 0)
-    local y1m = dft_mineCraftRateS[3]['rate'] * XBuy.getItemField(dft_mineCraftRateS[3]['itemname'], 'price', 0)
-    local g1m = dft_mineCraftRateS[4]['rate'] * XBuy.getItemField(dft_mineCraftRateS[4]['itemname'], 'price', 0)
-    local b1m = dft_mineCraftRateS[5]['rate'] * XBuy.getItemField(dft_mineCraftRateS[5]['itemname'], 'price', 0)
-    local p1m = dft_mineCraftRateS[6]['rate'] * XBuy.getItemField(dft_mineCraftRateS[6]['itemname'], 'price', 0)
+    local tuPrice = XBuy.getItemField('土之结晶', 'sellprice', 0)
+    local r1m = dft_mineCraftRateS[1]['rate'] * XBuy.getItemField(dft_mineCraftRateS[1]['itemname'], 'sellprice', 0)
+    local o1m = dft_mineCraftRateS[2]['rate'] * XBuy.getItemField(dft_mineCraftRateS[2]['itemname'], 'sellprice', 0)
+    local y1m = dft_mineCraftRateS[3]['rate'] * XBuy.getItemField(dft_mineCraftRateS[3]['itemname'], 'sellprice', 0)
+    local g1m = dft_mineCraftRateS[4]['rate'] * XBuy.getItemField(dft_mineCraftRateS[4]['itemname'], 'sellprice', 0)
+    local b1m = dft_mineCraftRateS[5]['rate'] * XBuy.getItemField(dft_mineCraftRateS[5]['itemname'], 'sellprice', 0)
+    local p1m = dft_mineCraftRateS[6]['rate'] * XBuy.getItemField(dft_mineCraftRateS[6]['itemname'], 'sellprice', 0)
 
     local r0m = dft_mineCraftRateS[7]['rate'] * (jewPrice - tuPrice * 2)
     local o0m = dft_mineCraftRateS[8]['rate'] * (jewPrice - tuPrice * 2)

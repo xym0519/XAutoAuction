@@ -149,9 +149,9 @@ refreshUI = function()
     table.insert(itemList, { itemname = XUI.Green .. '----------', dealcount = 0, craftcount = 0, buycount = 0 })
 
     local startTimeStr = '-'
-    if item['starttime'] then startTimeStr = XUtils.formatTime(item['starttime']) end
+    if item and item['starttime'] then startTimeStr = XUtils.formatTime(item['starttime']) end
     local endTimeStr = '-'
-    if item['endtime'] then endTimeStr = XUtils.formatTime(item['endtime']) end
+    if item and item['endtime'] then endTimeStr = XUtils.formatTime(item['endtime']) end
     mainFrame.title:SetText('拍卖记录(' .. startTimeStr
         .. '~' .. endTimeStr .. ')'
         .. '  卖: ' .. totalDealCount

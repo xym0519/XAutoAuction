@@ -302,7 +302,7 @@ end
 
 initUI = function()
     mainFrame = XUI.createFrame('XJewCountMainFrame', 580, 255)
-    mainFrame.title:SetText('常用')
+    mainFrame.title:SetText('')
     mainFrame:SetPoint('BOTTOM', UIParent, 'BOTTOM', 0, 60)
     mainFrame:Hide()
     XJewCount.mainFrame = mainFrame
@@ -316,7 +316,7 @@ initUI = function()
         xdebug.info('补充完成')
     end)
 
-    local shrinkButton = XUI.createButton(mainFrame, 60, '整理')
+    local shrinkButton = XUI.createButton(mainFrame, 60, '收缩')
     shrinkButton:SetHeight(20)
     shrinkButton:SetPoint('RIGHT', fulfilStackButton, 'LEFT', -3, 0)
     shrinkButton:SetScript('OnClick', function()
@@ -330,6 +330,21 @@ initUI = function()
     sortButton:SetScript('OnClick', function()
         XUtils.sortJewsInBag()
         xdebug.info('排列完成')
+    end)
+
+    local sellButton = XUI.createButton(mainFrame, 60, '垃圾')
+    sellButton:SetHeight(20)
+    sellButton:SetPoint('RIGHT', sortButton, 'LEFT', -3, 0)
+    sellButton:SetScript('OnClick', function()
+        XUIConfirmDialog.show(moduleName, '确认', '确认出售', function()
+            local rubbishList = XCraftQueue.getRubbishList()
+            local items = {}
+            for _, item in ipairs(rubbishList) do
+                table.insert(items, item['itemname'])
+                table.insert(items, '完美' .. item['itemname'])
+            end
+            XUtils.sellItems(items)
+        end)
     end)
 
     local bagPriceButton = XUI.createButton(mainFrame, 60, '包价')
@@ -371,7 +386,6 @@ initUI = function()
             if jewList[self.index]['receiver'] then
                 title = title .. ' (' .. jewList[self.index]['receiver'] .. ')'
             end
-            mainFrame.title:SetText(title)
             reloadLabels()
             refreshUI()
         end)
