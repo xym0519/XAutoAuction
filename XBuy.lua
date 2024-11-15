@@ -5,18 +5,18 @@ local moduleName = 'XBuy'
 local mainFrame = nil
 
 local dft_mineCraftRateS = {
-    { itemname = '血玉石', rate = 0.83 },
-    { itemname = '帝黄晶', rate = 0.93 },
-    { itemname = '秋色石', rate = 1.07 },
-    { itemname = '森林翡翠', rate = 0.79 },
-    { itemname = '天蓝石', rate = 0.79 },
+    { itemname = '血玉石', rate = 0.8 },
+    { itemname = '帝黄晶', rate = 0.8 },
+    { itemname = '秋色石', rate = 1 },
+    { itemname = '森林翡翠', rate = 0.8 },
+    { itemname = '天蓝石', rate = 0.8 },
     { itemname = '曙光猫眼石', rate = 0.7 },
-    { itemname = '血石', rate = 3.34 },
-    { itemname = '茶晶石', rate = 3.55 },
-    { itemname = '太阳水晶', rate = 3.95 },
-    { itemname = '黑玉', rate = 3.75 },
-    { itemname = '玉髓石', rate = 3.75 },
-    { itemname = '暗影水晶', rate = 3.69 },
+    { itemname = '血石', rate = 3 },
+    { itemname = '茶晶石', rate = 3 },
+    { itemname = '太阳水晶', rate = 3 },
+    { itemname = '黑玉', rate = 3 },
+    { itemname = '玉髓石', rate = 3 },
+    { itemname = '暗影水晶', rate = 3 },
 }
 local dft_mineCraftPerfectRate = 0.2
 local dft_mineCraftProfitRate = 0.1

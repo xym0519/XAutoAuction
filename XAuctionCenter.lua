@@ -356,7 +356,6 @@ initUI = function()
     allToBankButton:SetPoint('LEFT', cleanMassButton, 'RIGHT', dft_sectionGap, 0)
     allToBankButton:SetScript('OnClick', function()
         XUtils.moveToBank(nil, nil, nil, false)
-        cleanShort()
     end)
 
     local allToBagButton = XUI.createButton(mainFrame, dft_buttonWidth, '全取')
@@ -364,10 +363,11 @@ initUI = function()
     allToBagButton:SetScript('OnClick', function()
         local itemNames = { '简易研磨器', '珠宝制作工具' }
         for _, item in ipairs(XItemList) do
-            table.insert(itemNames, item['itemname'])
+            if not XUtils.inArray(item['itemname'], XInfo.materialList) then
+                table.insert(itemNames, item['itemname'])
+            end
         end
         XUtils.moveToBag(itemNames, nil, nil, false)
-        cleanShort()
     end)
 
     local refreshButton = XUI.createButton(mainFrame, dft_buttonWidth, '刷新')
@@ -1846,7 +1846,13 @@ cleanMass = function()
                 table.insert(cleanMassList, { itemname = itemName, count = auctionCount - 8 - 1 })
             end
         end
+        if #cleanMassList < 1 then
+            xdebug.error('清理结束')
+        end
     else
+        table.sort(cleanMassList, function(a, b)
+            return a['count'] > b['count']
+        end)
         local target = cleanMassList[1]
         cleanLower(target['itemname'])
         if target['count'] <= 1 then
@@ -1855,7 +1861,7 @@ cleanMass = function()
             target['count'] = target['count'] - 1
         end
         if #cleanMassList < 1 then
-            xdebug.warn('清理结束')
+            xdebug.error('清理结束')
         end
     end
     lastCleanMassTime = time()
@@ -2572,7 +2578,7 @@ processQueryTask = function(task)
 
         local stackSize = 1
         local stackCount = task['count']
-        if XUtils.inArray(item['itemname'], XInfo.materialListSS) then
+        if XUtils.inArray(item['itemname'], XInfo.materialList) then
             stackSize = task['count']
             if stackSize > 20 then
                 stackSize = 20
