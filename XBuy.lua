@@ -7,19 +7,27 @@ local mainFrame = nil
 local dft_mineCraftRateS = {
     { itemname = '血玉石', rate = 0.8 },
     { itemname = '帝黄晶', rate = 0.8 },
-    { itemname = '秋色石', rate = 1 },
+    { itemname = '秋色石', rate = 0.8 },
     { itemname = '森林翡翠', rate = 0.8 },
     { itemname = '天蓝石', rate = 0.8 },
-    { itemname = '曙光猫眼石', rate = 0.7 },
-    { itemname = '血石', rate = 3 },
-    { itemname = '茶晶石', rate = 3 },
-    { itemname = '太阳水晶', rate = 3 },
-    { itemname = '黑玉', rate = 3 },
-    { itemname = '玉髓石', rate = 3 },
-    { itemname = '暗影水晶', rate = 3 },
+    { itemname = '曙光猫眼石', rate = 0.8 },
+    { itemname = '血石', rate = 3.6 },
+    { itemname = '茶晶石', rate = 3.6 },
+    { itemname = '太阳水晶', rate = 3.6 },
+    { itemname = '黑玉', rate = 3.6 },
+    { itemname = '玉髓石', rate = 3.6 },
+    { itemname = '暗影水晶', rate = 3.6 },
 }
 local dft_mineCraftPerfectRate = 0.2
 local dft_mineCraftProfitRate = 0.1
+local dft_mineReceiver = '阿肌'
+local dft_mineReceiverList = {
+    {
+        receiver = '默法',
+        list = { '萨隆邪铁矿石', '血石', '茶晶石', '太阳水晶', '黑玉', '玉髓石', '暗影水晶', '永恒之土', '土之结晶', '钴矿石', '冰冻宝珠' }
+    }
+}
+local dft_rubbishReceiver = '默无'
 
 local dft_minPrice = 9999999
 
@@ -506,7 +514,14 @@ onMineCrafingUpdate = function()
 
     for _, item in ipairs(dft_mineCraftRateS) do
         if XInfo.getBagItemCount(item['itemname']) >= 60 then
-            XUtils.sendMail(item['itemname'], 3)
+            local receiver = dft_mineReceiver
+            for _, receiverItem in ipairs(dft_mineReceiverList) do
+                if XUtils.inArray(item['itemname'], receiverItem['list']) then
+                    receiver = receiverItem['receiver']
+                    break
+                end
+            end
+            XUtils.sendMail(item['itemname'], 3, true, receiver)
             return
         end
     end
@@ -522,11 +537,11 @@ onJewCrafingUpdate = function()
     local rubbishList = XCraftQueue.getRubbishList()
     for _, item in ipairs(rubbishList) do
         if XInfo.getBagItemCount(item['itemname']) >= 5 then
-            XUtils.sendMail(item['itemname'], 5)
+            XUtils.sendMail(item['itemname'], 5, true, dft_rubbishReceiver)
             return
         end
         if XInfo.getBagItemCount('完美' .. item['itemname']) >= 5 then
-            XUtils.sendMail('完美' .. item['itemname'], 5)
+            XUtils.sendMail('完美' .. item['itemname'], 5, true, dft_rubbishReceiver)
             return
         end
     end
