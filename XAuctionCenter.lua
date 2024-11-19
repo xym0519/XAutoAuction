@@ -1143,6 +1143,7 @@ refreshUI = function()
         materialItem:refreshUI()
     end
 
+    local displayFilter = XAPI.UIDropDownMenu_GetText(mainFrame.filterDropDown)
     for idx, item in ipairs(displayList) do
         local frame = scrollView:GetItemFrame(idx)
         local itemName = item['itemname']
@@ -1191,7 +1192,7 @@ refreshUI = function()
             itemNameStr = XUI.Cyan .. itemNameStr
         end
 
-        if not recipe then
+        if displayFilter == '有效' and not recipe then
             itemNameStr = itemNameStr .. XUI.Red .. '■'
         end
 
