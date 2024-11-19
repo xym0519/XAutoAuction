@@ -1853,8 +1853,9 @@ cleanMass = function()
             local auctionCount = XInfo.getAuctionItemCount(itemName)
             local minPriceOther = item['minpriceother']
             local basePrice = item['baseprice']
-            if auctionCount >= 8 and (IsLeftShiftKeyDown() or (enabled and minPriceOther >= basePrice)) then
-                table.insert(cleanMassList, { itemname = itemName, count = auctionCount - 8 - 1 })
+            local stackCount = math.ceil(auctionCount / item['stacksize'])
+            if stackCount >= 8 and (IsLeftShiftKeyDown() or (enabled and minPriceOther >= basePrice)) then
+                table.insert(cleanMassList, { itemname = itemName, count = stackCount - 8 - 1 })
             end
         end
         if #cleanMassList < 1 then
