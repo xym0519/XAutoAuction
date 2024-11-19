@@ -2594,7 +2594,11 @@ processQueryTask = function(task)
         end
 
         local stackSize = item['stacksize']
-        local stackCount = task['count'] / stackSize
+        local stackCount = math.floor(task['count'] / stackSize)
+        if stackCount < 1 then
+            stackSize = task['count']
+            stackCount = 1
+        end
         local price = task['price'] * stackSize
         -- if XUtils.inArray(item['itemname'], XInfo.materialList) then
         --     stackSize = task['count']
