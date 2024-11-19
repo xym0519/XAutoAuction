@@ -571,6 +571,7 @@ filterDisplayList = function()
         local minPriceOther = item['minpriceother']
         local basePrice = item['baseprice']
         local stackCount = item['stackcount']
+        local stackSize = item['stacksize']
         local materialBuyPrice = XBuy.getItemField(materialName, 'price', 0)
         local bagCount = XInfo.getBagItemCount(itemName)
         local mailCount = XInfo.getMailItemCount(itemName)
@@ -631,11 +632,11 @@ filterDisplayList = function()
                 disFlag = true
             end
         elseif displayFilter == '潜力' then
-            if (not important) and (dealCount / 3 / stackCount >= 10) then
+            if (not important) and (dealCount / 3 / stackCount / stackSize >= 10) then
                 disFlag = true
             end
         elseif displayFilter == '缺货' then
-            if enabled and (IsLeftShiftKeyDown() or important or star) and minPriceOther >= basePrice and bagCount < stackCount then
+            if enabled and (IsLeftShiftKeyDown() or important or star) and minPriceOther >= basePrice and bagCount < stackCount * stackSize then
                 disFlag = true
             end
         end
@@ -1436,14 +1437,22 @@ startNextTask = function()
     end
 end
 
-addItem = function(itemName, basePrice, defaultPrice, stackCount)
+addItem = function(itemName, basePrice, defaultPrice, stackCount, stackSize)
     if getItem(itemName) then return end
+    if stackSize == nil then stackSize = 1 end
+
+    local itemStackSize = XInfo.getStackSize(itemName)
+    if stackSize > itemStackSize then
+        xdebug.error('每组个数不能超过' .. itemStackSize)
+        return
+    end
 
     local item = {
         itemname = itemName,
         baseprice = basePrice,
         defaultprice = defaultPrice,
         stackcount = stackCount,
+        stacksize = stackSize,
         cancraft = true,
 
         myvalidlist = {},
@@ -1676,6 +1685,7 @@ addCraftQueue = function()
                     -- local auctionCount = XInfo.getAuctionItemCount(item['itemname'])
                     local itemTotalCount = XInfo.getItemTotalCount(item['itemname'])
                     local stackCount = item['stackcount']
+                    local stackSize = item['stacksize']
                     local materialCount = XInfo.getMaterialBagCount(item['itemname'])
                     local dealCount = XInfo.getItemInfoField(item['itemname'], 'dealcount', 0)
 
@@ -1685,7 +1695,7 @@ addCraftQueue = function()
                     -- else
                     --     subCount = stackCount - auctionCount - bagCount
                     -- end
-                    local subCount = stackCount - bagCount
+                    local subCount = stackCount * stackSize - bagCount
                     local maxCount = math.ceil(dealCount / 10)
                     if checkImportant(item) then
                         maxCount = dft_maxCraftCount
@@ -1878,6 +1888,7 @@ puton = function(isForce)
             local bagCount = XInfo.getBagItemCount(item['itemname'])
             local validCount = getMyValidCount(item['itemname'])
             local stackCount = item['stackcount']
+            local stackSize = item['stacksize']
             if checkImportant(item) then
                 local multiple = dft_multiSellList[multiSell]
                 if multiple == '双倍' then
@@ -1887,7 +1898,7 @@ puton = function(isForce)
                 end
             end
             if isForce or bagCount > 0 then
-                if item['minpriceother'] >= item['baseprice'] and validCount < stackCount and XCraftQueue.getCurItemName() ~= item['itemname'] then
+                if item['minpriceother'] >= item['baseprice'] and validCount < stackCount * stackSize and XCraftQueue.getCurItemName() ~= item['itemname'] then
                     table.insert(queue, i)
                     count = count + 1
                 end
@@ -2052,18 +2063,20 @@ addClick = function(this)
         local itemName = nil
         local basePrice = nil
         local defaultPrice = nil
+        local stackSize = nil
         local stackCount = nil
         for _, item in ipairs(data) do
             if item.Name == '宝石名称' then itemName = item.Value end
             if item.Name == '基准价格' then basePrice = tonumber(item.Value) end
             if item.Name == '默认价格' then defaultPrice = tonumber(item.Value) end
-            if item.Name == '拍卖数量' then stackCount = tonumber(item.Value) end
+            if item.Name == '每组数量' then stackSize = tonumber(item.Value) end
+            if item.Name == '拍卖组数' then stackCount = tonumber(item.Value) end
         end
-        if itemName and basePrice and defaultPrice and stackCount then
-            addItem(itemName, basePrice, defaultPrice, stackCount)
+        if itemName and basePrice and defaultPrice and stackSize and stackCount then
+            addItem(itemName, basePrice, defaultPrice, stackCount, stackSize)
         end
         filterDisplayList()
-    end, { { Name = '宝石名称' }, { Name = '基准价格' }, { Name = '默认价格' }, { Name = '拍卖数量' } }, '添加')
+    end, { { Name = '宝石名称' }, { Name = '基准价格' }, { Name = '默认价格' }, { Name = '每组数量' }, { Name = '拍卖组数' } }, '添加')
 end
 
 checkRecipeClick = function(this)
@@ -2122,7 +2135,7 @@ checkRecipeClick = function(this)
         xdebug.warn()
         XUIConfirmDialog.show(moduleName, '确认', '是否确认添加配方', function()
             for _, itemName in ipairs(newList) do
-                addItem(itemName, dft_minPrice, dft_minPrice, 1)
+                addItem(itemName, dft_minPrice, dft_minPrice, 1, 1)
             end
             xdebug.info('添加成功')
         end)
@@ -2241,7 +2254,7 @@ itemNameClick = function(this)
             local itemName = item['itemname']
             local count = input[1].Value
             XCraftQueue.addItem(itemName, count, 'fulfil')
-        end, { { Name = '数量', Value = item['stackcount'] } }, item['itemname'])
+        end, { { Name = '数量', Value = item['stackcount'] * item['stacksize'] } }, item['itemname'])
     end
 end
 
@@ -2277,17 +2290,20 @@ itemSettingClick = function(this)
         local itemName = nil
         local basePrice = nil
         local defaultPrice = nil
+        local stackSize = nil
         local stackCount = nil
         for _, titem in ipairs(data) do
             if titem.Name == '宝石名称' then itemName = titem.Value end
             if titem.Name == '基准价格' then basePrice = tonumber(titem.Value) end
             if titem.Name == '默认价格' then defaultPrice = tonumber(titem.Value) end
-            if titem.Name == '拍卖数量' then stackCount = tonumber(titem.Value) end
+            if titem.Name == '每组数量' then stackSize = tonumber(titem.Value) end
+            if titem.Name == '拍卖组数' then stackCount = tonumber(titem.Value) end
         end
         if itemName and basePrice and defaultPrice and stackCount then
             item['itemname'] = itemName
             item['baseprice'] = basePrice
             item['defaultprice'] = defaultPrice
+            item['stacksize'] = stackSize
             item['stackcount'] = stackCount
         end
         refreshUI()
@@ -2295,7 +2311,8 @@ itemSettingClick = function(this)
         { Name = '宝石名称', Value = item['itemname'] },
         { Name = '基准价格', Value = item['baseprice'] },
         { Name = '默认价格', Value = item['defaultprice'] },
-        { Name = '拍卖数量', Value = item['stackcount'] }
+        { Name = '每组数量', Value = item['stacksize'] },
+        { Name = '拍卖组数', Value = item['stackcount'] }
     }, '添加')
 end
 
@@ -2524,7 +2541,7 @@ processQueryTask = function(task)
 
             local validCount = getMyValidCount(item['itemname'])
 
-            local targetCount = item['stackcount']
+            local targetCount = item['stackcount'] * item['stacksize']
             if checkImportant(item) then
                 local multiple = dft_multiSellList[multiSell]
                 if multiple == '双倍' then
@@ -2576,19 +2593,20 @@ processQueryTask = function(task)
             return
         end
 
-        local stackSize = 1
-        local stackCount = task['count']
-        if XUtils.inArray(item['itemname'], XInfo.materialList) then
-            stackSize = task['count']
-            if stackSize > 20 then
-                stackSize = 20
-            end
-            stackCount = 1
-        end
+        local stackSize = item['stacksize']
+        local stackCount = task['count'] / stackSize
+        local price = task['price'] * stackSize
+        -- if XUtils.inArray(item['itemname'], XInfo.materialList) then
+        --     stackSize = task['count']
+        --     if stackSize > 20 then
+        --         stackSize = 20
+        --     end
+        --     stackCount = 1
+        -- end
 
-        XAPI.PostAuction(task['price'], task['price'], 1, stackSize, stackCount)
+        XAPI.PostAuction(price, price, 1, stackSize, stackCount)
 
-        xdebug.info('拍卖：' .. item['itemname'] .. '(' .. XUtils.priceToMoneyString(task['price']) .. ')')
+        xdebug.info('拍卖：' .. item['itemname'] .. '(' .. XUtils.priceToMoneyString(price) .. ')')
         for _ = 1, stackSize * stackCount do
             table.insert(item['myvalidlist'], task['price'])
         end

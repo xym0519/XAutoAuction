@@ -552,12 +552,12 @@ XUtils.fulfilBag = function()
             if itemBag then
                 local itemName = itemBag.itemName
                 local count = itemBag.stackCount
-                local stackCount = XInfo.getStackCount(itemName)
+                local stackSize = XInfo.getStackSize(itemName)
                 if XUtils.inArray(itemName, XInfo.materialList) then
-                    if count < stackCount then
-                        local subCount = stackCount - count
+                    if count < stackSize then
+                        local subCount = stackSize - count
                         for x = -1, XAPI.NUM_BAG_SLOTS + XAPI.NUM_BANKBAGSLOTS do
-                            if count < stackCount then
+                            if count < stackSize then
                                 if x < 0 or x > XAPI.NUM_BAG_SLOTS then
                                     local bankSlotCount = XAPI.C_Container_GetContainerNumSlots(x)
                                     for y = 1, bankSlotCount do
@@ -574,7 +574,7 @@ XUtils.fulfilBag = function()
                                                     count = count + subCount
                                                 end
                                                 XAPI.C_Container_PickupContainerItem(i, j)
-                                                if count >= stackCount then
+                                                if count >= stackSize then
                                                     break
                                                 end
                                             end

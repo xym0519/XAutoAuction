@@ -55,16 +55,16 @@ XInfo.getBankItemCount = function(itemName)
     return item['count']
 end
 
-local itemStackCountCache = {}
-XInfo.getStackCount = function(itemName)
-    local stackCount = itemStackCountCache[itemName]
-    if stackCount then return stackCount end
+local itemStackSizeCache = {}
+XInfo.getStackSize = function(itemName)
+    local stackSize = itemStackSizeCache[itemName]
+    if stackSize then return stackSize end
 
     local itemInfo = { XAPI.GetItemInfo(XInfo.getItemId(itemName)) }
     if itemInfo then
-        stackCount = itemInfo[8]
-        itemStackCountCache[itemName] = stackCount
-        return stackCount
+        stackSize = itemInfo[8]
+        itemStackSizeCache[itemName] = stackSize
+        return stackSize
     else
         return 0
     end
@@ -77,8 +77,8 @@ XInfo.isItemFullStack = function(bagId, slotId)
     local count = bagItem['stackCount']
     local itemId = bagItem['itemID']
 
-    local stackCount = XInfo.getStackCount(bagItem['itemName'])
-    return count >= stackCount
+    local stackSize = XInfo.getStackSize(bagItem['itemName'])
+    return count >= stackSize
 end
 
 function ReloadBagBank(type)
