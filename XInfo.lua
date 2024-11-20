@@ -2,7 +2,6 @@ XInfo = {}
 local moduleName = 'XInfo'
 
 -- Bag items
-XInfo.NormalBagCount = 3
 XInfoBagList = {}
 XInfoBankList = {}
 XInfo.emptyBagCount = 0
@@ -122,7 +121,7 @@ function ReloadBagBank(type)
             else
                 if isBag then
                     emptyBagCount = emptyBagCount + 1
-                    if i >= 0 and i < XInfo.NormalBagCount then
+                    if i >= 0 and i < XSetting.getNormalBagCount() then
                         emptyBagCountNormal = emptyBagCountNormal + 1
                     end
                 else
@@ -466,16 +465,15 @@ XInfo.getMaterialTotalCount = function(itemName)
 end
 
 -- Character
-XInfo.characterList = { '暗影肌', '阿肌' }
+-- XInfo.characterList = { '暗影肌', '阿肌' }
 XInfo.myName = XAPI.UnitName('player')
 XInfo.isMe = function(characterName)
-    return XUtils.inArray(characterName, XInfo.characterList)
+    return XUtils.inArray(characterName, XSetting.getMyCharacterList())
 end
 
-XInfo.partnerList = { '嘿丶小十六', '京城顽主', '小灬白龙', '暗影肌', '奔波丶霸' }
+-- XInfo.partnerList = { '嘿丶小十六', '京城顽主', '小灬白龙', '暗影肌', '奔波丶霸' }
 XInfo.isPartner = function(characterName)
-    -- return true
-    return XUtils.inArray(characterName, XInfo.partnerList)
+    return XUtils.inArray(characterName, XSetting.getPartnerList())
 end
 
 -- print count

@@ -1262,7 +1262,7 @@ refreshUI = function()
 
         local basePriceStr = XUI.White .. XUtils.priceToString(basePrice)
 
-        if XUtils.inArray(minPriceSeller, XInfo.partnerList) then
+        if XUtils.inArray(minPriceSeller, XSetting.getPartnerList()) then
             minPriceSeller = XUI.Orange .. string.sub(minPriceSeller, 1, 12)
         else
             if minPriceSeller then
@@ -2602,13 +2602,6 @@ processQueryTask = function(task)
             stackCount = 1
         end
         local price = task['price'] * stackSize
-        -- if XUtils.inArray(item['itemname'], XInfo.materialList) then
-        --     stackSize = task['count']
-        --     if stackSize > 20 then
-        --         stackSize = 20
-        --     end
-        --     stackCount = 1
-        -- end
 
         XAPI.PostAuction(price, price, 1, stackSize, stackCount)
 
