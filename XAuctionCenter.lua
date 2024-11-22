@@ -1687,8 +1687,13 @@ addCraftQueue = function()
                     local itemTotalCount = XInfo.getItemTotalCount(item['itemname'])
                     local stackCount = item['stackcount']
                     local stackSize = item['stacksize']
-                    local materialCount = XInfo.getMaterialBagCount(item['itemname'])
                     local dealCount = XInfo.getItemInfoField(item['itemname'], 'dealcount', 0)
+                    local reagents = XInfo.getReagentList(item['itemname'])
+                    local availableCount = 999
+                    for _, reagent in ipairs(reagents) do
+                        local tcount = math.floor(XInfo.getBagItemCount(reagent['itemname']) / reagent['count'])
+                        if tcount < availableCount then availableCount = tcount end
+                    end
 
                     -- local subCount = 0
                     -- if checkImportant(item) then
@@ -1708,7 +1713,7 @@ addCraftQueue = function()
                     if subCount > maxCount - itemTotalCount then
                         subCount = maxCount - itemTotalCount
                     end
-                    if subCount > materialCount then subCount = materialCount end
+                    if subCount > availableCount then subCount = availableCount end
                     if subCount > 0 then
                         XCraftQueue.addItem(item['itemname'], subCount, 'fulfil')
                         count = count + 1

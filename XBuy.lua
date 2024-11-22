@@ -546,12 +546,15 @@ onJewCrafingUpdate = function()
         end
     end
     for _, item in ipairs(rubbishList) do
-        local materialName = XInfo.getMaterialName(item['itemname'])
-        if XInfo.getBagItemCount(materialName) < 20 and XInfo.getMailItemCount(materialName) > 0 then
-            XUtils.receiveMail(materialName)
-            return
+        local reagents = XInfo.getReagentList(item['itemname'])
+        for _, reagent in ipairs(reagents) do
+            if XInfo.getBagItemCount(reagent['itemname']) < 20 and XInfo.getMailItemCount(reagent['itemname']) > 0 then
+                XUtils.receiveMail(reagent['itemname'])
+                return
+            end
         end
     end
+    -- TODO 永恒之土特殊处理
     if XInfo.getBagItemCount('永恒之土') <= 0 and XInfo.getBagItemCount('土之结晶') < 10 and XInfo.getMailItemCount('永恒之土') > 0 then
         XUtils.receiveMail('永恒之土')
         return

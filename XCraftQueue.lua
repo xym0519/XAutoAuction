@@ -9,14 +9,14 @@ local dft_largetime = 1.5
 local dft_taskInterval = 1
 local dft_emptySlotCount = 1
 local dft_rubbishList = {
-    { itemname = '裂纹森林翡翠', materialcount = 0 },
-    { itemname = '充能暗影水晶', materialcount = 0 },
-    { itemname = '烈日石戒', materialcount = 0 },
-    { itemname = '血石指环', materialcount = 0 },
-    { itemname = '坚硬黑玉', materialcount = 0 },
-    -- { itemname = '风暴天蓝石', materialcount = 20 },
-    { itemname = '水晶玉髓石项圈', materialcount = 0 },
-    -- { itemname = '水晶茶晶石项链', materialcount = 0 },
+    { itemname = '裂纹森林翡翠' },
+    { itemname = '充能暗影水晶' },
+    { itemname = '烈日石戒' },
+    { itemname = '血石指环' },
+    { itemname = '坚硬黑玉' },
+    -- { itemname = '风暴天蓝石'},
+    { itemname = '水晶玉髓石项圈' },
+    -- { itemname = '水晶茶晶石项链'},
 }
 
 local craftRubbish = true
@@ -422,19 +422,17 @@ local function onUpdate()
         if craftRubbish then
             if XInfo.emptyBagCountNormal > dft_emptySlotCount then
                 local found = false
-                for _index, _item in ipairs(dft_rubbishList) do
-                    if XInfo.getMaterialBagCount(_item['itemname']) > _item['materialcount'] then
-                        if _index <= 3 then
-                            addItem(_item['itemname'], craftRubbishCount)
-                            found = true
-                            break
-                        else
-                            if XInfo.getBagItemCount('土之结晶') >= 2 then -- TODO 土之结晶特殊处理
-                                addItem(_item['itemname'], craftRubbishCount)
-                                found = true
-                                break
-                            end
-                        end
+                for _, _item in ipairs(dft_rubbishList) do
+                    local reagents = XInfo.getReagentList(_item['itemname'])
+                    local availableCount = craftRubbishCount
+                    for _, reagent in ipairs(reagents) do
+                        local tcount = math.floor(XInfo.getBagItemCount(reagent['itemname']) / reagent['count'])
+                        if tcount < availableCount then availableCount = tcount end
+                    end
+                    if availableCount > 0 then
+                        addItem(_item['itemname'], availableCount)
+                        found = true
+                        break
                     end
                 end
                 if not found then
@@ -452,21 +450,26 @@ local function onUpdate()
         end
     end
 
-    curTask = craftQueue[1];
+    curTask = craftQueue[1]
     table.remove(craftQueue, 1)
 
-    local materialName = XInfo.getMaterialName(curTask['itemname'])
-    local materialCount = XInfo.getBagItemCount(materialName)
     local count = curTask['count']
-    if count > materialCount then
-        count = materialCount
+    local reagents = XInfo.getReagentList(curTask['itemname'])
+    for _, reagent in ipairs(reagents) do
+        local reagentCount = XInfo.getBagItemCount(reagent['itemname'])
+        local availableCount = math.floor(reagentCount / reagent['count'])
+        if count > availableCount then
+            count = availableCount
+        end
     end
+
     if count <= 0 then
         finishCurTask()
         refreshUI()
         return
     end
 
+    local materialName = XInfo.getMaterialName(curTask['itemname'])
     taskExpires = time() + dft_smalltime * count + 2
     if XUtils.inArray(materialName, XInfo.materialListB) then
         taskExpires = time() + dft_largetime * count + 2

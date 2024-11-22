@@ -483,6 +483,30 @@ XAPI.GetTradeSkillInfo = function(...)
     return GetTradeSkillInfo(...)
 end
 
+-- 获取商业技能原料数量
+-- https://wowpedia.fandom.com/wiki/API_GetTradeSkillNumReagents
+-- Arguments: (tradeSkillRecipeId)
+--   tradeSkillRecipeId: number - The id of the trade skill recipe.
+-- Returns:
+--   reagentCount: number - The number of distinct reagents required to create the item.
+XAPI.GetTradeSkillNumReagents = function(...)
+    return GetTradeSkillNumReagents(...)
+end
+
+-- 获取商业技能原料信息
+-- https://wowpedia.fandom.com/wiki/API_GetTradeSkillReagentInfo
+-- Arguments: (tradeSkillRecipeId, reagentId)
+--   tradeSkillRecipeId: The Id of the tradeskill recipe
+--   reagentId: The Id of the reagent (from 1 to x, where x is the result of calling GetTradeSkillNumReagents)
+-- Returns:
+--   reagentName: string - The name of the reagent.
+--   reagentTexture: string - The texture for the reagent's icon.
+--   reagentCount: number - The quantity of this reagent required to make one of these items.
+--   playerReagentCount: number - The quantity of this reagent in the player's inventory.
+XAPI.GetTradeSkillReagentInfo = function(...)
+    return GetTradeSkillReagentInfo(...)
+end
+
 -- 使用商业技能制造物品
 -- https://wowpedia.fandom.com/wiki/API_DoTradeSkill
 -- Arguments: (index, repeat)

@@ -280,7 +280,7 @@ end
 -- Trade skills
 XInfoTradeSkillList = {}
 
--- index, skillname
+-- index, skillname, reagents(itemname, count)
 XInfo.getTradeSkillItem = function(itemName, type)
     if not type then type = '珠宝加工' end
     if XInfoTradeSkillList and XInfoTradeSkillList[type] and XInfoTradeSkillList[type][itemName] then
@@ -308,7 +308,13 @@ XInfo.reloadTradeSkill = function(type)
             local itemLink = XAPI.GetTradeSkillItemLink(i)
             if itemLink and skillName then
                 local itemName = XAPI.GetItemInfo(itemLink)
-                list[itemName] = { index = i, skillname = skillName }
+                local reagentCount = XAPI.GetTradeSkillNumReagents(i)
+                local reagents = {}
+                for j = 1, reagentCount do
+                    local _itemName, _, _count = XAPI.GetTradeSkillReagentInfo(i, j)
+                    table.insert(reagents, { itemname = _itemName, count = _count })
+                end
+                list[itemName] = { index = i, skillname = skillName, reagents = reagents }
             end
         end
     end
@@ -375,31 +381,30 @@ XInfo.materialListSS = { '血石', '茶晶石', '太阳水晶', '黑玉', '玉�
 XInfo.materialListB = { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼', '巨锆石', '恐惧石' }
 XInfo.materialListO = { '天焰钻石', '大地侵攻钻石' }
 XInfo.mineList = { '萨隆邪铁矿石', '泰坦神铁矿石' }
-XInfo.recipeList = {
-    { itemname = '水晶玉髓石项圈', materialname = '玉髓石' },
-    { itemname = '水晶茶晶石项链', materialname = '茶晶石' },
-    { itemname = '烈日石戒', materialname = '太阳水晶' },
-    { itemname = '血石指环', materialname = '血石' },
-    { itemname = '充能暗影水晶', materialname = '暗影水晶' },
-    { itemname = '坚硬黑玉', materialname = '黑玉' },
-}
-XInfo.getMaterialName = function(itemName)
-    local materialName = nil
-    for _, item in ipairs(XInfo.recipeList) do
-        if item['itemname'] == itemName then
-            materialName = item['materialname']
-            break
-        end
-    end
-    if materialName then return materialName end
 
-    for i = 1, #XInfo.materialList do
-        if XUtils.stringContains(itemName, XInfo.materialList[i]) then
-            materialName = XInfo.materialList[i]
-            break
+XInfo.getReagentList = function(itemName, type)
+    if type == nil then type = '珠宝加工' end
+    local skillItem = XInfo.getTradeSkillItem(itemName, type)
+    if not skillItem then return {} end
+    return skillItem['reagents']
+end
+
+XInfo.getMaterialName = function(itemName, type)
+    if type == nil then type = '珠宝加工' end
+    local reagents = XInfo.getReagentList(itemName, type)
+    if #reagents < 1 then return itemName end
+
+    for _, reagent in ipairs(reagents) do
+        if type == '珠宝加工' then
+            if XUtils.inArray(reagent['itemname'], XInfo.materialList) then
+                return reagent['itemname']
+            end
+        else
+            return reagent['itemname']
         end
     end
-    return materialName
+
+    return itemName
 end
 
 XInfo.getMaterialBagItem = function(itemName)
