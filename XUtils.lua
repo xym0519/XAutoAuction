@@ -269,7 +269,7 @@ XUtils.sendMail = function(itemName, stackCount, fullStack, receiver, money, sub
         end
     end
     XAPI.SendMail(receiver, subject, content)
-    xdebug.info(subject)
+    xdebug.info(subject, receiver)
     XInfo.reloadBag()
     XInfo.reloadMail()
 end
