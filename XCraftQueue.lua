@@ -19,7 +19,7 @@ local dft_rubbishList = {
     -- { itemname = '水晶茶晶石项链'},
 }
 
-local craftRubbish = true
+local craftRubbish = false
 local craftRubbishCount = 1
 local craftQueue = {}
 local displayPageNo = 0
@@ -73,7 +73,7 @@ initUI = function()
         end
     end)
 
-    local craftRubbishButton = XUI.createButton(mainFrame, 35, XUI.Green .. '造')
+    local craftRubbishButton = XUI.createButton(mainFrame, 35, XUI.Red .. '造')
     craftRubbishButton:SetPoint('LEFT', nextButton, 'RIGHT', 5, 0)
     craftRubbishButton:SetScript('OnClick', function(self)
         craftRubbish = not craftRubbish
