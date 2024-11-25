@@ -77,7 +77,7 @@ end
 
 XSetting.addPartnerListBuy = function(value)
     initSetting('partnerlistbuy')
-    table.insert(XSettingList['mycharacterlistbuy'], value)
+    table.insert(XSettingList['partnerlistbuy'], value)
 end
 
 XSetting.delPartnerListBuy = function(index)
@@ -102,7 +102,7 @@ end
 
 XSetting.addPartnerListSell = function(value)
     initSetting('partnerlistsell')
-    table.insert(XSettingList['mycharacterlistsell'], value)
+    table.insert(XSettingList['partnerlistsell'], value)
 end
 
 XSetting.delPartnerListSell = function(index)
