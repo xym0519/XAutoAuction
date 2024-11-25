@@ -43,7 +43,7 @@ XAPI.UI_ERROR_MESSAGE[28] = '未找到指定物品'
 XAPI.UI_ERROR_MESSAGE[453] = '内部拍卖错误'
 
 -- 问号图标
-XAPI.Texture_QuestionMark = 'Interface/Icons/INV_Misc_QuestionMark'
+XAPI.Texture_QuestionMark = 'INV_Misc_QuestionMark'
 
 -- 界面 & 操作
 -- 清除鼠标选中物体
@@ -693,6 +693,41 @@ end
 -- 出售选中物品
 XAPI.SellCursorItem = function()
     SellCursorItem()
+end
+
+-- 宏
+-- 创建宏
+-- https://wowpedia.fandom.com/wiki/API_CreateMacro
+-- Arguments: (name, iconFileID [, body, perCharacter])
+--   name: string - The name of the macro to be displayed in the UI. The current UI imposes a 16-character limit.
+--   iconFileID: number|string - A FileID or string identifying the icon texture to use. The available icons can be retrieved by calling GetMacroIcons() and GetMacroItemIcons(); other textures inside Interface\ICONS may also be used.
+--   body: string? - The macro commands to be executed. If this string is longer than 255 characters, only the first 255 will be saved.
+--   perCharacter: boolean? - true to create a per-character macro, nil to create a general macro available to all characters.
+-- Returns:
+--   macroId: number - The 1-based index of the newly-created macro, as displayed in the "Create Macros" UI.
+XAPI.CreateMacro = function(...)
+    return CreateMacro(...)
+end
+
+-- 删除宏
+-- https://wowpedia.fandom.com/wiki/API_DeleteMacro
+-- Arguments: (index or macroname)
+--   index: number - Index ranging from 1 to 120 for account-wide macros and 121 to 138 for character-specific ones.
+--   macroname: string - Name of the macro to delete.
+XAPI.DeleteMacro = function(...)
+    return DeleteMacro(...)
+end
+
+-- 获取宏
+-- https://wowpedia.fandom.com/wiki/API_GetMacroInfo
+-- Arguments: (macro)
+--   macro: number|string - Macro slot index or the name of the macro. Slots 1 through 120 are general macros; 121 through 138 are per-character macros.
+-- Returns:
+--   name: string - The name of the macro.
+--   icon: number : fileID - Macro icon texture.
+--   body: string - Macro contents.
+XAPI.GetMacroInfo = function(...)
+    return GetMacroInfo(...)
 end
 
 -- Auctionator

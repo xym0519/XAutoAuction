@@ -213,6 +213,80 @@ initUI = function()
     local macroButton = XUI.createButton(mainFrame, 100, '初始化宏')
     macroButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -30)
     macroButton:SetScript('OnClick', function()
+        XUIConfirmDialog.show(moduleName, '确认', '确认初始化宏', function()
+            if not XAPI.GetMacroInfo('cls') then
+                XAPI.CreateMacro('cls', XAPI.Texture_QuestionMark, '/cls')
+            end
+            if not XAPI.GetMacroInfo('reload') then
+                XAPI.CreateMacro('reload', XAPI.Texture_QuestionMark, '/reload')
+            end
+
+            if not XAPI.GetMacroInfo('出售') then
+                XAPI.CreateMacro('出售', XAPI.Texture_QuestionMark,
+                    "/xauctioncenter\n/xcraftqueue_close\n/xbuy_close\n/xjewwords_close")
+            end
+            if not XAPI.GetMacroInfo('购买') then
+                XAPI.CreateMacro('购买', XAPI.Texture_QuestionMark,
+                    "/xauctioncenter_close\n/xcraftqueue_close\n/xbuy\n/xjewcount_show\n/xjewwords_close")
+            end
+            if not XAPI.GetMacroInfo('交易') then
+                XAPI.CreateMacro('交易', XAPI.Texture_QuestionMark,
+                    "/xauctioncenter_close\n/xcraftqueue_close\n/xbuy_close\n/xjewcount_close\n/xjewwords")
+            end
+            if not XAPI.GetMacroInfo('关闭') then
+                XAPI.CreateMacro('关闭', XAPI.Texture_QuestionMark,
+                    "/xauctioncenter_close\n/xcraftqueue_close\n/xauctionhistory_close\n/xbuy_close\n/xjewcount_close\n/xjewwords_close")
+            end
+
+            if not XAPI.GetMacroInfo('刷新') then
+                XAPI.CreateMacro('刷新', XAPI.Texture_QuestionMark, "/xjewtool_refresh")
+            end
+            if not XAPI.GetMacroInfo('设置') then
+                XAPI.CreateMacro('设置', XAPI.Texture_QuestionMark, "/xsetting")
+            end
+            if not XAPI.GetMacroInfo('导出') then
+                XAPI.CreateMacro('导出', XAPI.Texture_QuestionMark, "/xjewtooldata_export")
+            end
+
+            if not XAPI.GetMacroInfo('法1') then
+                XAPI.CreateMacro('法1', XAPI.Texture_QuestionMark, "/xjewtool_update")
+            end
+            if not XAPI.GetMacroInfo('法2') then
+                XAPI.CreateMacro('法2', XAPI.Texture_QuestionMark, "/xjewtool_skill")
+            end
+            if not XAPI.GetMacroInfo('法3') then
+                XAPI.CreateMacro('法3', XAPI.Texture_QuestionMark, "/xjewtool_cast")
+            end
+            if not XAPI.GetMacroInfo('法4') then
+                XAPI.CreateMacro('法4', XAPI.Texture_QuestionMark, "/xjewtool_magic")
+            end
+            if not XAPI.GetMacroInfo('法5') then
+                XAPI.CreateMacro('法5', XAPI.Texture_QuestionMark, "/xjewtool_fang")
+            end
+
+            if not XAPI.GetMacroInfo('合土') then
+                XAPI.CreateMacro('合土', XAPI.Texture_QuestionMark, "/use 土之结晶")
+            end
+            if not XAPI.GetMacroInfo('拆土1') then
+                XAPI.CreateMacro('拆土1', XAPI.Texture_QuestionMark, "/use 永恒之土\n/xjewtool_update")
+            end
+            if not XAPI.GetMacroInfo('拆土2') then
+                XAPI.CreateMacro('拆土2', XAPI.Texture_QuestionMark, "/use 永恒之土\n/xjewtool_skill")
+            end
+            if not XAPI.GetMacroInfo('拆土3') then
+                XAPI.CreateMacro('拆土3', XAPI.Texture_QuestionMark, "/use 永恒之土\n/xjewtool_cast")
+            end
+            if not XAPI.GetMacroInfo('拆土4') then
+                XAPI.CreateMacro('拆土4', XAPI.Texture_QuestionMark, "/use 永恒之土\n/xjewtool_magic")
+            end
+            if not XAPI.GetMacroInfo('拆土5') then
+                XAPI.CreateMacro('拆土5', XAPI.Texture_QuestionMark, "/use 永恒之土\n/xjewtool_fang")
+            end
+
+            if not XAPI.GetMacroInfo('选矿') then
+                XAPI.CreateMacro('选矿', XAPI.Texture_QuestionMark, "/cast 选矿\n/use 萨隆邪铁矿石")
+            end
+        end)
     end)
 
     local normalBagCountButton = XUI.createButton(mainFrame, 100, '包裹数量')
