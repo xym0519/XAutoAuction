@@ -41,24 +41,46 @@ XSetting.printMyCharacterList = function()
     end
 end
 
--- Partner List
-if XSettingList['partnerlist'] == nil then XSettingList['partnerlist'] = {} end
-XSetting.getPartnerList = function()
-    return XSettingList['partnerlist']
+-- Partner List Sell
+if XSettingList['partnerlistbuy'] == nil then XSettingList['partnerlistbuy'] = {} end
+XSetting.getPartnerListBuy = function()
+    return XSettingList['partnerlistbuy']
 end
 
-XSetting.addPartnerList = function(value)
-    table.insert(XSettingList['mycharacterlist'], value)
+XSetting.addPartnerListBuy = function(value)
+    table.insert(XSettingList['mycharacterlistbuy'], value)
 end
 
-XSetting.delPartnerList = function(index)
-    if #XSettingList['partnerlist'] < index then return end
-    table.remove(XSettingList['partnerlist'], index)
+XSetting.delPartnerListBuy = function(index)
+    if #XSettingList['partnerlistbuy'] < index then return end
+    table.remove(XSettingList['partnerlistbuy'], index)
 end
 
-XSetting.printPartnerList = function()
-    xdebug.warn('PartnerList')
-    for idx, name in ipairs(XSettingList['partnerlist']) do
+XSetting.printPartnerListBuy = function()
+    xdebug.warn('PartnerListBuy')
+    for idx, name in ipairs(XSettingList['partnerlistbuy']) do
+        printSetting(idx, name)
+    end
+end
+
+-- Partner List Sell
+if XSettingList['partnerlistsell'] == nil then XSettingList['partnerlistsell'] = {} end
+XSetting.getPartnerListSell = function()
+    return XSettingList['partnerlistsell']
+end
+
+XSetting.addPartnerListSell = function(value)
+    table.insert(XSettingList['mycharacterlistsell'], value)
+end
+
+XSetting.delPartnerListSell = function(index)
+    if #XSettingList['partnerlistsell'] < index then return end
+    table.remove(XSettingList['partnerlistsell'], index)
+end
+
+XSetting.printPartnerListSell = function()
+    xdebug.warn('PartnerListSell')
+    for idx, name in ipairs(XSettingList['partnerlistsell']) do
         printSetting(idx, name)
     end
 end
@@ -79,30 +101,65 @@ end
 
 -- Mail Receiver
 if XSettingList['mailreceiver'] == nil then XSettingList['mailreceiver'] = {} end
-XSetting.getMailReceiver = function()
-    return XSettingList['mailreceiver']
+XSetting.getMailReceiver = function(itemName)
+    local receiver = XSettingList['mailreceiver'][itemName]
+    if receiver == nil then
+        receiver = XSetting.getDefaultMailReceiver()
+    end
+    return receiver
 end
 
 XSetting.addMailReceiver = function(receiver, ...)
-    local receiverItem = nil
-    for _, item in ipairs(XSettingList['mailreceiver']) do
-        if item['receiver'] == receiver then
-            receiverItem = item
-            break
-        end
-    end
-    if receiverItem == nil then
-        receiverItem = { receiver = receiver, list = {} }
-        table.insert(XSettingList['mailreceiver'], receiverItem)
-    end
     local itemList = { ... }
     for _, itemName in ipairs(itemList) do
-111
+        XSettingList['mailreceiver'][itemName] = receiver
     end
-    -- table.insert(XSettingList['mycharacterlist'], value)
+end
+
+XSetting.delMailReceiver = function(itemName)
+    XSettingList['mailreceiver'][itemName] = nil
+end
+
+XSetting.printMailReceiver = function()
+    xdebug.warn('MailReceiver')
+    local list = {}
+    for itemName, receiver in pairs(XSettingList['mailreceiver']) do
+        if list[receiver] == nil then
+            list[receiver] = {}
+        end
+        if not XUtils.inArray(itemName, list[receiver]) then
+            tinsert(list[receiver], itemName)
+        end
+    end
+    for receiver, itemList in pairs(list) do
+        xdebug.warn(receiver)
+        for _, itemName in ipairs(itemList) do
+            xdebug.warn('    ' .. itemName)
+        end
+    end
 end
 
 -- {
 --     receiver = '默法',
 --     list = { '萨隆邪铁矿石', '血石', '茶晶石', '太阳水晶', '黑玉', '玉髓石', '暗影水晶', '永恒之土', '土之结晶', '钴矿石', '冰冻宝珠' }
+-- }
+
+-- local dft_mineReceiver = '阿肌'
+-- local dft_mineReceiverList = {
+--     {
+--         receiver = '默法',
+--         list = { '萨隆邪铁矿石', '血石', '茶晶石', '太阳水晶', '黑玉', '玉髓石', '暗影水晶', '永恒之土', '土之结晶', '钴矿石', '冰冻宝珠' }
+--     }
+-- }
+-- local dft_rubbishReceiver = '默无'
+
+-- local dft_rubbishList = {
+--     { itemname = '裂纹森林翡翠', materialcount = 0 },
+--     { itemname = '充能暗影水晶', materialcount = 0 },
+--     { itemname = '烈日石戒', materialcount = 0 },
+--     { itemname = '血石指环', materialcount = 0 },
+--     { itemname = '坚硬黑玉', materialcount = 0 },
+--     -- { itemname = '风暴天蓝石', materialcount = 20 },
+--     { itemname = '水晶玉髓石项圈', materialcount = 0 },
+--     -- { itemname = '水晶茶晶石项链', materialcount = 0 },
 -- }

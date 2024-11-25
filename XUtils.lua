@@ -187,7 +187,7 @@ XUtils.round = function(v)
 end
 
 XUtils.sendMail = function(itemName, stackCount, fullStack, receiver, money, subject, content)
-    if receiver == nil then receiver = '阿肌' end
+    if receiver == nil then receiver = XSetting.getMailReceiver(itemName) end
     if fullStack == nil then fullStack = true end
 
     if not XAPI.IsMailBoxOpen() then

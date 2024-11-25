@@ -369,11 +369,7 @@ XInfo.materialList = { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼',
     '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石',
     '血石', '茶晶石', '太阳水晶', '黑玉', '玉髓石', '暗影水晶',
     '天焰钻石', '大地侵攻钻石' }
-XInfo.materialListS = { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石' }
-XInfo.materialListSS = { '血石', '茶晶石', '太阳水晶', '黑玉', '玉髓石', '暗影水晶' }
 XInfo.materialListB = { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼', '巨锆石', '恐惧石' }
-XInfo.materialListO = { '天焰钻石', '大地侵攻钻石' }
-XInfo.mineList = { '萨隆邪铁矿石', '泰坦神铁矿石' }
 XInfo.recipeList = {
     { itemname = '水晶玉髓石项圈', materialname = '玉髓石' },
     { itemname = '水晶茶晶石项链', materialname = '茶晶石' },
@@ -472,8 +468,12 @@ XInfo.isMe = function(characterName)
 end
 
 -- XInfo.partnerList = { '嘿丶小十六', '京城顽主', '小灬白龙', '暗影肌', '奔波丶霸' }
-XInfo.isPartner = function(characterName)
-    return XUtils.inArray(characterName, XSetting.getPartnerList())
+XInfo.isPartnerBuy = function(characterName)
+    return XUtils.inArray(characterName, XSetting.getPartnerListBuy())
+end
+
+XInfo.isPartnerSell = function(characterName)
+    return XUtils.inArray(characterName, XSetting.getPartnerListSell())
 end
 
 -- print count

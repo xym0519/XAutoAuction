@@ -1262,7 +1262,7 @@ refreshUI = function()
 
         local basePriceStr = XUI.White .. XUtils.priceToString(basePrice)
 
-        if XUtils.inArray(minPriceSeller, XSetting.getPartnerList()) then
+        if XUtils.inArray(minPriceSeller, XSetting.getPartnerListSell()) then
             minPriceSeller = XUI.Orange .. string.sub(minPriceSeller, 1, 12)
         else
             if minPriceSeller then
@@ -2488,10 +2488,10 @@ processQueryTask = function(task)
                             item['myvalidlist'] = newPriceList
                             item['minpriceother'] = buyoutPrice
                             item['minpriceseller'] = seller
-                            item['minpriceotherispartner'] = XInfo.isPartner(seller)
+                            item['minpriceotherispartner'] = XInfo.isPartnerSell(seller)
                         elseif buyoutPrice == item['minpriceother'] then
                             if not item['minpriceotherispartner'] then
-                                item['minpriceotherispartner'] = XInfo.isPartner(seller)
+                                item['minpriceotherispartner'] = XInfo.isPartnerSell(seller)
                             end
                         end
                     end
@@ -2699,12 +2699,12 @@ processMaterialQueryTask = function(task)
 
                 if (timeLeft < 3 and nextBidPrice / stackCount <= buyingItem['price'])
                     or (buyoutPrice > 0 and buyoutPrice / stackCount <= buyingItem['price']) then
-                    if (not XInfo.isMe(seller)) and (not isMine) and (not XInfo.isPartner(seller)) then
+                    if (not XInfo.isMe(seller)) and (not isMine) and (not XInfo.isPartnerBuy(seller)) then
                         found = true
                     end
                 end
 
-                if (not XInfo.isMe(seller)) and (not isMine) and (not XInfo.isPartner(seller)) then
+                if (not XInfo.isMe(seller)) and (not isMine) and (not XInfo.isPartnerBuy(seller)) then
                     if buyoutPrice / stackCount <= buyingItem['price'] and buyoutPrice > 0 then
                         xdebug.info('Buyout: ' .. itemName .. ' (' .. stackCount .. ')'
                             .. '    ' .. XUtils.priceToMoneyString(buyoutPrice / stackCount))

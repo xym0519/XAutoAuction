@@ -18,6 +18,24 @@ XAPI.FeeRate = 0.15
 XAPI.TaxRate = 0.05
 XAPI.ProfitRate = 1 - XAPI.TaxRate
 
+-- 炸矿爆率
+XAPI.MineJewRateSmall = {}
+XAPI.MineJewRateSmall['血玉石'] = 0.8
+XAPI.MineJewRateSmall['帝黄晶'] = 0.8
+XAPI.MineJewRateSmall['秋色石'] = 0.8
+XAPI.MineJewRateSmall['森林翡翠'] = 0.8
+XAPI.MineJewRateSmall['天蓝石'] = 0.8
+XAPI.MineJewRateSmall['曙光猫眼石'] = 0.8
+XAPI.MineJewRateSmall['血石'] = 3.6
+XAPI.MineJewRateSmall['茶晶石'] = 3.6
+XAPI.MineJewRateSmall['太阳水晶'] = 3.6
+XAPI.MineJewRateSmall['黑玉'] = 3.6
+XAPI.MineJewRateSmall['玉髓石'] = 3.6
+XAPI.MineJewRateSmall['暗影水晶'] = 3.6
+
+-- 完美宝石概率
+XAPI.PerfectJewRate = 0.2
+
 -- UI_ERROR_MESSAGE
 XAPI.UI_ERROR_MESSAGE = {}
 XAPI.UI_ERROR_MESSAGE[3] = '物品栏已满。'
