@@ -303,9 +303,8 @@ initUI = function()
     sellButton:SetPoint('RIGHT', sortButton, 'LEFT', -3, 0)
     sellButton:SetScript('OnClick', function()
         XUIConfirmDialog.show(moduleName, '确认', '确认出售', function()
-            local rubbishList = XCraftQueue.getRubbishList()
             local items = {}
-            for _, item in ipairs(rubbishList) do
+            for _, item in ipairs(XRubbishList) do
                 table.insert(items, item['itemname'])
                 table.insert(items, '完美' .. item['itemname'])
             end

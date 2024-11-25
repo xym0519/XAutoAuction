@@ -381,6 +381,7 @@ XInfo.getReagentList = function(itemName, type)
     if type == nil then type = '珠宝加工' end
     local skillItem = XInfo.getTradeSkillItem(itemName, type)
     if not skillItem then return {} end
+    if not skillItem['reagents'] then return {} end
     return skillItem['reagents']
 end
 

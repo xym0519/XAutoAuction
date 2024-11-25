@@ -3,21 +3,24 @@ local moduleName = 'XCraftQueue'
 
 -- Variable definition
 local mainFrame
+local rubbishSettingFrame
 
 local dft_smalltime = 5
 local dft_largetime = 1.5
 local dft_taskInterval = 1
 local dft_emptySlotCount = 1
-local dft_rubbishList = {
-    { itemname = '裂纹森林翡翠' },
-    { itemname = '充能暗影水晶' },
-    { itemname = '烈日石戒' },
-    { itemname = '血石指环' },
-    { itemname = '坚硬黑玉' },
-    -- { itemname = '风暴天蓝石'},
-    { itemname = '水晶玉髓石项圈' },
-    -- { itemname = '水晶茶晶石项链'},
-}
+local dft_buttonWidth = 60
+local dft_buttonGap = 1
+-- local dft_rubbishList = {
+--     { itemname = '裂纹森林翡翠' },
+--     { itemname = '充能暗影水晶' },
+--     { itemname = '烈日石戒' },
+--     { itemname = '血石指环' },
+--     { itemname = '坚硬黑玉' },
+--     -- { itemname = '风暴天蓝石'},
+--     { itemname = '水晶玉髓石项圈' },
+--     -- { itemname = '水晶茶晶石项链'},
+-- }
 
 local craftRubbish = false
 local craftRubbishCount = 1
@@ -31,9 +34,15 @@ local taskExpires = 0
 local lastFailTime = 0
 local lastTaskFinishTime = 0
 
+local rubbishDisplayPageNo = 0
+local rubbishDisplayPageSize = 10
+local rubbishDisplayFrameList = {}
+
 -- Function definition
 local initUI
+local initRubbishSettingUI
 local refreshUI
+local refreshRubbishUI
 local addItem
 local finishCurTask
 local start
@@ -76,13 +85,17 @@ initUI = function()
     local craftRubbishButton = XUI.createButton(mainFrame, 35, XUI.Red .. '造')
     craftRubbishButton:SetPoint('LEFT', nextButton, 'RIGHT', 5, 0)
     craftRubbishButton:SetScript('OnClick', function(self)
-        craftRubbish = not craftRubbish
-        if craftRubbish then
-            self:SetText(XUI.Green .. '造')
+        if IsLeftShiftKeyDown() then
+            XUI.toggleVisible(rubbishSettingFrame)
         else
-            self:SetText(XUI.Red .. '造')
+            craftRubbish = not craftRubbish
+            if craftRubbish then
+                self:SetText(XUI.Green .. '造')
+            else
+                self:SetText(XUI.Red .. '造')
+            end
+            refreshUI()
         end
-        refreshUI()
     end)
 
     local cleanButton = XUI.createButton(mainFrame, 35, '清')
@@ -207,6 +220,103 @@ initUI = function()
         table.insert(displayFrameList, frame)
         lastWidget = frame
     end
+
+    initRubbishSettingUI()
+end
+
+initRubbishSettingUI = function()
+    rubbishSettingFrame = XUI.createFrame('XCraftQueueRubbishSettingFrame', 340, 420)
+    rubbishSettingFrame.title:SetText('垃圾设置')
+    rubbishSettingFrame:SetPoint('LEFT', UIParent, 'LEFT', 0, 0)
+    rubbishSettingFrame:Hide()
+    tinsert(UISpecialFrames, rubbishSettingFrame:GetName())
+
+    local preButton = XUI.createButton(rubbishSettingFrame, dft_buttonWidth, '上页')
+    preButton:SetPoint('TOPLEFT', rubbishSettingFrame, 'TOPLEFT', 15, -30)
+    preButton:SetScript('OnClick', function()
+        if rubbishDisplayPageNo > 0 then
+            rubbishDisplayPageNo = rubbishDisplayPageNo - 1
+            refreshRubbishUI()
+        end
+    end)
+
+    local nextButton = XUI.createButton(rubbishSettingFrame, dft_buttonWidth, '下页')
+    nextButton:SetPoint('LEFT', preButton, 'RIGHT', dft_buttonGap, 0)
+    nextButton:SetScript('OnClick', function()
+        if rubbishDisplayPageNo < math.ceil(#XRubbishList / rubbishDisplayPageSize) - 1 then
+            rubbishDisplayPageNo = rubbishDisplayPageNo + 1
+            refreshRubbishUI()
+        end
+    end)
+
+    local addButton = XUI.createButton(rubbishSettingFrame, dft_buttonWidth, '新增')
+    addButton:SetPoint('LEFT', nextButton, 'RIGHT', dft_buttonGap, 0)
+    addButton:SetScript('OnClick', function()
+        XUIInputDialog.show(moduleName .. '_Rubbish_Setting', function(data)
+            local itemName = data[1].Value
+            if not XUtils.inArray(itemName, XRubbishList) then
+                table.insert(XRubbishList, { itemname = itemName, enabled = false })
+            end
+            refreshRubbishUI()
+        end, { { Name = '垃圾名称' }, }, '新增垃圾')
+    end)
+
+    local lastWidget = preButton
+    for i = 1, rubbishDisplayPageSize do
+        local frame = XAPI.CreateFrame('Frame', nil, rubbishSettingFrame)
+        frame:SetSize(rubbishSettingFrame:GetWidth(), 30)
+
+        if i == 1 then
+            frame:SetPoint('TOPLEFT', rubbishSettingFrame, 'TOPLEFT', 0, -65)
+        else
+            frame:SetPoint('TOPLEFT', lastWidget, 'BOTTOMLEFT', 0, -5)
+        end
+
+        frame:Hide()
+
+        local indexButton = XUI.createButton(frame, 30, '')
+        indexButton:SetPoint('LEFT', frame, 'LEFT', 15, 0)
+        indexButton:SetScript('OnClick', function()
+            local idx = rubbishDisplayPageNo * rubbishDisplayPageSize + i
+            XUISortDialog.show(moduleName .. '_Rubbish_Sort', XRubbishList, idx, function()
+                refreshRubbishUI()
+            end)
+        end)
+        frame.indexButton = indexButton
+
+        local label = XUI.createLabel(frame, 200, '')
+        label:SetPoint('LEFT', indexButton, 'RIGHT', 8, 0)
+        frame.label = label
+
+        local deleteButton = XUI.createButton(frame, 32, '删')
+        deleteButton:SetPoint('LEFT', label, 'RIGHT', 3, 0)
+        deleteButton:SetScript('OnClick', function()
+            local idx = rubbishDisplayPageNo * rubbishDisplayPageSize + i
+            if idx <= #XRubbishList then
+                XUIConfirmDialog.show(moduleName .. '_Rubbish_delete',
+                    '确认删除',
+                    '是否确认删除：' .. XRubbishList[idx]['itemname'],
+                    function()
+                        table.remove(XRubbishList, idx)
+                        refreshRubbishUI()
+                    end)
+            end
+        end)
+
+        local enableButton = XUI.createButton(frame, 32, '')
+        enableButton:SetPoint('LEFT', deleteButton, 'RIGHT', 1, 0)
+        enableButton:SetScript('OnClick', function(self)
+            local idx = rubbishDisplayPageNo * rubbishDisplayPageSize + i
+            local item = XRubbishList[idx]
+            if not item then return end
+            item['enabled'] = not item['enabled']
+            refreshRubbishUI()
+        end)
+        frame.enableButton = enableButton
+
+        table.insert(rubbishDisplayFrameList, frame)
+        lastWidget = frame
+    end
 end
 
 refreshUI = function()
@@ -229,7 +339,7 @@ refreshUI = function()
     end
 
     local rubbishCount = 0
-    for _, _item in ipairs(dft_rubbishList) do
+    for _, _item in ipairs(XRubbishList) do
         rubbishCount = rubbishCount + XInfo.getBagItemCount(_item['itemname'])
     end
     local rubbishCountStr = 'R' .. rubbishCount
@@ -284,6 +394,33 @@ refreshUI = function()
             frame.countLabel:SetText(item['count']
                 .. XUI.White .. ' / ' .. mailCountStr .. XUI.White .. ' / ' .. 'A' .. auctionCount
                 .. ' / ' .. 'T' .. itemTotalCount .. XUI.White .. ' / ' .. materialCount)
+            frame:Show()
+        else
+            frame:Hide()
+        end
+    end
+
+    refreshRubbishUI()
+end
+
+refreshRubbishUI = function()
+    if not rubbishSettingFrame then return end
+    if not rubbishSettingFrame:IsVisible() then return end
+
+    for i = 1, rubbishDisplayPageSize do
+        local frame = rubbishDisplayFrameList[i]
+        local idx = rubbishDisplayPageNo * rubbishDisplayPageSize + i
+        if idx <= #XRubbishList then
+            local item = XRubbishList[idx]
+
+            frame.indexButton:SetText(idx)
+            frame.label:SetText(item['itemname'])
+
+            if item['enabled'] ~= true then
+                frame.enableButton:SetText(XUI.Red .. '停')
+            else
+                frame.enableButton:SetText(XUI.Green .. '起')
+            end
             frame:Show()
         else
             frame:Hide()
@@ -422,17 +559,19 @@ local function onUpdate()
         if craftRubbish then
             if XInfo.emptyBagCountNormal > dft_emptySlotCount then
                 local found = false
-                for _, _item in ipairs(dft_rubbishList) do
-                    local reagents = XInfo.getReagentList(_item['itemname'])
-                    local availableCount = craftRubbishCount
-                    for _, reagent in ipairs(reagents) do
-                        local tcount = math.floor(XInfo.getBagItemCount(reagent['itemname']) / reagent['count'])
-                        if tcount < availableCount then availableCount = tcount end
-                    end
-                    if availableCount > 0 then
-                        addItem(_item['itemname'], availableCount)
-                        found = true
-                        break
+                for _, _item in ipairs(XRubbishList) do
+                    if _item['enabled'] then
+                        local reagents = XInfo.getReagentList(_item['itemname'])
+                        local availableCount = craftRubbishCount
+                        for _, reagent in ipairs(reagents) do
+                            local tcount = math.floor(XInfo.getBagItemCount(reagent['itemname']) / reagent['count'])
+                            if tcount < availableCount then availableCount = tcount end
+                        end
+                        if availableCount > 0 then
+                            addItem(_item['itemname'], availableCount)
+                            found = true
+                            break
+                        end
                     end
                 end
                 if not found then
@@ -600,8 +739,4 @@ XCraftQueue.getCurItemName = function()
     else
         return nil
     end
-end
-
-XCraftQueue.getRubbishList = function()
-    return dft_rubbishList
 end

@@ -11,6 +11,7 @@ XJewWordSetting = {}
 XAuctionBoardList = {}
 XFrameLevel = 10
 XSettingList = {}
+XRubbishList = {}
 
 -- ui
 local hintShowDelay = 3

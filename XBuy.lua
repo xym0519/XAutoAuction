@@ -504,8 +504,7 @@ onJewCrafingUpdate = function()
     if not jewCrafting then return end
     XInfo.reloadBag()
 
-    local rubbishList = XCraftQueue.getRubbishList()
-    for _, item in ipairs(rubbishList) do
+    for _, item in ipairs(XRubbishList) do
         if XInfo.getBagItemCount(item['itemname']) >= 5 then
             XUtils.sendMail(item['itemname'], 5, true)
             return
@@ -515,7 +514,7 @@ onJewCrafingUpdate = function()
             return
         end
     end
-    for _, item in ipairs(rubbishList) do
+    for _, item in ipairs(XRubbishList) do
         local reagents = XInfo.getReagentList(item['itemname'])
         for _, reagent in ipairs(reagents) do
             if XInfo.getBagItemCount(reagent['itemname']) < 20 and XInfo.getMailItemCount(reagent['itemname']) > 0 then
