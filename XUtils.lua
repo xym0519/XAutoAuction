@@ -187,7 +187,7 @@ XUtils.round = function(v)
 end
 
 XUtils.sendMail = function(itemName, stackCount, fullStack, receiver, money, subject, content)
-    if receiver == nil then receiver = '阿肌' end
+    if receiver == nil then receiver = XSetting.getMailReceiver(itemName) end
     if fullStack == nil then fullStack = true end
 
     if not XAPI.IsMailBoxOpen() then
@@ -594,7 +594,7 @@ end
 
 XUtils.sortJewsInBag = function(bagIndex)
     -- TODO bagIndex 需要配置
-    if bagIndex == nil then bagIndex = XInfo.NormalBagCount - 1 end
+    if bagIndex == nil then bagIndex = XSetting.getNormalBagCount() - 1 end
     local sourceList = {}
     for i = 0, bagIndex do
         local slotCount = XAPI.C_Container_GetContainerNumSlots(i)

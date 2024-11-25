@@ -4,30 +4,7 @@ local moduleName = 'XBuy'
 -- Variable definition
 local mainFrame = nil
 
-local dft_mineCraftRateS = {
-    { itemname = '血玉石', rate = 0.8 },
-    { itemname = '帝黄晶', rate = 0.8 },
-    { itemname = '秋色石', rate = 0.8 },
-    { itemname = '森林翡翠', rate = 0.8 },
-    { itemname = '天蓝石', rate = 0.8 },
-    { itemname = '曙光猫眼石', rate = 0.8 },
-    { itemname = '血石', rate = 3.6 },
-    { itemname = '茶晶石', rate = 3.6 },
-    { itemname = '太阳水晶', rate = 3.6 },
-    { itemname = '黑玉', rate = 3.6 },
-    { itemname = '玉髓石', rate = 3.6 },
-    { itemname = '暗影水晶', rate = 3.6 },
-}
-local dft_mineCraftPerfectRate = 0.2
 local dft_mineCraftProfitRate = 0.1
-local dft_mineReceiver = '阿肌'
-local dft_mineReceiverList = {
-    {
-        receiver = '默法',
-        list = { '萨隆邪铁矿石', '血石', '茶晶石', '太阳水晶', '黑玉', '玉髓石', '暗影水晶', '永恒之土', '土之结晶', '钴矿石', '冰冻宝珠' }
-    }
-}
-local dft_rubbishReceiver = '默无'
 
 local dft_minPrice = 9999999
 
@@ -485,19 +462,19 @@ end
 getMineSmallPrice = function()
     local jewPrice = 31478
     local tuPrice = XBuy.getItemField('土之结晶', 'sellprice', 0)
-    local r1m = dft_mineCraftRateS[1]['rate'] * XBuy.getItemField(dft_mineCraftRateS[1]['itemname'], 'sellprice', 0)
-    local o1m = dft_mineCraftRateS[2]['rate'] * XBuy.getItemField(dft_mineCraftRateS[2]['itemname'], 'sellprice', 0)
-    local y1m = dft_mineCraftRateS[3]['rate'] * XBuy.getItemField(dft_mineCraftRateS[3]['itemname'], 'sellprice', 0)
-    local g1m = dft_mineCraftRateS[4]['rate'] * XBuy.getItemField(dft_mineCraftRateS[4]['itemname'], 'sellprice', 0)
-    local b1m = dft_mineCraftRateS[5]['rate'] * XBuy.getItemField(dft_mineCraftRateS[5]['itemname'], 'sellprice', 0)
-    local p1m = dft_mineCraftRateS[6]['rate'] * XBuy.getItemField(dft_mineCraftRateS[6]['itemname'], 'sellprice', 0)
+    local r1m = XAPI.MineJewRateSmall['血玉石'] * XBuy.getItemField('血玉石', 'sellprice', 0)
+    local o1m = XAPI.MineJewRateSmall['帝黄晶'] * XBuy.getItemField('帝黄晶', 'sellprice', 0)
+    local y1m = XAPI.MineJewRateSmall['秋色石'] * XBuy.getItemField('秋色石', 'sellprice', 0)
+    local g1m = XAPI.MineJewRateSmall['森林翡翠'] * XBuy.getItemField('森林翡翠', 'sellprice', 0)
+    local b1m = XAPI.MineJewRateSmall['天蓝石'] * XBuy.getItemField('天蓝石', 'sellprice', 0)
+    local p1m = XAPI.MineJewRateSmall['曙光猫眼石'] * XBuy.getItemField('曙光猫眼石', 'sellprice', 0)
 
-    local r0m = dft_mineCraftRateS[7]['rate'] * (jewPrice - tuPrice * 2)
-    local o0m = dft_mineCraftRateS[8]['rate'] * (jewPrice - tuPrice * 2)
-    local y0m = dft_mineCraftRateS[9]['rate'] * (jewPrice - tuPrice * 2)
-    local g0m = dft_mineCraftRateS[10]['rate'] * (1 * dft_mineCraftPerfectRate + 0.5 * (1 - dft_mineCraftPerfectRate))
-    local b0m = dft_mineCraftRateS[11]['rate'] * (jewPrice - tuPrice * 2)
-    local p0m = dft_mineCraftRateS[12]['rate'] * (1 * dft_mineCraftPerfectRate + 0.5 * (1 - dft_mineCraftPerfectRate))
+    local r0m = XAPI.MineJewRateSmall['血石'] * (jewPrice - tuPrice * 2)
+    local o0m = XAPI.MineJewRateSmall['茶晶石'] * (jewPrice - tuPrice * 2)
+    local y0m = XAPI.MineJewRateSmall['太阳水晶'] * (jewPrice - tuPrice * 2)
+    local g0m = XAPI.MineJewRateSmall['黑玉'] * (1 * XAPI.PerfectJewRate + 0.5 * (1 - XAPI.PerfectJewRate))
+    local b0m = XAPI.MineJewRateSmall['玉髓石'] * (jewPrice - tuPrice * 2)
+    local p0m = XAPI.MineJewRateSmall['暗影水晶'] * (1 * XAPI.PerfectJewRate + 0.5 * (1 - XAPI.PerfectJewRate))
 
     local total = r1m + o1m + y1m + g1m + b1m + p1m + r0m + o0m + y0m + g0m + b0m + p0m
     return math.floor(total / 100)
@@ -512,16 +489,9 @@ onMineCrafingUpdate = function()
         return
     end
 
-    for _, item in ipairs(dft_mineCraftRateS) do
-        if XInfo.getBagItemCount(item['itemname']) >= 60 then
-            local receiver = dft_mineReceiver
-            for _, receiverItem in ipairs(dft_mineReceiverList) do
-                if XUtils.inArray(item['itemname'], receiverItem['list']) then
-                    receiver = receiverItem['receiver']
-                    break
-                end
-            end
-            XUtils.sendMail(item['itemname'], 3, true, receiver)
+    for _, itemName in ipairs(XInfo.materialList) do
+        if XInfo.getBagItemCount(itemName) >= 60 then
+            XUtils.sendMail(itemName, 3, true)
             return
         end
     end
@@ -537,11 +507,11 @@ onJewCrafingUpdate = function()
     local rubbishList = XCraftQueue.getRubbishList()
     for _, item in ipairs(rubbishList) do
         if XInfo.getBagItemCount(item['itemname']) >= 5 then
-            XUtils.sendMail(item['itemname'], 5, true, dft_rubbishReceiver)
+            XUtils.sendMail(item['itemname'], 5, true)
             return
         end
         if XInfo.getBagItemCount('完美' .. item['itemname']) >= 5 then
-            XUtils.sendMail('完美' .. item['itemname'], 5, true, dft_rubbishReceiver)
+            XUtils.sendMail('完美' .. item['itemname'], 5, true)
             return
         end
     end
