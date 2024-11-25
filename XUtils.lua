@@ -299,9 +299,20 @@ XUtils.receiveMail = function(itemName, receiveAll, onlyAH)
     local count = 0
 
     if receiveAll then
+        XJewTool.registerEventCallback(moduleName .. '_receiveMailError', 'UI_ERROR_MESSAGE',
+            function(_, _, code, message)
+                if code == 3 then
+                    XJewTool.unRegisterUIUpdateCallback(moduleName .. '_receiveMail')
+                    xdebug.error('包裹已满')
+                    XInfo.reloadBag()
+                    XInfo.reloadMail()
+                end
+            end)
+
         XJewTool.registerUIUpdateCallback(moduleName .. '_receiveMail', function()
             if not XAPI.IsMailBoxOpen() then
                 XJewTool.unRegisterUIUpdateCallback(moduleName .. '_receiveMail')
+                XJewTool.unRegisterEventCallback(moduleName .. '_receiveMailError', 'UI_ERROR_MESSAGE')
                 return
             end
             XInfo.reloadBag()
@@ -347,6 +358,7 @@ XUtils.receiveMail = function(itemName, receiveAll, onlyAH)
             end
             if not found then
                 XJewTool.unRegisterUIUpdateCallback(moduleName .. '_receiveMail')
+                XJewTool.unRegisterEventCallback(moduleName .. '_receiveMailError', 'UI_ERROR_MESSAGE')
                 xdebug.info('收取' .. itemName .. ' ' .. count)
                 XInfo.reloadBag()
                 XInfo.reloadMail()
@@ -660,12 +672,3 @@ XUtils.sellItems = function(itemNames)
         XJewTool.unRegisterUIUpdateCallback(moduleName .. '_sellItem')
     end, 0.5)
 end
-
-XJewTool.registerEventCallback(moduleName, 'UI_ERROR_MESSAGE', function(_, _, code, message)
-    if code == 3 then
-        XJewTool.unRegisterUIUpdateCallback(moduleName .. '_receiveMail')
-        xdebug.error('包裹已满')
-        XInfo.reloadBag()
-        XInfo.reloadMail()
-    end
-end)

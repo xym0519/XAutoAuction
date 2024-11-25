@@ -10,7 +10,6 @@ XJewWordList = {}
 XJewWordSetting = {}
 XAuctionBoardList = {}
 XFrameLevel = 10
-XSettingList = {}
 XRubbishList = {}
 
 -- ui
@@ -91,6 +90,11 @@ XJewTool.registerEventCallback = function(key, event, callback)
         eventCallback[event] = {}
     end
     eventCallback[event][key] = callback
+end
+
+XJewTool.unRegisterEventCallback = function(key, event)
+    if not eventCallback[event] then return end
+    eventCallback[event][key] = nil
 end
 
 -- Event callback

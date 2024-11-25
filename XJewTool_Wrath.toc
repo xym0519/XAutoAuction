@@ -9,10 +9,10 @@
 
 XAPI.lua
 XUI.lua
-XSetting.lua
-XJewTool.lua
 XUtils.lua
 XDebug.lua
+XJewTool.lua
+XSetting.lua
 XExternal.lua
 
 XUIInputDialog.lua

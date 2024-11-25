@@ -1,13 +1,9 @@
 XSetting = {}
-XSettingList = {
-    normalbagcount = 3,
-    mycharacterlist = {},
-    partnerlistbuy = {},
-    partnerlistsell = {},
-    defaultmailreceiver = '',
-    mailreceiver = {}
-}
 local moduleName = 'XSetting'
+
+XSettingList = {}
+local mainFrame
+local initUI
 
 local printSetting = function(key, ...)
     print(XUI.Orange, key, XUI.Green, ...)
@@ -206,3 +202,63 @@ end
 --     { itemname = '水晶玉髓石项圈', materialcount = 0 },
 --     -- { itemname = '水晶茶晶石项链', materialcount = 0 },
 -- }
+
+initUI = function()
+    mainFrame = XUI.createFrame(moduleName .. '_mainFrame', 450, 150)
+    mainFrame.title:SetText('系统设置')
+    mainFrame:SetPoint('RIGHT', UIParent, 'RIGHT', -80, 0)
+    mainFrame:Hide()
+    tinsert(UISpecialFrames, mainFrame:GetName())
+
+    local macroButton = XUI.createButton(mainFrame, 100, '初始化宏')
+    macroButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -30)
+    macroButton:SetScript('OnClick', function()
+    end)
+
+    local normalBagCountButton = XUI.createButton(mainFrame, 100, '包裹数量')
+    normalBagCountButton:SetPoint('TOPLEFT', macroButton, 'BOTTOMLEFT', 0, -5)
+    normalBagCountButton:SetScript('OnClick', function()
+        XSetting.printNormalBagCount()
+    end)
+
+    local myCharacterButton = XUI.createButton(mainFrame, 100, '我的角色')
+    myCharacterButton:SetPoint('LEFT', normalBagCountButton, 'RIGHT', 5, 0)
+    myCharacterButton:SetScript('OnClick', function()
+        XSetting.printMyCharacterList()
+    end)
+
+    local partnerBuyButton = XUI.createButton(mainFrame, 100, '合作方买')
+    partnerBuyButton:SetPoint('LEFT', myCharacterButton, 'RIGHT', 5, 0)
+    partnerBuyButton:SetScript('OnClick', function()
+        XSetting.printPartnerListBuy()
+    end)
+
+    local partnerSellButton = XUI.createButton(mainFrame, 100, '合作方卖')
+    partnerSellButton:SetPoint('LEFT', partnerBuyButton, 'RIGHT', 5, 0)
+    partnerSellButton:SetScript('OnClick', function()
+        XSetting.printPartnerListSell()
+    end)
+
+    local defaultMailReceiverButton = XUI.createButton(mainFrame, 100, '默认收件人')
+    defaultMailReceiverButton:SetPoint('TOPLEFT', normalBagCountButton, 'BOTTOMLEFT', 0, -5)
+    defaultMailReceiverButton:SetScript('OnClick', function()
+        XSetting.printDefaultMailReceiver()
+    end)
+
+    local mailReceiverButton = XUI.createButton(mainFrame, 100, '收件人')
+    mailReceiverButton:SetPoint('LEFT', defaultMailReceiverButton, 'RIGHT', 5, 0)
+    mailReceiverButton:SetScript('OnClick', function()
+        XSetting.printMailReceiver()
+    end)
+end
+
+-- Events
+XJewTool.registerEventCallback(moduleName, 'ADDON_LOADED', function()
+    initUI()
+end)
+
+-- Commands
+SlashCmdList['XSETTING'] = function()
+    XUI.toggleVisible(mainFrame)
+end
+SLASH_XSETTING1 = '/xsetting'
