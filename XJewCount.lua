@@ -14,14 +14,6 @@ local reloadLabels
 
 local printPrice
 
-local dft_defaultReceiver = '阿肌'
-local receiverList = {
-    {
-        receiver = '默法',
-        list = { '萨隆邪铁矿石', '血石', '茶晶石', '太阳水晶', '黑玉', '玉髓石', '暗影水晶', '永恒之土', '土之结晶', '钴矿石', '冰冻宝珠' }
-    }
-}
-
 local categoryIndex = 3
 local jewList = {
     {
@@ -57,37 +49,10 @@ local jewList = {
         }
     },
     {
-        category = '九五',
-        receiver = '编号九十五',
-        issell = 1,
-        list = {
-            { '金苜蓿', '卷丹' }, { '死亡荨麻', '塔兰德拉的玫瑰' }
-        }
-    },
-    {
         category = '咖喱',
         receiver = '咖喱贼',
-        issell = 1,
-        fixedprice = 100,
+        issell = 0,
         list = { { '太阳水晶', '血石', '玉髓石', '萨隆邪铁矿石', '永恒之土', '土之结晶', '钴矿石', '损坏的项链' }, { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石', '冰冻宝珠' } }
-    },
-    {
-        category = '原石',
-        receiver = nil,
-        issell = 0,
-        list = {
-            { '赤玉石', '紫黄晶', '王者琥珀', '祖尔之眼', '巨锆石', '恐惧石' },
-            { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石' }
-        }
-    },
-    {
-        category = '炸矿',
-        receiver = nil,
-        issell = 0,
-        list = {
-            { '血石', '茶晶石', '太阳水晶', '黑玉', '玉髓石', '暗影水晶', '泰坦神铁矿石' },
-            { '血玉石', '帝黄晶', '秋色石', '森林翡翠', '天蓝石', '曙光猫眼石', '萨隆邪铁矿石' }
-        }
     }
 }
 
@@ -146,17 +111,18 @@ createLabel = function(itemName)
 
         if category['issell'] and category['issell'] == 1 and IsLeftShiftKeyDown() then
             local receiver = category['receiver']
-            local money = 'auto'
-            if category['fixedprice'] then
-                money = category['fixedprice']
+            if receiver == nil then
+                xdebug.error('缺少收件人')
+                return
             end
+            local money = 'auto'
             XUtils.sendMail(_itemName, count, false, receiver, money)
         else
-            local receiver = dft_defaultReceiver
-            for _, receiverItem in ipairs(receiverList) do
-                if XUtils.inArray(_itemName, receiverItem['list']) then
-                    receiver = receiverItem['receiver']
-                    break
+            local receiver = category['receiver']
+            if receiver then
+                if not XInfo.isMe(receiver) then
+                    xdebug.error('收件人不是自己')
+                    return
                 end
             end
             if IsLeftControlKeyDown() then

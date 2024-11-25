@@ -20,7 +20,7 @@ XSetting.printNormalBagCount = function()
 end
 
 -- My Character List
--- XInfo.characterList = { '暗影肌', '阿肌' }
+-- XInfo.characterList = { '暗影肌', '阿肌', '咖喱贼' }
 if XSettingList['mycharacterlist'] == nil then XSettingList['mycharacterlist'] = {} end
 XSetting.getMyCharacterList = function()
     return XSettingList['mycharacterlist']
