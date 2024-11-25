@@ -171,7 +171,7 @@ XSetting.printMailReceiver = function()
         end
     end
     for receiver, itemList in pairs(list) do
-        xdebug.warn(receiver)
+        xdebug.debug(receiver)
         for _, itemName in ipairs(itemList) do
             xdebug.warn('    ' .. itemName)
         end
