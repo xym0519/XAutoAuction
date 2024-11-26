@@ -30,6 +30,7 @@ local addItem
 local reset
 local itemChanged
 local getMineSmallPrice
+local getRedJewSmallPrice
 
 -- Function implemention
 initUI = function()
@@ -346,10 +347,12 @@ refreshUI = function()
     if not mainFrame:IsVisible() then return end
 
     local mineSmallPrice = getMineSmallPrice()
+    local redJewSmallPrice = getRedJewSmallPrice()
     mainFrame.title:SetText('购买清单 (' .. (displayPageNo + 1) .. '/'
         .. (math.ceil(#XBuyItemList / displayPageSize)) .. ')'
         .. '    邪铁: ' .. math.floor(mineSmallPrice * (1 - dft_mineCraftProfitRate) / 100)
-        .. '(' .. math.floor(mineSmallPrice / 100) .. ')')
+        .. '(' .. math.floor(mineSmallPrice / 100) .. ')'
+        .. '    血: ' .. redJewSmallPrice)
 
     if mineCrafting then
         mainFrame.mineCraftStartButton:SetText(XUI.Green .. '炸矿')
@@ -477,7 +480,29 @@ getMineSmallPrice = function()
     local p0m = XAPI.MineJewRateSmall['暗影水晶'] * (1 * XAPI.PerfectJewRate + 0.5 * (1 - XAPI.PerfectJewRate))
 
     local total = r1m + o1m + y1m + g1m + b1m + p1m + r0m + o0m + y0m + g0m + b0m + p0m
-    return math.floor(total / 100)
+    return math.ceil(total / 100)
+end
+
+getRedJewSmallPrice = function()
+    local jewPrice = 31478
+    local minePrice = XBuy.getItemField('萨隆邪铁矿石', 'sellprice', 0)
+    local tuPrice = XBuy.getItemField('土之结晶', 'sellprice', 0)
+
+    local o1m = XAPI.MineJewRateSmall['帝黄晶'] * XBuy.getItemField('帝黄晶', 'sellprice', 0)
+    local y1m = XAPI.MineJewRateSmall['秋色石'] * XBuy.getItemField('秋色石', 'sellprice', 0)
+    local g1m = XAPI.MineJewRateSmall['森林翡翠'] * XBuy.getItemField('森林翡翠', 'sellprice', 0)
+    local b1m = XAPI.MineJewRateSmall['天蓝石'] * XBuy.getItemField('天蓝石', 'sellprice', 0)
+    local p1m = XAPI.MineJewRateSmall['曙光猫眼石'] * XBuy.getItemField('曙光猫眼石', 'sellprice', 0)
+
+    local r0m = XAPI.MineJewRateSmall['血石'] * (jewPrice - tuPrice * 2)
+    local o0m = XAPI.MineJewRateSmall['茶晶石'] * (jewPrice - tuPrice * 2)
+    local y0m = XAPI.MineJewRateSmall['太阳水晶'] * (jewPrice - tuPrice * 2)
+    local g0m = XAPI.MineJewRateSmall['黑玉'] * (1 * XAPI.PerfectJewRate + 0.5 * (1 - XAPI.PerfectJewRate))
+    local b0m = XAPI.MineJewRateSmall['玉髓石'] * (jewPrice - tuPrice * 2)
+    local p0m = XAPI.MineJewRateSmall['暗影水晶'] * (1 * XAPI.PerfectJewRate + 0.5 * (1 - XAPI.PerfectJewRate))
+
+    local totalOther = o1m + y1m + g1m + b1m + p1m + r0m + o0m + y0m + g0m + b0m + p0m
+    return math.floor((minePrice - totalOther) / 10000)
 end
 
 onMineCrafingUpdate = function()
