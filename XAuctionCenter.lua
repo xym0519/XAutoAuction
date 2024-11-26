@@ -86,6 +86,7 @@ local addCraftQueue
 local cleanLower
 local cleanShort
 local cleanMass
+local receiveMail
 local puton
 local putonNoPrice
 local putonOld
@@ -322,13 +323,6 @@ initUI = function()
         xdebug.info('PutOn: ' .. count)
     end)
 
-    -- local craftAllButton = XUI.createButton(mainFrame, dft_buttonWidth, '制造')
-    -- craftAllButton:SetPoint('LEFT', putonOldButton, 'RIGHT', dft_sectionGap, 0)
-    -- craftAllButton:SetScript('OnClick', function()
-    --     local count = addCraftQueue()
-    --     xdebug.info('Craft: ' .. count)
-    -- end)
-
     local cleanLowerButton = XUI.createButton(mainFrame, dft_buttonWidth, '清理')
     cleanLowerButton:SetPoint('LEFT', putonOldButton, 'RIGHT', dft_sectionGap, 0)
     cleanLowerButton:SetScript('OnClick', function()
@@ -347,8 +341,14 @@ initUI = function()
         cleanMass()
     end)
 
+    local receiveMailButton = XUI.createButton(mainFrame, dft_buttonWidth, '收件')
+    receiveMailButton:SetPoint('LEFT', cleanMassButton, 'RIGHT', dft_sectionGap, 0)
+    receiveMailButton:SetScript('OnClick', function()
+        receiveMail()
+    end)
+
     local allToBankButton = XUI.createButton(mainFrame, dft_buttonWidth, '全存')
-    allToBankButton:SetPoint('LEFT', cleanMassButton, 'RIGHT', dft_sectionGap, 0)
+    allToBankButton:SetPoint('LEFT', receiveMailButton, 'RIGHT', dft_sectionGap, 0)
     allToBankButton:SetScript('OnClick', function()
         XUtils.moveToBank(nil, nil, nil, false)
     end)
@@ -1873,6 +1873,37 @@ cleanMass = function()
         end
     end
     lastCleanMassTime = time()
+end
+
+receiveMail = function()
+    XInfo.reloadBag()
+    XInfo.reloadMail()
+    if XInfo.emptyBagCount < 1 then
+        xdebug.error('包裹已满')
+        return
+    end
+    local found = false
+    for i, item in ipairs(XItemList) do
+        item.index = i
+        local itemName = item['itemname']
+        local enabled = item['enabled']
+        if enabled == nil then enabled = false end
+        local minPriceOther = item['minpriceother']
+        local basePrice = item['baseprice']
+        local stackCount = item['stackcount']
+        local stackSize = item['stacksize']
+        local bagCount = XInfo.getBagItemCount(itemName)
+        local mailCount = XInfo.getMailItemCount(itemName)
+
+        if (bagCount < stackSize or (IsLeftShiftKeyDown() and bagCount < stackCount * stackSize)) and mailCount > 0 and enabled and minPriceOther >= basePrice then
+            XUtils.receiveMail(itemName)
+            found = true
+            break
+        end
+    end
+    if not found then
+        xdebug.info('收取完成')
+    end
 end
 
 puton = function(isForce)
