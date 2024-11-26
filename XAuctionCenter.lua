@@ -22,6 +22,8 @@ local dft_oldInterval = 1800
 local dft_maxCraftCount = 12
 local dft_materialTaskInterval = 30
 local dft_multiSellList = { '单倍', '双倍', '全部' }
+local dft_buyInterval = 60 -- 购买时间窗口
+local dft_buyLimit = 50    -- 购买时间窗口内，购买次数限制
 
 local dft_buttonWidth = 45
 local dft_buttonGap = 1
@@ -39,13 +41,14 @@ local taskList = {}
 local curTask = nil
 local lastTaskFinishTime = 0
 
-local buyPriceEnabled = true
 local buyEnabled = true
 local multiSell = 1
 
 local queryIndex = 1
 local starQueryIndex = 1
 local queryStarFlag = true
+
+local buyTime = {}
 
 local lastMaterialTaskTime = time()
 local materialQueryIndex = 0
@@ -275,14 +278,6 @@ initUI = function()
         refreshUI()
     end)
     mainFrame.buyButton = buyButton
-
-    local buyPriceButton = XUI.createButton(mainFrame, dft_buttonWidth, '买价')
-    buyPriceButton:SetPoint('RIGHT', buyButton, 'LEFT', -3, 0)
-    buyPriceButton:SetScript('OnClick', function(self)
-        buyPriceEnabled = not buyPriceEnabled
-        refreshUI()
-    end)
-    mainFrame.buyPriceButton = buyPriceButton
 
     local startButton = XUI.createButton(mainFrame, dft_buttonWidth, '开始')
     startButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -30)
@@ -1037,12 +1032,6 @@ refreshUI = function()
         mainFrame.startButton:SetText('开始')
     end
 
-    if buyPriceEnabled then
-        mainFrame.buyPriceButton:SetText(XUI.Green .. '买价')
-    else
-        mainFrame.buyPriceButton:SetText(XUI.Red .. '买价')
-    end
-
     if buyEnabled then
         mainFrame.buyButton:SetText(XUI.Green .. '购买')
     else
@@ -1385,45 +1374,47 @@ startNextTask = function()
         return
     end
 
-    if buyPriceEnabled then
+    if buyEnabled then
         if lastMaterialTaskTime + dft_materialTaskInterval < time() then
-            lastMaterialTaskTime = time()
-            if #XBuyItemList > 0 then
-                local tEnabledIndex = -1
-                local tAvailableIndex = -1
-                for idx = 0, #XBuyItemList - 1 do
-                    local tIndex = ((materialQueryIndex + idx) % #XBuyItemList) + 1
-                    local item = XBuyItemList[tIndex]
-                    if item ~= nil then
-                        if item['enabled'] then
-                            if tEnabledIndex == -1 then
-                                tEnabledIndex = tIndex
+            if #buyTime < dft_buyLimit then
+                lastMaterialTaskTime = time()
+                if #XBuyItemList > 0 then
+                    local tEnabledIndex = -1
+                    local tAvailableIndex = -1
+                    for idx = 0, #XBuyItemList - 1 do
+                        local tIndex = ((materialQueryIndex + idx) % #XBuyItemList) + 1
+                        local item = XBuyItemList[tIndex]
+                        if item ~= nil then
+                            if item['enabled'] then
+                                if tEnabledIndex == -1 then
+                                    tEnabledIndex = tIndex
+                                end
                             end
-                        end
-                        if item['minbuyoutprice'] <= item['price'] then
-                            if tAvailableIndex == -1 then
-                                tAvailableIndex = tIndex
+                            if item['minbuyoutprice'] <= item['price'] then
+                                if tAvailableIndex == -1 then
+                                    tAvailableIndex = tIndex
+                                end
                             end
                         end
                     end
-                end
 
-                if tAvailableIndex ~= -1 then
-                    materialQueryIndex = tAvailableIndex
-                elseif tEnabledIndex ~= -1 then
-                    materialQueryIndex = tEnabledIndex
-                end
+                    if tAvailableIndex ~= -1 then
+                        materialQueryIndex = tAvailableIndex
+                    elseif tEnabledIndex ~= -1 then
+                        materialQueryIndex = tEnabledIndex
+                    end
 
-                local item = XBuyItemList[materialQueryIndex]
-                if item then
-                    addMaterialQueryTaskByItemName(item['itemname'])
-                    curTask = taskList[1]
-                    table.remove(taskList, 1)
-                    curTask['starttime'] = time()
+                    local item = XBuyItemList[materialQueryIndex]
+                    if item then
+                        addMaterialQueryTaskByItemName(item['itemname'])
+                        curTask = taskList[1]
+                        table.remove(taskList, 1)
+                        curTask['starttime'] = time()
 
-                    processMaterialQueryTask(curTask)
-                    refreshUI()
-                    return
+                        processMaterialQueryTask(curTask)
+                        refreshUI()
+                        return
+                    end
                 end
             end
         end
@@ -2664,16 +2655,16 @@ processMaterialQueryTask = function(task)
             end
         end
 
-        if buyEnabled then
-            task['status'] = 'buying'
-        else
+        task['status'] = 'buying'
+        return
+    elseif task['status'] == 'buying' then
+        local buyingItem = XBuy.getItem(task['itemname'])
+        if buyingItem == nil then
             finishTask()
             startNextTask()
             return
         end
-    elseif task['status'] == 'buying' then
-        local buyingItem = XBuy.getItem(task['itemname'])
-        if buyingItem == nil then
+        if #buyTime > dft_buyLimit then
             finishTask()
             startNextTask()
             return
@@ -2715,12 +2706,14 @@ processMaterialQueryTask = function(task)
                             .. '    ' .. XUtils.priceToMoneyString(buyoutPrice / stackCount))
                         XAPI.PlaceAuctionBid('list', itemIndex, buyoutPrice)
                         XAuctionBoard.addItem(itemName, 'buy', stackCount)
+                        tinsert(buyTime, time())
                         break
                     elseif timeLeft < 3 and nextBidPrice / stackCount <= buyingItem['price'] then
                         xdebug.info('Bid: ' .. itemName .. ' (' .. stackCount .. ')'
                             .. '    ' .. XUtils.priceToMoneyString(nextBidPrice / stackCount))
                         XAPI.PlaceAuctionBid('list', itemIndex, nextBidPrice)
                         XAuctionBoard.addItem(itemName, 'buy', stackCount)
+                        tinsert(buyTime, time())
                         break
                     end
                 end
@@ -2741,6 +2734,14 @@ local function onUpdate()
     refreshUI()
 
     addCraftQueue()
+
+    for _ = 1, #buyTime do
+        if buyTime[1] < time() - dft_buyInterval then
+            tremove(buyTime, 1)
+        else
+            break
+        end
+    end
 
     if curTask then
         if time() - curTask['starttime'] > curTask['timeout'] then
