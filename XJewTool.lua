@@ -6,6 +6,7 @@ local moduleName = 'XJewTool'
 XItemList = {}
 XBuyItemList = {}
 XSpeakWordList = {}
+XSpeakWordSetting = {}
 XJewWordList = {}
 XJewWordSetting = {}
 XAuctionBoardList = {}

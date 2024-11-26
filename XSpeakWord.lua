@@ -10,6 +10,7 @@ local hintFrame = nil
 local dft_interval = 90
 local dft_buttonWidth = 60
 local dft_buttonGap = 1
+local dft_defaultReply = '抱歉人不在，材料可以直接u我，看到消息后我会尽快回复'
 
 local displayPageNo = 0
 local displayFrameList = {}
@@ -19,6 +20,8 @@ local displaySettingItem = nil
 local lastUpdatetime = 0
 local isRunning = false
 local curIndex = 1;
+local autoReply = false
+local replyList = {}
 
 -- Function definition
 local initUI
@@ -29,6 +32,9 @@ local addItem
 local getItem
 local send
 local printList
+local addReplyList
+local setAutoReply
+local getAutoReply
 
 -- Function implemention
 initUI = function()
@@ -38,7 +44,7 @@ initUI = function()
     mainFrame:Hide()
     tinsert(UISpecialFrames, mainFrame:GetName())
 
-    local startButton = XUI.createButton(mainFrame, 50, '开始')
+    local startButton = XUI.createButton(mainFrame, 50, XUI.Red .. '开始')
     startButton:SetPoint('LEFT', mainFrame, 'LEFT', 15, -10)
     startButton:SetScript('OnClick', function()
         isRunning = not isRunning
@@ -47,8 +53,17 @@ initUI = function()
     end)
     mainFrame.startButton = startButton
 
+    local replyButton = XUI.createButton(mainFrame, 50, XUI.Red .. '回复')
+    replyButton:SetPoint('LEFT', startButton, 'RIGHT', 5, 0)
+    replyButton:SetScript('OnClick', function()
+        autoReply = not autoReply
+        replyList = {}
+        refreshUI()
+    end)
+    mainFrame.replyButton = replyButton
+
     local resetButton = XUI.createButton(mainFrame, 50, '重置')
-    resetButton:SetPoint('LEFT', startButton, 'RIGHT', 5, 0)
+    resetButton:SetPoint('LEFT', replyButton, 'RIGHT', 5, 0)
     resetButton:SetScript('OnClick', function()
         isRunning = false
         lastUpdatetime = 0
@@ -259,9 +274,16 @@ refreshUI = function()
 
     if mainFrame.startButton then
         if isRunning then
-            mainFrame.startButton:SetText('停止')
+            mainFrame.startButton:SetText(XUI.Green .. '停止')
         else
-            mainFrame.startButton:SetText('开始')
+            mainFrame.startButton:SetText(XUI.Red .. '开始')
+        end
+    end
+    if mainFrame.replyButton then
+        if autoReply then
+            mainFrame.replyButton:SetText(XUI.Green .. '回复')
+        else
+            mainFrame.replyButton:SetText(XUI.Red .. '回复')
         end
     end
 
@@ -331,6 +353,18 @@ printList = function()
     end
 end
 
+addReplyList = function(userName)
+    tinsert(replyList, { username = userName, step = 1 })
+end
+
+setAutoReply = function(text)
+    XSpeakWordSetting['autoreplycontent'] = text
+end
+
+getAutoReply = function()
+    return XSpeakWordSetting['autoreplycontent']
+end
+
 -- Event callback
 local function onUpdate()
     if isRunning then
@@ -342,6 +376,20 @@ local function onUpdate()
             return
         end
         send()
+        if autoReply then
+            if #replyList > 0 then
+                if replyList[1]['step'] == 1 then
+                    XAPI.SendChatMessage(dft_defaultReply, "WHISPER", nil, replyList[1]['username'])
+                    replyList[1]['step'] = 2
+                else
+                    local reply = getAutoReply()
+                    if reply then
+                        XAPI.SendChatMessage(reply, "WHISPER", nil, replyList[1]['username'])
+                    end
+                    tremove(replyList, 1)
+                end
+            end
+        end
     end
 end
 
@@ -353,6 +401,9 @@ end)
 XJewTool.registerEventCallback(moduleName, 'CHAT_MSG_WHISPER', function(self, event, message, sender, ...)
     if not hintFrame then return end
     hintFrame:Show()
+    if isRunning and autoReply then
+        addReplyList(sender)
+    end
 end)
 
 XJewTool.registerUpdateCallback(moduleName, onUpdate)
@@ -382,6 +433,7 @@ SLASH_XSPEAKWORDSEND1 = '/xspeakword_send'
 -- Interface
 XSpeakWord.addItem = addItem
 XSpeakWord.getItem = getItem
+XSpeakWord.setAutoReply = setAutoReply
 XSpeakWord.toggle = function() XUI.toggleVisible(mainFrame) end
 XSpeakWord.isRunning = function() return isRunning end
 XSpeakWord.start = function()

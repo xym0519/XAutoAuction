@@ -290,14 +290,24 @@ initUI = function()
     setButton:SetPoint('RIGHT', billButton, 'LEFT', -5, 0)
     setButton:SetScript('OnClick', function(self)
         XUIConfirmDialog.show(moduleName, '确认', '是否设置喊话内容', function()
-            local text = mainFrame.price1Editbox:GetText()
+            local speakWord = mainFrame.price1Editbox:GetText()
+            local replyWord = speakWord
+            if XJewWordSetting.Prefix then
+                speakWord = XJewWordSetting.Prefix .. '：' .. speakWord
+            else
+                speakWord = '长期收：' .. speakWord
+            end
+            if XJewWordSetting.Suffix then
+                speakWord = speakWord .. XJewWordSetting.Suffix
+            end
             local wordItem = XSpeakWord.getItem(1)
             if wordItem ~= nil then
-                wordItem['text'] = text
+                wordItem['text'] = speakWord
             else
-                XSpeakWord.addItem(text, true)
+                XSpeakWord.addItem(speakWord, true)
             end
-            xdebug.info('自动喊话设置成功: ' .. text)
+            XSpeakWord.setAutoReply(replyWord)
+            xdebug.info('自动喊话设置成功: ' .. speakWord)
         end)
     end)
 
@@ -439,11 +449,8 @@ refreshUI = function()
         end
     end
 
-    local price1Str = '长期收：'
-    if XJewWordSetting.Prefix then
-        price1Str = XJewWordSetting.Prefix .. '：'
-    end
-    local price2Str = '珠宝价格表：\n'
+    local price1Str = ''
+    local price2Str = ''
     local price3Str = ''
     local price3 = 0
     for _, item in ipairs(XJewWordList) do
@@ -459,10 +466,6 @@ refreshUI = function()
             price3 = price3 + price1 * ccount
         end
     end
-    if XJewWordSetting.Suffix then
-        price1Str = price1Str .. XJewWordSetting.Suffix
-    end
-    price2Str = price2Str .. '\nPS：零头自行向上取整'
     if XUtils.stringEndsWith(price3Str, '+') then
         price3Str = string.sub(price3Str, 1, string.len(price3Str) - 1)
         price3Str = price3Str .. '=' .. price3

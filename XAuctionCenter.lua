@@ -280,7 +280,7 @@ initUI = function()
     end)
     mainFrame.buyButton = buyButton
 
-    local startButton = XUI.createButton(mainFrame, dft_buttonWidth, '开始')
+    local startButton = XUI.createButton(mainFrame, dft_buttonWidth, XUI.Red .. '开始')
     startButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -30)
     startButton:SetScript('OnClick', function(self)
         if isStarted then
@@ -1027,9 +1027,9 @@ refreshUI = function()
     XInfo.reloadAuction()
 
     if isStarted then
-        mainFrame.startButton:SetText('停止')
+        mainFrame.startButton:SetText(XUI.Green .. '停止')
     else
-        mainFrame.startButton:SetText('开始')
+        mainFrame.startButton:SetText(XUI.Red .. '开始')
     end
 
     if buyEnabled then
