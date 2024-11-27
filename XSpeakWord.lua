@@ -20,7 +20,7 @@ local displaySettingItem = nil
 local lastUpdatetime = 0
 local isRunning = false
 local curIndex = 1;
-local autoReply = false
+local autoReply = true
 local replyList = {}
 
 -- Function definition
@@ -53,7 +53,7 @@ initUI = function()
     end)
     mainFrame.startButton = startButton
 
-    local replyButton = XUI.createButton(mainFrame, 50, XUI.Red .. '回复')
+    local replyButton = XUI.createButton(mainFrame, 50, XUI.Green .. '回复')
     replyButton:SetPoint('LEFT', startButton, 'RIGHT', 5, 0)
     replyButton:SetScript('OnClick', function()
         autoReply = not autoReply

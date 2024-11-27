@@ -348,11 +348,14 @@ refreshUI = function()
 
     local mineSmallPrice = getMineSmallPrice()
     local redJewSmallPrice = getRedJewSmallPrice()
+    local mineCount = XInfo.getItemTotalCount('萨隆邪铁矿石')
+    local mineTime = math.ceil(mineCount * 2.5 / 60)
     mainFrame.title:SetText('购买清单 (' .. (displayPageNo + 1) .. '/'
         .. (math.ceil(#XBuyItemList / displayPageSize)) .. ')'
         .. '    邪铁: ' .. math.floor(mineSmallPrice * (1 - dft_mineCraftProfitRate) / 100)
         .. '(' .. math.floor(mineSmallPrice / 100) .. ')'
-        .. '    血: ' .. redJewSmallPrice)
+        .. '    血: ' .. redJewSmallPrice
+        .. '    炸矿: ' .. mineTime .. 'm')
 
     if mineCrafting then
         mainFrame.mineCraftStartButton:SetText(XUI.Green .. '炸矿')

@@ -267,37 +267,67 @@ initUI = function()
     local normalBagCountButton = XUI.createButton(mainFrame, 100, '包裹数量')
     normalBagCountButton:SetPoint('TOPLEFT', macroButton, 'BOTTOMLEFT', 0, -5)
     normalBagCountButton:SetScript('OnClick', function()
-        XSetting.printNormalBagCount()
+        if IsLeftShiftKeyDown() then
+            XUIInputDialog.show(moduleName, function() end,
+                { { Name = '设置', Value = '/run XSetting.setNormalBagCount(3)' } })
+        else
+            XSetting.printNormalBagCount()
+        end
     end)
 
     local myCharacterButton = XUI.createButton(mainFrame, 100, '我的角色')
     myCharacterButton:SetPoint('LEFT', normalBagCountButton, 'RIGHT', 5, 0)
     myCharacterButton:SetScript('OnClick', function()
-        XSetting.printMyCharacterList()
+        if IsLeftShiftKeyDown() then
+            XUIInputDialog.show(moduleName, function() end,
+                { { Name = '设置', Value = '/run XSetting.addMyCharacterList("")' } })
+        else
+            XSetting.printMyCharacterList()
+        end
     end)
 
     local partnerBuyButton = XUI.createButton(mainFrame, 100, '合作方买')
     partnerBuyButton:SetPoint('LEFT', myCharacterButton, 'RIGHT', 5, 0)
     partnerBuyButton:SetScript('OnClick', function()
-        XSetting.printPartnerListBuy()
+        if IsLeftShiftKeyDown() then
+            XUIInputDialog.show(moduleName, function() end,
+                { { Name = '设置', Value = '/run XSetting.addPartnerListBuy("")' } })
+        else
+            XSetting.printPartnerListBuy()
+        end
     end)
 
     local partnerSellButton = XUI.createButton(mainFrame, 100, '合作方卖')
     partnerSellButton:SetPoint('LEFT', partnerBuyButton, 'RIGHT', 5, 0)
     partnerSellButton:SetScript('OnClick', function()
-        XSetting.printPartnerListSell()
+        if IsLeftShiftKeyDown() then
+            XUIInputDialog.show(moduleName, function() end,
+                { { Name = '设置', Value = '/run XSetting.addPartnerListSell("")' } })
+        else
+            XSetting.printPartnerListSell()
+        end
     end)
 
     local defaultMailReceiverButton = XUI.createButton(mainFrame, 100, '默认收件人')
     defaultMailReceiverButton:SetPoint('TOPLEFT', normalBagCountButton, 'BOTTOMLEFT', 0, -5)
     defaultMailReceiverButton:SetScript('OnClick', function()
-        XSetting.printDefaultMailReceiver()
+        if IsLeftShiftKeyDown() then
+            XUIInputDialog.show(moduleName, function() end,
+                { { Name = '设置', Value = '/run XSetting.setDefaultMailReceiver("")' } })
+        else
+            XSetting.printDefaultMailReceiver()
+        end
     end)
 
     local mailReceiverButton = XUI.createButton(mainFrame, 100, '收件人')
     mailReceiverButton:SetPoint('LEFT', defaultMailReceiverButton, 'RIGHT', 5, 0)
     mailReceiverButton:SetScript('OnClick', function()
-        XSetting.printMailReceiver()
+        if IsLeftShiftKeyDown() then
+            XUIInputDialog.show(moduleName, function() end,
+                { { Name = '设置', Value = '/run XSetting.addMailReceiver("i","u")' } })
+        else
+            XSetting.printMailReceiver()
+        end
     end)
 end
 
