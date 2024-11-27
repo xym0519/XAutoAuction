@@ -47,18 +47,33 @@ initUI = function()
     local startButton = XUI.createButton(mainFrame, 50, XUI.Red .. '开始')
     startButton:SetPoint('LEFT', mainFrame, 'LEFT', 15, -10)
     startButton:SetScript('OnClick', function()
-        isRunning = not isRunning
-        lastUpdatetime = 0
-        refreshUI()
+        if IsLeftShiftKeyDown() then
+            xdebug.info('----------自动喊话设置----------')
+            for idx, cnt in pairs(XSpeakWordList) do
+                local status = 'disabled'
+                if cnt['enabled'] ~= nil and cnt['enabled'] then
+                    status = 'enabled'
+                end
+                xdebug.info(idx .. '(' .. status .. '): ' .. cnt['text'])
+            end
+        else
+            isRunning = not isRunning
+            lastUpdatetime = 0
+            refreshUI()
+        end
     end)
     mainFrame.startButton = startButton
 
     local replyButton = XUI.createButton(mainFrame, 50, XUI.Green .. '回复')
     replyButton:SetPoint('LEFT', startButton, 'RIGHT', 5, 0)
     replyButton:SetScript('OnClick', function()
-        autoReply = not autoReply
-        replyList = {}
-        refreshUI()
+        if IsLeftShiftKeyDown() then
+            xdebug.info(getAutoReply())
+        else
+            autoReply = not autoReply
+            replyList = {}
+            refreshUI()
+        end
     end)
     mainFrame.replyButton = replyButton
 
@@ -68,6 +83,7 @@ initUI = function()
         isRunning = false
         lastUpdatetime = 0
         curIndex = 1
+        replyList = {}
         refreshUI()
     end)
 
@@ -77,19 +93,6 @@ initUI = function()
         if not settingFrame then return end
         settingFrame:Show()
         refreshUI()
-    end)
-
-    local printButton = XUI.createButton(mainFrame, 50, '查看')
-    printButton:SetPoint('LEFT', settingButton, 'RIGHT', 5, 0)
-    printButton:SetScript('OnClick', function()
-        xdebug.info('----------自动喊话设置----------')
-        for idx, cnt in pairs(XSpeakWordList) do
-            local status = 'disabled'
-            if cnt['enabled'] ~= nil and cnt['enabled'] then
-                status = 'enabled'
-            end
-            xdebug.info(idx .. '(' .. status .. '): ' .. cnt['text'])
-        end
     end)
 
     initUI_Setting()
