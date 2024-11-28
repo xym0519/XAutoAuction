@@ -108,7 +108,7 @@ initUI = function()
     local jewCraftStartButton = XUI.createButton(mainFrame, dft_buttonWidth, XUI.Red .. '垃圾')
     jewCraftStartButton:SetPoint('RIGHT', mineCraftStartButton, 'LEFT', dft_buttonGap, 0)
     jewCraftStartButton:SetScript('OnClick', function(self)
-        XCraftQueue.start(true, 5)
+        XCraftQueue.start(true, 5, true)
         if XCraftQueue.isRunning() then
             jewCrafting = true
             refreshUI()

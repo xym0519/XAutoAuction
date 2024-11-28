@@ -57,7 +57,7 @@ initUI = function()
     mainFrame:Hide()
     tinsert(UISpecialFrames, mainFrame:GetName())
 
-    local startButton = XUI.createButton(mainFrame, 35, '起')
+    local startButton = XUI.createButton(mainFrame, 35, XUI.Red .. '起')
     startButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -30)
     startButton:SetScript('OnClick', function()
         start(true)
@@ -89,14 +89,10 @@ initUI = function()
             XUI.toggleVisible(rubbishSettingFrame)
         else
             craftRubbish = not craftRubbish
-            if craftRubbish then
-                self:SetText(XUI.Green .. '造')
-            else
-                self:SetText(XUI.Red .. '造')
-            end
             refreshUI()
         end
     end)
+    mainFrame.craftRubbishButton = craftRubbishButton
 
     local cleanButton = XUI.createButton(mainFrame, 35, '清')
     cleanButton:SetPoint('LEFT', craftRubbishButton, 'RIGHT', 5, 0)
@@ -333,9 +329,14 @@ refreshUI = function()
     end
 
     if isRunning then
-        mainFrame.startButton:SetText('停')
+        mainFrame.startButton:SetText(XUI.Green .. '停')
     else
-        mainFrame.startButton:SetText('起')
+        mainFrame.startButton:SetText(XUI.Red .. '起')
+    end
+    if craftRubbish then
+        mainFrame.craftRubbishButton:SetText(XUI.Green .. '造')
+    else
+        mainFrame.craftRubbishButton:SetText(XUI.Red .. '造')
     end
 
     local rubbishCount = 0
@@ -492,8 +493,9 @@ finishCurTask = function()
     lastTaskFinishTime = time()
 end
 
-start = function(_reset, count)
+start = function(_reset, count, _craftRubbish)
     if count == nil then count = 1 end
+
     if not isRunning then
         if not XInfo.reloadTradeSkill('珠宝加工') then
             refreshUI()
@@ -506,6 +508,7 @@ start = function(_reset, count)
         craftQueue = {}
     end
     craftRubbishCount = count
+    if _craftRubbish ~= nil then craftRubbish = _craftRubbish end
     isRunning = not isRunning
     refreshUI()
 end
