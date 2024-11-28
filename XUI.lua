@@ -66,10 +66,45 @@ XUI.createFrame = function(name, width, height, strata)
     return frame
 end
 
-XUI.createButton = function(parent, width, text)
+XUI.createButton = function(parent, width, text, highlightColor)
+    if highlightColor == nil then highlightColor = { 0, 1, 0, 1 } end
+
     local button = XAPI.CreateFrame('Button', nil, parent, 'UIPanelButtonTemplate')
     button:SetSize(width, 30)
     button:SetText(text)
+    button.highLightColor = highlightColor
+
+    local borderLeft = button:CreateTexture(nil, 'OVERLAY')
+    borderLeft:SetColorTexture(1, 1, 0, 0)
+    borderLeft:SetPoint('TOPLEFT', button, 'TOPLEFT', 5, -5)
+    borderLeft:SetPoint('BOTTOMRIGHT', button, 'BOTTOMLEFT', 8, 5)
+    button.borderLeft = borderLeft
+
+    button.SetHighlight = function(self, highlight)
+        if highlight then
+            self.borderLeft:SetColorTexture(
+                self.highLightColor[1],
+                self.highLightColor[2],
+                self.highLightColor[3],
+                self.highLightColor[4])
+        else
+            self.borderLeft:SetColorTexture(0, 0, 0, 0)
+        end
+    end
+
+    local background = button:CreateTexture(nil, 'ARTWORK')
+    background:SetColorTexture(1, 1, 0, 0)
+    background:SetPoint('TOPLEFT', button, 'TOPLEFT', 5, -5)
+    background:SetPoint('BOTTOMRIGHT', button, 'BOTTOMRIGHT', -5, 5)
+    button.background = background
+
+    button.SetFocus = function(self, focus)
+        if focus then
+            self.background:SetColorTexture(0, 1, 0, 0.5)
+        else
+            self.background:SetColorTexture(0, 0, 0, 0)
+        end
+    end
     return button
 end
 

@@ -335,9 +335,9 @@ initUI = function()
     local lastWidget = mainFrame
     for index, jewItem in ipairs(jewList) do
         local category = jewItem['category']
-        local categoryButton = XUI.createButton(mainFrame, 60, XUI.Red .. category)
+        local categoryButton = XUI.createButton(mainFrame, 60, category)
         if index == categoryIndex then
-            categoryButton:SetText(XUI.Green .. category)
+            categoryButton:SetFocus(true)
         end
         categoryButton:SetHeight(20)
         categoryButton.index = index
@@ -348,10 +348,10 @@ initUI = function()
         end
         categoryButton:SetScript('OnClick', function(self)
             for _, button in ipairs(categoryButtons) do
-                button:SetText(XUI.Red .. jewList[button.index]['category'])
+                button:SetFocus(false)
             end
             categoryIndex = self.index
-            self:SetText(XUI.Green .. jewList[self.index]['category'])
+            self:SetFocus(true)
 
             local title = jewList[self.index]['category']
             if jewList[self.index]['receiver'] then

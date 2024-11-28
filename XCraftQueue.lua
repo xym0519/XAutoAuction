@@ -57,7 +57,7 @@ initUI = function()
     mainFrame:Hide()
     tinsert(UISpecialFrames, mainFrame:GetName())
 
-    local startButton = XUI.createButton(mainFrame, 35, XUI.Red .. '起')
+    local startButton = XUI.createButton(mainFrame, 35, '起')
     startButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -30)
     startButton:SetScript('OnClick', function()
         start(true)
@@ -82,7 +82,7 @@ initUI = function()
         end
     end)
 
-    local craftRubbishButton = XUI.createButton(mainFrame, 35, XUI.Red .. '造')
+    local craftRubbishButton = XUI.createButton(mainFrame, 35, '造')
     craftRubbishButton:SetPoint('LEFT', nextButton, 'RIGHT', 5, 0)
     craftRubbishButton:SetScript('OnClick', function(self)
         if IsLeftShiftKeyDown() then
@@ -328,16 +328,8 @@ refreshUI = function()
         mainFrame.title:SetText('制造队列  (' .. #craftQueue .. ')');
     end
 
-    if isRunning then
-        mainFrame.startButton:SetText(XUI.Green .. '停')
-    else
-        mainFrame.startButton:SetText(XUI.Red .. '起')
-    end
-    if craftRubbish then
-        mainFrame.craftRubbishButton:SetText(XUI.Green .. '造')
-    else
-        mainFrame.craftRubbishButton:SetText(XUI.Red .. '造')
-    end
+    mainFrame.startButton:SetFocus(isRunning)
+    mainFrame.craftRubbishButton:SetFocus(craftRubbish)
 
     local rubbishCount = 0
     for _, _item in ipairs(XRubbishList) do

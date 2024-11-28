@@ -44,7 +44,7 @@ initUI = function()
     mainFrame:Hide()
     tinsert(UISpecialFrames, mainFrame:GetName())
 
-    local startButton = XUI.createButton(mainFrame, 50, XUI.Red .. '开始')
+    local startButton = XUI.createButton(mainFrame, 50, '开始')
     startButton:SetPoint('LEFT', mainFrame, 'LEFT', 15, -10)
     startButton:SetScript('OnClick', function()
         if IsLeftShiftKeyDown() then
@@ -275,20 +275,8 @@ refreshUI = function()
     if time < 0 then time = 0 end
     mainFrame.title:SetText('自动喊话(' .. curIndex .. ')    ' .. XUtils.formatTimeLeft(time) .. ' / ' .. dft_interval)
 
-    if mainFrame.startButton then
-        if isRunning then
-            mainFrame.startButton:SetText(XUI.Green .. '停止')
-        else
-            mainFrame.startButton:SetText(XUI.Red .. '开始')
-        end
-    end
-    if mainFrame.replyButton then
-        if autoReply then
-            mainFrame.replyButton:SetText(XUI.Green .. '回复')
-        else
-            mainFrame.replyButton:SetText(XUI.Red .. '回复')
-        end
-    end
+    mainFrame.startButton:SetFocus(isRunning)
+    mainFrame.replyButton:SetFocus(autoReply)
 
     if not settingFrame then return end
     if settingFrame:IsVisible() then

@@ -97,7 +97,7 @@ initUI = function()
         XAPI.PutItemInBackpack()
     end)
 
-    local mineCraftStartButton = XUI.createButton(mainFrame, dft_buttonWidth, XUI.Red .. '炸矿')
+    local mineCraftStartButton = XUI.createButton(mainFrame, dft_buttonWidth, '炸矿')
     mineCraftStartButton:SetPoint('TOPRIGHT', mainFrame, 'TOPRIGHT', -30, 0)
     mineCraftStartButton:SetScript('OnClick', function(self)
         mineCrafting = not mineCrafting
@@ -105,7 +105,7 @@ initUI = function()
     end)
     mainFrame.mineCraftStartButton = mineCraftStartButton
 
-    local jewCraftStartButton = XUI.createButton(mainFrame, dft_buttonWidth, XUI.Red .. '垃圾')
+    local jewCraftStartButton = XUI.createButton(mainFrame, dft_buttonWidth, '垃圾')
     jewCraftStartButton:SetPoint('RIGHT', mineCraftStartButton, 'LEFT', dft_buttonGap, 0)
     jewCraftStartButton:SetScript('OnClick', function(self)
         XCraftQueue.start(true, 5, true)
@@ -357,16 +357,8 @@ refreshUI = function()
         .. '    血: ' .. redJewSmallPrice
         .. '    炸矿: ' .. mineTime .. 'm')
 
-    if mineCrafting then
-        mainFrame.mineCraftStartButton:SetText(XUI.Green .. '炸矿')
-    else
-        mainFrame.mineCraftStartButton:SetText(XUI.Red .. '炸矿')
-    end
-    if jewCrafting then
-        mainFrame.jewCraftStartButton:SetText(XUI.Green .. '垃圾')
-    else
-        mainFrame.jewCraftStartButton:SetText(XUI.Red .. '垃圾')
-    end
+    mainFrame.mineCraftStartButton:SetFocus(mineCrafting)
+    mainFrame.jewCraftStartButton:SetFocus(jewCrafting)
 
     XInfo.reloadBag()
 

@@ -280,7 +280,7 @@ initUI = function()
     end)
     mainFrame.buyButton = buyButton
 
-    local startButton = XUI.createButton(mainFrame, dft_buttonWidth, XUI.Red .. '开始')
+    local startButton = XUI.createButton(mainFrame, dft_buttonWidth, '开始')
     startButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -30)
     startButton:SetScript('OnClick', function(self)
         if isStarted then
@@ -785,28 +785,12 @@ filterDisplayList = function()
         frame.itemIcon = itemIcon
         itemIcon.frame = frame
 
-        local itemNameButton = XUI.createButton(frame, 80, '')
+        local itemNameButton = XUI.createButton(frame, 80, '', { 1, 1, 0, 1 })
         itemNameButton:SetPoint('LEFT', itemIcon, 'RIGHT', 0, 0)
         itemNameButton:SetScript('OnClick', itemNameClick)
         itemNameButton:SetScript("OnEnter", itemOnEnter)
         itemNameButton:SetScript("OnLeave", itemOnLeave)
-
-        local itemNameButtonBorderLeft = itemNameButton:CreateTexture(nil, 'OVERLAY')
-        itemNameButtonBorderLeft:SetColorTexture(1, 1, 0, 0)
-        itemNameButtonBorderLeft:SetPoint('TOPLEFT', itemNameButton, 'TOPLEFT', 5, -5)
-        itemNameButtonBorderLeft:SetPoint('BOTTOMRIGHT', itemNameButton, 'BOTTOMLEFT', 8, 5)
-        itemNameButton.borderLeft = itemNameButtonBorderLeft
-
-        itemNameButton.SetHighlight = function(self, highlight)
-            if highlight then
-                self.borderLeft:SetColorTexture(1, 1, 0, 1)
-            else
-                self.borderLeft:SetColorTexture(1, 1, 0, 0)
-            end
-        end
-
         frame.itemNameButton = itemNameButton
-        itemNameButton.frame = frame
 
         local labelTime = XUI.createLabel(frame, 50, '', 'CENTER')
         labelTime:SetPoint('LEFT', itemNameButton, 'RIGHT', 3, 0)
@@ -1026,41 +1010,12 @@ refreshUI = function()
     XInfo.reloadBag()
     XInfo.reloadAuction()
 
-    if isStarted then
-        mainFrame.startButton:SetText(XUI.Green .. '停止')
-    else
-        mainFrame.startButton:SetText(XUI.Red .. '开始')
-    end
-
-    if buyEnabled then
-        mainFrame.buyButton:SetText(XUI.Green .. '购买')
-    else
-        mainFrame.buyButton:SetText(XUI.Red .. '购买')
-    end
-
-    if XSpeakWord.isRunning() then
-        mainFrame.speakButton:SetText(XUI.Green .. '喊话')
-    else
-        mainFrame.speakButton:SetText(XUI.Red .. '喊话')
-    end
-
-    if XCraftQueue.isRunning() then
-        mainFrame.craftQueueButton:SetText(XUI.Green .. '制造')
-    else
-        mainFrame.craftQueueButton:SetText(XUI.Red .. '制造')
-    end
-
-    if XAuctionBoard.mainFrame:IsVisible() then
-        mainFrame.auctionBoardButton:SetText(XUI.Green .. '面板')
-    else
-        mainFrame.auctionBoardButton:SetText(XUI.Red .. '面板')
-    end
-
-    if XJewCount.mainFrame:IsVisible() then
-        mainFrame.jewCountButton:SetText(XUI.Green .. '材料')
-    else
-        mainFrame.jewCountButton:SetText(XUI.Red .. '材料')
-    end
+    mainFrame.startButton:SetFocus(isStarted)
+    mainFrame.buyButton:SetFocus(buyEnabled)
+    mainFrame.speakButton:SetFocus(XSpeakWord.isRunning())
+    mainFrame.craftQueueButton:SetFocus(XCraftQueue.isRunning())
+    mainFrame.auctionBoardButton:SetFocus(XAuctionBoard.mainFrame:IsVisible())
+    mainFrame.jewCountButton:SetFocus(XJewCount.mainFrame:IsVisible())
 
     mainFrame.multiSellButton:SetText(dft_multiSellList[multiSell])
 
