@@ -189,6 +189,30 @@ initUI = function()
     macroButton:SetPoint('TOPLEFT', mainFrame, 'TOPLEFT', 15, -30)
     macroButton:SetScript('OnClick', function()
         XUIConfirmDialog.show(moduleName, '确认', '确认初始化宏', function()
+            if IsLeftShiftKeyDown() then
+                XAPI.DeleteMacro('cls')
+                XAPI.DeleteMacro('reload')
+                XAPI.DeleteMacro('出售')
+                XAPI.DeleteMacro('购买')
+                XAPI.DeleteMacro('交易')
+                XAPI.DeleteMacro('关闭')
+                XAPI.DeleteMacro('刷新')
+                XAPI.DeleteMacro('设置')
+                XAPI.DeleteMacro('导出')
+                XAPI.DeleteMacro('法1')
+                XAPI.DeleteMacro('法2')
+                XAPI.DeleteMacro('法3')
+                XAPI.DeleteMacro('法4')
+                XAPI.DeleteMacro('法5')
+                XAPI.DeleteMacro('合土')
+                XAPI.DeleteMacro('拆土1')
+                XAPI.DeleteMacro('拆土2')
+                XAPI.DeleteMacro('拆土3')
+                XAPI.DeleteMacro('拆土4')
+                XAPI.DeleteMacro('拆土5')
+                XAPI.DeleteMacro('选矿')
+            end
+
             if not XAPI.GetMacroInfo('cls') then
                 XAPI.CreateMacro('cls', XAPI.Texture_QuestionMark, '/cls')
             end
@@ -198,19 +222,19 @@ initUI = function()
 
             if not XAPI.GetMacroInfo('出售') then
                 XAPI.CreateMacro('出售', XAPI.Texture_QuestionMark,
-                    "/xauctioncenter\n/xcraftqueue_close\n/xbuy_close\n/xjewwords_close")
+                    "/xauctioncenter\n/xcraftqueue_close\n/xbuy_close\n/xjewwords_close\n/xminecenter_hide")
             end
             if not XAPI.GetMacroInfo('购买') then
                 XAPI.CreateMacro('购买', XAPI.Texture_QuestionMark,
-                    "/xauctioncenter_close\n/xcraftqueue_close\n/xbuy\n/xjewcount_show\n/xjewwords_close")
+                    "/xauctioncenter_close\n/xcraftqueue_close\n/xbuy\n/xjewcount_show\n/xjewwords_close\n/xminecenter")
             end
             if not XAPI.GetMacroInfo('交易') then
                 XAPI.CreateMacro('交易', XAPI.Texture_QuestionMark,
-                    "/xauctioncenter_close\n/xcraftqueue_close\n/xbuy_close\n/xjewcount_close\n/xjewwords")
+                    "/xauctioncenter_close\n/xcraftqueue_close\n/xbuy_close\n/xjewcount_close\n/xjewwords\n/xminecenter_hide")
             end
             if not XAPI.GetMacroInfo('关闭') then
                 XAPI.CreateMacro('关闭', XAPI.Texture_QuestionMark,
-                    "/xauctioncenter_close\n/xcraftqueue_close\n/xauctionhistory_close\n/xbuy_close\n/xjewcount_close\n/xjewwords_close")
+                    "/xauctioncenter_close\n/xcraftqueue_close\n/xauctionhistory_close\n/xbuy_close\n/xjewcount_close\n/xjewwords_close\n/xminecenter_hide")
             end
 
             if not XAPI.GetMacroInfo('刷新') then

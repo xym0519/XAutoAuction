@@ -28,3 +28,4 @@ XBuy.lua
 XAuctionCenter.lua
 XJewWords.lua
 XJewCount.lua
+XMineCenter.lua

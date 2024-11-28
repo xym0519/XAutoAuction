@@ -41,6 +41,7 @@ XJewToolFrame:RegisterEvent('AUCTION_ITEM_LIST_UPDATE')
 
 XJewToolFrame:RegisterEvent('CHAT_MSG_SYSTEM')
 XJewToolFrame:RegisterEvent('CHAT_MSG_WHISPER')
+XJewToolFrame:RegisterEvent('CHAT_MSG_LOOT')
 
 XJewToolFrame:RegisterEvent('BAG_UPDATE')
 XJewToolFrame:RegisterEvent('GET_ITEM_INFO_RECEIVED')
