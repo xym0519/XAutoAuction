@@ -313,8 +313,6 @@ getMineSmallPrice = function()
 
     local total = 0
     for _, itemName in ipairs(list) do
-        xdebug.error(itemName, XAPI.MineJewRateSmall[itemName], getPrice(itemName),
-            XAPI.MineJewRateSmall[itemName] * getPrice(itemName))
         total = total + XAPI.MineJewRateSmall[itemName] * getPrice(itemName)
     end
 
