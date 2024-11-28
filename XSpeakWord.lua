@@ -357,7 +357,10 @@ printList = function()
 end
 
 addReplyList = function(userName)
-    tinsert(replyList, { username = userName, step = 1 })
+    for _, item in ipairs(replyList) do
+        if item['username'] == userName then return end
+    end
+    tinsert(replyList, { username = userName, step = 1, createtime = time() })
 end
 
 setAutoReply = function(text)
@@ -370,29 +373,37 @@ end
 
 -- Event callback
 local function onUpdate()
-    if isRunning then
-        if #XSpeakWordList <= 0 then
-            xdebug.warn('请先设置喊话内容')
-            lastUpdatetime = 0
-            curIndex = 1
-            isRunning = false
-            return
+    if not isRunning then return end
+
+    if #XSpeakWordList <= 0 then
+        xdebug.warn('请先设置喊话内容')
+        lastUpdatetime = 0
+        curIndex = 1
+        isRunning = false
+        return
+    end
+
+    send()
+
+    if not autoReply then return end
+    for _ = 1, #replyList do
+        if replyList[1]['createtime'] < time() - 3 then
+            tremove(replyList, 1)
+        else
+            break
         end
-        send()
-        if autoReply then
-            if #replyList > 0 then
-                if replyList[1]['step'] == 1 then
-                    XAPI.SendChatMessage(dft_defaultReply, "WHISPER", nil, replyList[1]['username'])
-                    replyList[1]['step'] = 2
-                else
-                    local reply = getAutoReply()
-                    if reply then
-                        XAPI.SendChatMessage(reply, "WHISPER", nil, replyList[1]['username'])
-                    end
-                    tremove(replyList, 1)
-                end
-            end
+    end
+
+    if #replyList < 1 then return end
+    if replyList[1]['step'] == 1 then
+        XAPI.SendChatMessage(dft_defaultReply, "WHISPER", nil, replyList[1]['username'])
+        replyList[1]['step'] = 2
+    else
+        local reply = getAutoReply()
+        if reply then
+            XAPI.SendChatMessage(reply, "WHISPER", nil, replyList[1]['username'])
         end
+        tremove(replyList, 1)
     end
 end
 
